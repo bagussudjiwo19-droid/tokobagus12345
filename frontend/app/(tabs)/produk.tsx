@@ -12,9 +12,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 
-import AppHeader from "@/components/AppHeader";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
@@ -30,9 +30,47 @@ export default function ProdukScreen() {
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [menuProduct, setMenuProduct] = useState<Product | null>(null);
+  const [scanResult, setScanResult] = useState<Product | null>(null);
+  const [manualMode, setManualMode] = useState(false);
   const sheetRef = useRef<BottomSheetModal>(null);
+  const inputRef = useRef<TextInput>(null);
 
-  useFocusEffect(useCallback(() => { reload(); }, [reload]));
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+      // Keep the search field focused so the Bluetooth scanner works
+      // immediately without tapping the field.
+      const t = setTimeout(() => inputRef.current?.focus(), 350);
+      return () => clearTimeout(t);
+    }, [reload]),
+  );
+
+  // Handle a barcode scan submitted from the Bluetooth scanner.
+  const handleScan = useCallback(
+    async (code: string) => {
+      const c = code.trim();
+      setQuery("");
+      if (!c) { inputRef.current?.focus(); return; }
+      try {
+        const product = await api.getByBarcode(c);
+        setScanResult(product);
+        Haptics.selectionAsync();
+      } catch {
+        setScanResult(null);
+        toast.show(`Barcode ${c} tidak ditemukan`, "error");
+      }
+      // Ready for the next scan without touching the field again.
+      setTimeout(() => inputRef.current?.focus(), 100);
+    },
+    [toast],
+  );
+
+  const toggleKeyboard = () => {
+    const next = !manualMode;
+    setManualMode(next);
+    inputRef.current?.blur();
+    setTimeout(() => inputRef.current?.focus(), 60);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -88,8 +126,7 @@ export default function ProdukScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <AppHeader />
+    <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.titleBlock}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Produk</Text>
@@ -101,21 +138,50 @@ export default function ProdukScreen() {
         </Pressable>
       </View>
       <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color={colors.muted} />
+        <View style={[styles.searchBox, !manualMode && styles.searchBoxScan]}>
+          <Ionicons name={manualMode ? "search" : "barcode-outline"} size={18} color={manualMode ? colors.muted : colors.brand} />
           <TextInput
+            ref={inputRef}
             testID="produk-search-input"
             value={query}
             onChangeText={setQuery}
-            placeholder="Cari produk / kategori / barcode"
+            onSubmitEditing={(e) => handleScan(e.nativeEvent.text)}
+            blurOnSubmit={false}
+            showSoftInputOnFocus={manualMode}
+            caretHidden={!manualMode}
+            autoFocus
+            placeholder={manualMode ? "Ketik nama / kategori / barcode" : "Mode scan aktif — arahkan scanner ke barcode"}
             placeholderTextColor={colors.muted}
             style={styles.searchInput}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery("")}><Ionicons name="close-circle" size={18} color={colors.muted} /></Pressable>
+            <Pressable onPress={() => setQuery("")} testID="produk-search-clear"><Ionicons name="close-circle" size={18} color={colors.muted} /></Pressable>
           )}
+          <Pressable onPress={toggleKeyboard} style={styles.kbdBtn} testID="produk-keyboard-toggle">
+            <Ionicons name={manualMode ? "barcode-outline" : "keypad-outline"} size={18} color={colors.onSurfaceSecondary} />
+          </Pressable>
         </View>
       </View>
+
+      {scanResult && (
+        <Pressable
+          style={styles.scanCard}
+          testID="produk-scan-result"
+          onPress={() => { const id = scanResult.id; setScanResult(null); router.push({ pathname: "/produk-form", params: { id } }); }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.scanCardLabel}>HASIL SCAN</Text>
+            <Text style={styles.scanCardName} numberOfLines={1}>{scanResult.name}</Text>
+            <Text style={styles.scanCardMeta} numberOfLines={1}>
+              {scanResult.barcode || "-"} · Stok {scanResult.variations.length ? scanResult.variations.reduce((s, v) => s + (v.stock || 0), 0) : scanResult.stock} {scanResult.unit}
+            </Text>
+          </View>
+          <Text style={styles.scanCardPrice}>{scanResult.variations.length ? "Bervariasi" : rupiah(scanResult.sell_price)}</Text>
+          <Pressable onPress={() => { setScanResult(null); inputRef.current?.focus(); }} style={styles.scanCardClose} testID="produk-scan-close">
+            <Ionicons name="close" size={20} color={colors.muted} />
+          </Pressable>
+        </Pressable>
+      )}
 
       {loading && products.length === 0 ? (
         <View style={styles.centerFill}><ActivityIndicator color={colors.brand} size="large" /></View>
@@ -174,7 +240,15 @@ const styles = StyleSheet.create({
   addTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   searchWrap: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, paddingHorizontal: spacing.md, height: 48, borderWidth: 1, borderColor: colors.border },
+  searchBoxScan: { borderWidth: 2, borderColor: colors.brand },
   searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
+  kbdBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  scanCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginHorizontal: spacing.lg, marginBottom: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.brandTertiary },
+  scanCardLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1 },
+  scanCardName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, marginTop: 2 },
+  scanCardMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
+  scanCardPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
+  scanCardClose: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.surfaceSecondary },
   rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
