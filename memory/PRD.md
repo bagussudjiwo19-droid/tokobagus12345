@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v5 — Cek Harga screen
+- Hapus header "KASIR WARUNG" + tanggal; judul "Cek Harga" jadi paling atas.
+- Auto scan mode aktif saat tab dibuka (input tersembunyi auto-focus, softInput disabled → no keyboard HP).
+- Barcode discan → tampil nama barang + harga jual (support varian). Hasil bertahan 15 detik + countdown, lalu auto-reset & refocus siap scan berikutnya.
+- Barcode tidak ketemu → tetap di mode scan (siap scan lagi). Tombol "Cari Produk Manual" dipertahankan sebagai opsi.
+- Verified via screenshot_tool (idle + hasil scan + countdown 15s).
+
 ### v4 — Produk screen improvements
 - Hapus header "KASIR WARUNG" + pill "Siap" dari layar Produk; judul "Produk" jadi paling atas.
 - Kolom pencarian Produk mendukung scanner barcode Bluetooth: auto-focus saat tab fokus, softInput disabled (no keyboard HP), onSubmitEditing → getByBarcode.
