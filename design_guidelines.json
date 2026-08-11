@@ -1,0 +1,158 @@
+{
+  "app_name": "Toko Bagus",
+  "personality": "7 Dark-First Utility DARK",
+  "personality_one_liner": "A high-speed, command-center operational surface optimizing for fast thumb-reach, strict numeric hierarchy, and low-light OLED visibility.",
+  "color": {
+    "surface": "#000000",
+    "onSurface": "#F3F4F6",
+    "surfaceSecondary": "#18181B",
+    "onSurfaceSecondary": "#E5E7EB",
+    "surfaceTertiary": "#27272A",
+    "onSurfaceTertiary": "#D1D5DB",
+    "surfaceInverse": "#F9FAFB",
+    "onSurfaceInverse": "#030712",
+    "brand": "#10B981",
+    "brandPrimary": "#10B981",
+    "onBrandPrimary": "#022C22",
+    "brandSecondary": "#047857",
+    "onBrandSecondary": "#D1FAE5",
+    "brandTertiary": "#065F46",
+    "onBrandTertiary": "#A7F3D0",
+    "success": "#10B981",
+    "onSuccess": "#022C22",
+    "warning": "#EAB308",
+    "onWarning": "#422006",
+    "error": "#EF4444",
+    "onError": "#450A0A",
+    "info": "#6B7280",
+    "onInfo": "#F9FAFB",
+    "border": "#27272A",
+    "borderStrong": "#3F3F46",
+    "divider": "#27272A"
+  },
+  "typography": {
+    "displayFontFamily": "Barlow Condensed",
+    "textFontFamily": "DM Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Use tight md/lg spacing for dense transactional lists. Padding inside buttons and cards should be highly deliberate to maximize screen real estate.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Use heavy translucent glass (e.g., rgba(0,0,0,0.85) + blur) for the bottom tab bar and the sticky 'Daftar Belanja' cart CTA.",
+      "Use glass for modal bottom-sheet headers to maintain context of the POS screen behind it."
+    ],
+    "dont's": [
+      "Never use glass for product cards or list rows; rely on solid surfaceSecondary.",
+      "Do not blur numeric keypads or form inputs."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Kasir (POS)",
+      "purpose": "Main checkout interface for scanning, browsing, and adding products to the cart for high-speed transactions.",
+      "states": {
+        "loading": "Skeleton grid representing product cards.",
+        "empty": "No products match the filter or search query.",
+        "error": "Failed to load product catalog."
+      },
+      "layout": "Top: Horizontal scrolling category chips (Semua, Makanan, Minuman). Middle: 2-column grid of product cards showing Name, Price, and Stock. Cards use solid surfaceSecondary. Bottom: A sticky CTA bar 'Daftar Belanja' showing item count and running total, anchored above the tab bar. Tapping it opens the Cart bottom sheet with a Numpad and 'Nominal Cepat' (Quick Amount) chips for payment."
+    },
+    {
+      "name": "Produk",
+      "purpose": "Product catalog management including stock, barcode, and wholesale pricing tiers.",
+      "states": {
+        "loading": "Spinner centered.",
+        "empty": "Illustration of an empty box with text 'Belum ada produk'.",
+        "error": "Failed to fetch products."
+      },
+      "layout": "Top: Search bar and a primary 'Tambah Produk' button. Middle: Single-column list of products. Each row displays Name, SKU/Barcode, Stock, and Price. Tapping opens an edit form with sections for Basic Info, Variations (variasi), and Wholesale Pricing (harga bertingkat)."
+    },
+    {
+      "name": "Riwayat",
+      "purpose": "Log of completed transactions with total omzet summary and reprint capabilities.",
+      "states": {
+        "loading": "List of skeleton rows.",
+        "empty": "Empty register illustration with text 'Belum ada transaksi hari ini'.",
+        "error": "Failed to load transaction history."
+      },
+      "layout": "Top: A summary card showing 'Total Pendapatan' for the selected date. Middle: Chronological list of transactions (Time, Receipt No, Total Amount). Tapping a row opens a detailed receipt preview modal with a 'Cetak Struk' (Print Receipt) sticky action."
+    },
+    {
+      "name": "Pengaturan",
+      "purpose": "Store settings, Bluetooth thermal printer connection, and JSON Backup/Restore.",
+      "states": {
+        "loading": "Spinner.",
+        "empty": "N/A",
+        "error": "Failed to load settings."
+      },
+      "layout": "Single-column list of settings sections. 'Informasi Toko' (Name, Address). 'Printer Bluetooth' (Scan & Connect button, test print). 'Data & Backup' (Export to JSON, Import JSON). Use surfaceSecondary blocks for each section."
+    }
+  ],
+  "images": {
+    "empty_cart_illustration": {
+      "url": "https://images.unsplash.com/photo-1634114521044-a8c62098f958?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHxjYXNoJTIwcmVnaXN0ZXIlMjBlbXB0eSUyMGlsbHVzdHJhdGlvbnxlbnwwfHx8fDE3ODY0NjQ3Mzd8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Black and white photo of an old cash register"
+    },
+    "groceries_placeholder": {
+      "url": "https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwxfHxncm9jZXJpZXMlMjBzbmFjayUyMHBhY2tldHN8ZW58MHx8fHwxNzg2NDY0NzQ0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Groceries and snacks in a bag"
+    },
+    "thermal_printer_placeholder": {
+      "url": "https://images.unsplash.com/photo-1623123096729-26b481292919?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwxfHx0aGVybWFsJTIwcmVjZWlwdCUyMHByaW50ZXJ8ZW58MHx8fHwxNzg2NDY0NzQ0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Thermal receipt printer being scanned"
+    }
+  },
+  "haptics": {
+    "add_to_cart": "selection",
+    "quick_amount_tap": "light",
+    "numpad_press": "light",
+    "transaction_success": "success",
+    "tab_change": "selection"
+  },
+  "instructions_to_main_agent": [
+    "STRICT PURE BLACK (`#000000`) for the root background. This is a non-negotiable requirement to match the original Toko Bagus app experience.",
+    "ALL UI text must be in Bahasa Indonesia (Kasir, Produk, Riwayat, Pengaturan, Tambah Produk, Daftar Belanja, Bayar, Kembalian, Nominal Cepat).",
+    "Currency formatting MUST use Indonesian Rupiah format exactly as `Rp 15.000` (No decimals, dot as thousand separator).",
+    "Use Emerald Green (`#10B981`) as the primary brand/action color for primary buttons and success states, as blue colors are banned. This perfectly suits a POS / cashier context.",
+    "Kasir Screen Layout: The 'Daftar Belanja' (Cart) CTA must be sticky at the bottom, placed inside a heavily tinted glass container (rgba(0,0,0,0.85)) sitting above the safe area or tab bar.",
+    "Payment Flow: When 'Bayar' is pressed, present a numeric keypad alongside 'Nominal Cepat' chips (e.g. Rp 50.000, Uang Pas) to allow immediate payment entry.",
+    "Product Form: Must include fields for 'Variasi' (Variations) and 'Harga Bertingkat/Grosir' (Wholesale pricing tiers, e.g. Min Qty -> Price)."
+  ]
+}
