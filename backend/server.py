@@ -88,6 +88,10 @@ class Transaction(TransactionIn):
     created_at: str = Field(default_factory=now_iso)
 
 
+class TransactionUpdate(TransactionIn):
+    created_at: Optional[str] = None
+
+
 class Settings(BaseModel):
     shopName: str = "TOKO BAGUS"
     address: str = ""
@@ -290,6 +294,63 @@ async def create_transaction(payload: TransactionIn):
             if isinstance(prod.get("stock"), (int, float)):
                 await db.products.update_one({"id": item.product_id}, {"$inc": {"stock": -item.quantity}})
     return clean(d)
+
+
+@api_router.put("/transactions/{tid}")
+async def update_transaction(tid: str, payload: TransactionUpdate):
+    existing = await db.transactions.find_one({"id": tid})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Transaksi tidak ditemukan")
+
+    # Reconcile stock: add back the old quantities, subtract the new ones.
+    old_map: dict = {}
+    for it in existing.get("items", []):
+        pid = it.get("product_id")
+        if not pid:
+            continue
+        k = (pid, it.get("variation_id"))
+        old_map[k] = old_map.get(k, 0) + (it.get("quantity") or 0)
+
+    new_map: dict = {}
+    for it in payload.items:
+        if not it.product_id:
+            continue
+        k = (it.product_id, it.variation_id)
+        new_map[k] = new_map.get(k, 0) + (it.quantity or 0)
+
+    for (pid, vid) in set(old_map) | set(new_map):
+        # delta > 0 -> restock (qty reduced), delta < 0 -> reduce more (qty increased)
+        delta = old_map.get((pid, vid), 0) - new_map.get((pid, vid), 0)
+        if delta == 0:
+            continue
+        prod = await db.products.find_one({"id": pid})
+        if not prod:
+            continue
+        if vid:
+            variations = prod.get("variations", [])
+            changed = False
+            for v in variations:
+                if v.get("id") == vid and isinstance(v.get("stock"), (int, float)):
+                    v["stock"] = v.get("stock", 0) + delta
+                    changed = True
+            if changed:
+                await db.products.update_one({"id": pid}, {"$set": {"variations": variations}})
+        else:
+            if isinstance(prod.get("stock"), (int, float)):
+                await db.products.update_one({"id": pid}, {"$inc": {"stock": delta}})
+
+    update = {
+        "items": [i.model_dump() for i in payload.items],
+        "total": payload.total,
+        "cash_paid": payload.cash_paid,
+        "change": payload.change,
+    }
+    # Keep the original date/time unless a new one is explicitly provided.
+    if payload.created_at:
+        update["created_at"] = payload.created_at
+    await db.transactions.update_one({"id": tid}, {"$set": update})
+    doc = await db.transactions.find_one({"id": tid})
+    return clean(doc)
 
 
 @api_router.get("/settings")

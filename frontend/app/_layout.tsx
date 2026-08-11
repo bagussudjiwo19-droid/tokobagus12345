@@ -65,6 +65,7 @@ export default function RootLayout() {
                   <Stack.Screen name="produk-form" options={{ presentation: "modal" }} />
                   <Stack.Screen name="checkout" options={{ presentation: "modal" }} />
                   <Stack.Screen name="cari" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="edit-transaksi" options={{ presentation: "modal" }} />
                   <Stack.Screen name="item-manual" options={{ presentation: "modal" }} />
                   <Stack.Screen name="backup" options={{ presentation: "modal" }} />
                   <Stack.Screen name="pengaturan-struk" options={{ presentation: "modal" }} />

@@ -19,6 +19,16 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v6 — Riwayat: Edit Transaksi
+- Backend: PUT /api/transactions/{tid} (TransactionUpdate) — update transaksi yang ada (bukan buat baru).
+  - Stok direkonsiliasi: delta = qty_lama - qty_baru per produk/varian (kembalikan qty lama, kurangi qty baru).
+  - created_at dipertahankan (tanggal/waktu asli) kecuali dikirim eksplisit.
+- Frontend: modal /edit-transaksi (dibuka dari tombol "Edit Transaksi" di detail Riwayat).
+  - Edit barang (hapus), jumlah (stepper), harga (input); Total & Kembalian/Kurang dihitung ulang otomatis.
+  - Uang Bayar dapat diedit. Tombol "Batal" & "Simpan Perubahan".
+  - Tanggal asli ditampilkan read-only ("Tanggal asli: ...").
+- Verified: backend script (same id, created_at preserved, stok 9998→9996→9998) + UI e2e (qty +1 → total 6.000→12.000, tersimpan ke transaksi yang sama).
+
 ### v5 — Cek Harga screen
 - Hapus header "KASIR WARUNG" + tanggal; judul "Cek Harga" jadi paling atas.
 - Auto scan mode aktif saat tab dibuka (input tersembunyi auto-focus, softInput disabled → no keyboard HP).

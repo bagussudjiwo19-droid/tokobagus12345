@@ -150,6 +150,18 @@ export default function RiwayatScreen() {
               <Text style={styles.actionTxt}>Cetak Struk</Text>
             </Pressable>
           </View>
+          <Pressable
+            style={styles.editBtn}
+            testID="riwayat-edit"
+            onPress={() => {
+              const id = selected?.id;
+              sheetRef.current?.dismiss();
+              if (id) router.push({ pathname: "/edit-transaksi", params: { id } });
+            }}
+          >
+            <Ionicons name="create-outline" size={20} color={colors.onBrandPrimary} />
+            <Text style={styles.editTxt}>Edit Transaksi</Text>
+          </Pressable>
         </BottomSheetScrollView>
       </BottomSheetModal>
     </View>
@@ -177,4 +189,6 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg, width: "100%", maxWidth: 320 },
   actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   actionTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand, width: "100%", maxWidth: 320, marginTop: spacing.md },
+  editTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
 });
