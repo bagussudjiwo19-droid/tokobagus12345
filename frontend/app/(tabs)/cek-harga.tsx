@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -6,17 +6,19 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { api } from "@/src/api";
+import { useData } from "@/src/data";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
 
 const RESET_MS = 15000;
 
-type ScanResult = { product: Product; variation: Variation | null; name: string; price: number };
+type ScanResult = { name: string; price: number };
 
 export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { products, pricePick, setPricePick } = useData();
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [countdown, setCountdown] = useState(0);
@@ -36,6 +38,23 @@ export default function CekHargaScreen() {
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
+  // Show a product + sell price, keep it for 15s, then reset to scan mode.
+  const showResult = useCallback((product: Product, variation: Variation | null) => {
+    clearTimers();
+    const price = variation
+      ? (variation.inherit_tiers ? product.sell_price : variation.sell_price)
+      : product.sell_price;
+    const name = variation ? `${product.name} — ${variation.name}` : product.name;
+    setResult({ name, price });
+    Haptics.selectionAsync();
+    setCountdown(RESET_MS / 1000);
+    tickTimer.current = setInterval(() => {
+      setCountdown((n) => (n > 1 ? n - 1 : 0));
+    }, 1000);
+    resetTimer.current = setTimeout(() => backToScan(), RESET_MS);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, [backToScan]);
+
   // Auto scan mode: focus the hidden scanner input whenever this tab is focused.
   useFocusEffect(
     useCallback(() => {
@@ -43,6 +62,20 @@ export default function CekHargaScreen() {
       return () => { clearTimeout(t); clearTimers(); };
     }, []),
   );
+
+  // Manual search: when a product is picked on the Cari screen (price mode),
+  // it lands here via pricePick — show name + price, then ready to scan again.
+  useEffect(() => {
+    if (!pricePick) return;
+    const product = products.find((p) => p.id === pricePick.productId);
+    if (product) {
+      const variation = pricePick.variationId
+        ? product.variations.find((v) => v.id === pricePick.variationId) || null
+        : null;
+      showResult(product, variation);
+    }
+    setPricePick(null);
+  }, [pricePick, products, showResult, setPricePick]);
 
   const handleScan = useCallback(async (code: string) => {
     const c = code.trim();
@@ -52,25 +85,13 @@ export default function CekHargaScreen() {
     try {
       const product = await api.getByBarcode(c);
       const variation = product.variations?.find((v) => v.barcode === c) || null;
-      const price = variation
-        ? (variation.inherit_tiers ? product.sell_price : variation.sell_price)
-        : product.sell_price;
-      const name = variation ? `${product.name} — ${variation.name}` : product.name;
-      setResult({ product, variation, name, price });
-      Haptics.selectionAsync();
-
-      // Keep the result visible for 15 seconds, then reset to scan mode.
-      setCountdown(RESET_MS / 1000);
-      tickTimer.current = setInterval(() => {
-        setCountdown((n) => (n > 1 ? n - 1 : 0));
-      }, 1000);
-      resetTimer.current = setTimeout(() => backToScan(), RESET_MS);
+      showResult(product, variation);
     } catch {
       setResult(null);
       // Stay in scan mode, ready for the next barcode.
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [backToScan]);
+  }, [showResult]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
@@ -105,10 +126,6 @@ export default function CekHargaScreen() {
             <Text style={styles.resultLabel}>HARGA JUAL</Text>
             <Text style={styles.resultName} numberOfLines={3}>{result.name}</Text>
             <Text style={styles.resultPrice}>{rupiah(result.price)}</Text>
-            <Text style={styles.resultMeta}>
-              {result.product.barcode || result.variation?.barcode || "-"} · Stok{" "}
-              {result.variation ? result.variation.stock : result.product.stock} {result.product.unit}
-            </Text>
             <View style={styles.countdownRow}>
               <Ionicons name="time-outline" size={16} color={colors.muted} />
               <Text style={styles.countdownTxt}>Reset otomatis dalam {countdown}s · siap scan berikutnya</Text>
@@ -153,7 +170,6 @@ const styles = StyleSheet.create({
   resultLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5 },
   resultName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize["2xl"], textAlign: "center", marginTop: spacing.sm },
   resultPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["4xl"], marginTop: spacing.sm },
-  resultMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, marginTop: spacing.xs, textAlign: "center" },
   countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.lg },
   countdownTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
   againBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand, alignSelf: "stretch", marginTop: spacing.lg },

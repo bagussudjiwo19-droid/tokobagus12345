@@ -12,14 +12,14 @@ import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
-import type { Product } from "@/src/types";
+import type { Product, Variation } from "@/src/types";
 
 export default function CariScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isPrice = mode === "price";
-  const { products, reload } = useData();
+  const { products, reload, setPricePick } = useData();
   const cart = useCart();
   const toast = useToast();
   const [query, setQuery] = useState("");
@@ -40,10 +40,21 @@ export default function CariScreen() {
       .slice(0, 100);
   }, [products, query]);
 
+  const pickForPrice = (p: Product, v: Variation | null) => {
+    setPricePick({ productId: p.id, variationId: v?.id ?? null, ts: Date.now() });
+    Haptics.selectionAsync();
+    router.back(); // kembali otomatis ke Cek Harga
+  };
+
   const onTap = (p: Product) => {
     if (isPrice) {
-      setSelected(p);
-      Haptics.selectionAsync();
+      // Produk dengan varian: tampilkan detail agar user pilih varian.
+      if (p.variations && p.variations.length > 0) {
+        setSelected(p);
+        Haptics.selectionAsync();
+        return;
+      }
+      pickForPrice(p, null);
       return;
     }
     // mode cart
@@ -99,7 +110,7 @@ export default function CariScreen() {
           <Text style={styles.detailName}>{selected.name}</Text>
           <Text style={styles.detailPrice}>{rupiah(selected.sell_price)}</Text>
           <Text style={styles.detailMeta}>
-            {selected.barcode || "Tanpa barcode"} • Stok {selected.stock} {selected.unit}
+            {selected.barcode || "Tanpa barcode"}{isPrice ? "" : ` • Stok ${selected.stock} ${selected.unit}`}
           </Text>
           {selected.variations?.length > 0 &&
             selected.variations.map((v) => (
@@ -108,7 +119,7 @@ export default function CariScreen() {
                 style={styles.varRow}
                 testID={`cari-var-${v.id}`}
                 onPress={() => {
-                  if (isPrice) return;
+                  if (isPrice) { pickForPrice(selected, v); return; }
                   cart.addProduct(selected, v);
                   toast.show(`${selected.name} — ${v.name} ditambahkan`, "success");
                   router.back();
@@ -116,7 +127,7 @@ export default function CariScreen() {
               >
                 <Text style={styles.varName}>{v.name}</Text>
                 <Text style={styles.varPrice}>{rupiah(v.inherit_tiers ? selected.sell_price : v.sell_price)}</Text>
-                {!isPrice && <Ionicons name="add-circle" size={22} color={colors.brand} />}
+                <Ionicons name={isPrice ? "chevron-forward" : "add-circle"} size={22} color={colors.brand} />
               </Pressable>
             ))}
         </View>
@@ -133,7 +144,7 @@ export default function CariScreen() {
             <Pressable style={styles.rowMain} onPress={() => onTap(item)} testID={`cari-row-${item.id}`}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"} • Stok {item.stock}</Text>
+                <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"}{isPrice ? "" : ` • Stok ${item.stock}`}</Text>
               </View>
               <Text style={styles.rowPrice}>{item.variations.length ? "Bervariasi" : rupiah(item.sell_price)}</Text>
               {!isPrice && <Ionicons name="add-circle-outline" size={24} color={colors.brand} style={{ marginLeft: 8 }} />}

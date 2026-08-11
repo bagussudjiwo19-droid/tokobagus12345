@@ -23,8 +23,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Hapus header "KASIR WARUNG" + tanggal; judul "Cek Harga" jadi paling atas.
 - Auto scan mode aktif saat tab dibuka (input tersembunyi auto-focus, softInput disabled → no keyboard HP).
 - Barcode discan → tampil nama barang + harga jual (support varian). Hasil bertahan 15 detik + countdown, lalu auto-reset & refocus siap scan berikutnya.
-- Barcode tidak ketemu → tetap di mode scan (siap scan lagi). Tombol "Cari Produk Manual" dipertahankan sebagai opsi.
-- Verified via screenshot_tool (idle + hasil scan + countdown 15s).
+- Barcode tidak ketemu → tetap di mode scan (siap scan lagi).
+- Hasil scan & hasil pencarian TIDAK menampilkan stok (hanya nama + harga jual).
+- Pencarian manual: Cari Produk → pilih produk → otomatis kembali ke Cek Harga (via DataProvider.pricePick) → tampil nama + harga → siap scan Bluetooth lagi. Varian → pilih varian dulu.
+- Verified via screenshot_tool (idle + scan + manual-pick + countdown 15s).
 
 ### v4 — Produk screen improvements
 - Hapus header "KASIR WARUNG" + pill "Siap" dari layar Produk; judul "Produk" jadi paling atas.

@@ -2,11 +2,15 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import type { Product } from "./types";
 import { api } from "./api";
 
+type PricePick = { productId: string; variationId: string | null; ts: number } | null;
+
 type DataCtx = {
   products: Product[];
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
+  pricePick: PricePick;
+  setPricePick: (p: PricePick) => void;
 };
 
 const Ctx = createContext<DataCtx | undefined>(undefined);
@@ -15,6 +19,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pricePick, setPricePick] = useState<PricePick>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -32,7 +37,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     reload();
   }, [reload]);
 
-  return <Ctx.Provider value={{ products, loading, error, reload }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ products, loading, error, reload, pricePick, setPricePick }}>{children}</Ctx.Provider>;
 }
 
 export function useData(): DataCtx {
