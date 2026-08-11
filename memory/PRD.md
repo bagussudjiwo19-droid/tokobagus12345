@@ -19,6 +19,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v7 — Backup/Restore audit + Printer audit
+- Backup export SUDAH lengkap: produk (buy_price/sell_price/barcode/stock/variasi/tiers), transaksi, settings, printer. Verified round-trip 2262 produk + 100 transaksi tanpa kehilangan/duplikat.
+- Restore DIPERBAIKI agar aman: validasi struktur + model SEBELUM hapus data; staging ke koleksi *_tmp; baru swap bila sukses; dedupe by id. Data lama TIDAK dihapus jika file rusak. Pesan error jelas dalam Bahasa Indonesia. Verified: 4 skenario rusak → 400 + data lama utuh, tanpa sisa koleksi tmp.
+- Printer: koneksi/scan paired devices, pilih dari banyak printer, tersimpan di DB & dipakai ulang. Cetak terpisah dari simpan transaksi (printer tak terhubung → toast info, transaksi TIDAK gagal). Struk (ReceiptPreview & buildReceiptText 32-char) memuat PEMBAYARAN KURANG, nama, qty x harga, subtotal, TOTAL, Tunai, Kembali. Verified via screenshot receipt partial.
+- CATATAN: pencetakan fisik Bluetooth hanya bisa diuji di build native (Publish), tidak di Expo Go/preview (modul react-native-bluetooth-classic tidak tersedia di web).
+
 ### v6 — Riwayat: Edit Transaksi
 - Backend: PUT /api/transactions/{tid} (TransactionUpdate) — update transaksi yang ada (bukan buat baru).
   - Stok direkonsiliasi: delta = qty_lama - qty_baru per produk/varian (kembalikan qty lama, kurangi qty baru).

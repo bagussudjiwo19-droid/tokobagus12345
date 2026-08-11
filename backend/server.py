@@ -411,27 +411,87 @@ async def backup_export():
 
 @api_router.post("/backup/import")
 async def backup_import(data: dict = Body(...)):
-    products = data.get("products", [])
+    # 1) Validasi struktur file SEBELUM menyentuh data lama.
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="File backup tidak valid atau rusak.")
+    products = data.get("products")
     transactions = data.get("transactions", [])
+    if not isinstance(products, list) or not isinstance(transactions, list):
+        raise HTTPException(status_code=400, detail="File backup tidak valid (data produk/transaksi tidak ditemukan).")
+    if len(products) == 0:
+        raise HTTPException(status_code=400, detail="File backup tidak berisi produk. Pemulihan dibatalkan agar data lama tetap aman.")
+
+    def strip_id(d: dict) -> dict:
+        d = dict(d)
+        d.pop("_id", None)
+        return d
+
+    # 2) Dedupe berdasarkan "id" (cegah duplikat) + validasi model.
+    seen_p = set()
+    cprods = []
+    try:
+        for p in products:
+            p = strip_id(p)
+            Product(**p)  # akan error jika format produk rusak
+            pid = p.get("id")
+            if pid and pid in seen_p:
+                continue
+            if pid:
+                seen_p.add(pid)
+            cprods.append(p)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="File backup rusak: data produk tidak sesuai format. Data lama tidak diubah.")
+
+    seen_t = set()
+    ctx = []
+    try:
+        for t in transactions:
+            t = strip_id(t)
+            if not isinstance(t.get("items"), list):
+                raise ValueError("transaksi tanpa items")
+            tid = t.get("id")
+            if tid and tid in seen_t:
+                continue
+            if tid:
+                seen_t.add(tid)
+            ctx.append(t)
+    except Exception:
+        raise HTTPException(status_code=400, detail="File backup rusak: data transaksi tidak sesuai format. Data lama tidak diubah.")
+
+    # 3) Staging ke koleksi sementara — jika gagal, data lama TIDAK tersentuh.
+    await db.products_tmp.drop()
+    await db.transactions_tmp.drop()
+    try:
+        if cprods:
+            await db.products_tmp.insert_many([strip_id(p) for p in cprods])
+        if ctx:
+            await db.transactions_tmp.insert_many([strip_id(t) for t in ctx])
+    except Exception:
+        await db.products_tmp.drop()
+        await db.transactions_tmp.drop()
+        raise HTTPException(status_code=400, detail="Gagal memproses file backup. Data lama tidak diubah.")
+
+    # 4) Staging sukses → baru ganti data lama.
     await db.products.delete_many({})
     await db.transactions.delete_many({})
-    if products:
-        for p in products:
-            p.pop("_id", None)
-        await db.products.insert_many(products)
-    if transactions:
-        for t in transactions:
-            t.pop("_id", None)
-        await db.transactions.insert_many(transactions)
+    if cprods:
+        await db.products.insert_many([strip_id(p) for p in cprods])
+    if ctx:
+        await db.transactions.insert_many([strip_id(t) for t in ctx])
+    await db.products_tmp.drop()
+    await db.transactions_tmp.drop()
+
     if data.get("settings"):
-        s = dict(data["settings"])
+        s = strip_id(data["settings"])
         s["_id"] = SETTINGS_ID
         await db.settings.replace_one({"_id": SETTINGS_ID}, s, upsert=True)
     if data.get("printer"):
-        pr = dict(data["printer"])
+        pr = strip_id(data["printer"])
         pr["_id"] = PRINTER_ID
         await db.printer.replace_one({"_id": PRINTER_ID}, pr, upsert=True)
-    return {"ok": True, "products": len(products), "transactions": len(transactions)}
+    return {"ok": True, "products": len(cprods), "transactions": len(ctx)}
 
 
 app.include_router(api_router)
