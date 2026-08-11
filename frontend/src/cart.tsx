@@ -12,6 +12,7 @@ type CartContextType = {
   inc: (key: string) => void;
   dec: (key: string) => void;
   remove: (key: string) => void;
+  setPrice: (key: string, price: number) => void;
   clear: () => void;
 };
 
@@ -111,6 +112,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setLines((prev) => prev.filter((l) => l.key !== key));
   }, []);
 
+  // Override the unit price for a line (edit harga). Fixes the price so tier
+  // recomputation on qty change won't override the manual choice.
+  const setPrice = useCallback((key: string, price: number) => {
+    setLines((prev) =>
+      prev.map((l) => (l.key === key ? { ...l, price, base_price: price, tiers: [] } : l)),
+    );
+  }, []);
+
   const clear = useCallback(() => setLines([]), []);
 
   const count = useMemo(() => lines.reduce((s, l) => s + l.quantity, 0), [lines]);
@@ -126,6 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     inc,
     dec,
     remove,
+    setPrice,
     clear,
   };
 

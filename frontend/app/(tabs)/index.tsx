@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -8,23 +8,57 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 
 import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
+import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
+import type { CartLine } from "@/src/types";
 
 export default function TransaksiScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const cart = useCart();
+  const { products, reload } = useData();
   const toast = useToast();
   const [scanBuffer, setScanBuffer] = useState("");
   const inputRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const prevLen = useRef(0);
+  const [lastKey, setLastKey] = useState<string | null>(null);
+
+  // Edit harga sheet
+  const priceSheet = useRef<BottomSheetModal>(null);
+  const [editLine, setEditLine] = useState<CartLine | null>(null);
+  const [priceInput, setPriceInput] = useState("");
+
+  // 1. Auto scan mode: keep the hardware-scanner input focused whenever the
+  // Transaksi tab is focused, so scanning works immediately without tapping.
+  useFocusEffect(
+    useCallback(() => {
+      const t = setTimeout(() => inputRef.current?.focus(), 350);
+      return () => clearTimeout(t);
+    }, []),
+  );
+
+  // 2. Auto-scroll to the newest scanned item.
+  useEffect(() => {
+    if (cart.lines.length > prevLen.current) {
+      const newest = cart.lines[cart.lines.length - 1];
+      setLastKey(newest.key);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+      const h = setTimeout(() => setLastKey(null), 1600);
+      prevLen.current = cart.lines.length;
+      return () => clearTimeout(h);
+    }
+    prevLen.current = cart.lines.length;
+  }, [cart.lines]);
 
   const submitBarcode = useCallback(
     async (code: string) => {
@@ -40,9 +74,48 @@ export default function TransaksiScreen() {
       } catch {
         toast.show(`Barcode ${c} belum terdaftar`, "error");
       }
+      setTimeout(() => inputRef.current?.focus(), 100);
     },
     [cart, toast],
   );
+
+  const openEditPrice = (l: CartLine) => {
+    setEditLine(l);
+    setPriceInput(String(Math.round(l.price)));
+    priceSheet.current?.present();
+  };
+
+  const applyTemporary = () => {
+    if (!editLine) return;
+    const p = Number((priceInput || "0").replace(/[^\d]/g, "")) || 0;
+    cart.setPrice(editLine.key, p);
+    priceSheet.current?.dismiss();
+    toast.show("Harga diubah untuk transaksi ini", "success");
+  };
+
+  const applyPermanent = async () => {
+    if (!editLine || !editLine.product_id) return;
+    const p = Number((priceInput || "0").replace(/[^\d]/g, "")) || 0;
+    const product = products.find((x) => x.id === editLine.product_id);
+    if (!product) return;
+    try {
+      const { id, created_at, updated_at, ...rest } = product as any;
+      if (editLine.variation_id) {
+        rest.variations = (rest.variations || []).map((v: any) =>
+          v.id === editLine.variation_id ? { ...v, sell_price: p, inherit_tiers: false } : v,
+        );
+      } else {
+        rest.sell_price = p;
+      }
+      await api.updateProduct(product.id, rest);
+      cart.setPrice(editLine.key, p);
+      await reload();
+      priceSheet.current?.dismiss();
+      toast.show("Harga permanen disimpan", "success");
+    } catch (e: any) {
+      toast.show(e?.message || "Gagal menyimpan harga", "error");
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
@@ -59,11 +132,11 @@ export default function TransaksiScreen() {
         </View>
 
         <Pressable style={styles.manualBtn} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
-          <Ionicons name="pricetag-outline" size={18} color={colors.onSurface} />
-          <Text style={styles.manualTxt}>Item Manual / Biaya Tambahan</Text>
+          <Ionicons name="add-circle-outline" size={18} color={colors.onSurface} />
+          <Text style={styles.manualTxt}>Tambah Item / Biaya Tambahan</Text>
         </Pressable>
 
-        <View style={styles.scanModeBox}>
+        <Pressable style={styles.scanModeBox} onPress={() => inputRef.current?.focus()}>
           <Ionicons name="barcode-outline" size={20} color={colors.brand} />
           <TextInput
             ref={inputRef}
@@ -72,13 +145,14 @@ export default function TransaksiScreen() {
             onChangeText={setScanBuffer}
             onSubmitEditing={(e) => submitBarcode(e.nativeEvent.text)}
             blurOnSubmit={false}
+            showSoftInputOnFocus={false}
             autoFocus
             placeholder="Mode scan aktif — arahkan scanner ke barcode"
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}
           />
           <View style={styles.readyDot} />
-        </View>
+        </Pressable>
 
         <View style={styles.listHead}>
           <Text style={styles.listHeadTxt}>DAFTAR BELANJA</Text>
@@ -97,37 +171,35 @@ export default function TransaksiScreen() {
         </View>
       ) : (
         <ScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: 110 }}
           keyboardShouldPersistTaps="handled"
         >
           {cart.lines.map((l) => (
-            <View key={l.key} style={styles.line} testID={`cart-line-${l.key}`}>
-              <View style={styles.lineAccent} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.lineName} numberOfLines={2}>
-                  {l.name}
-                </Text>
-                <Text style={styles.linePrice}>
-                  {rupiah(l.price)} / {l.unit}
-                  {l.price < l.base_price ? " • grosir" : ""}
-                </Text>
-                <View style={styles.qtyBox}>
-                  <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
-                    <Ionicons name="remove" size={18} color={colors.onSurface} />
-                  </Pressable>
-                  <Text style={styles.qtyTxt}>{l.quantity}</Text>
-                  <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
-                    <Ionicons name="add" size={18} color={colors.onSurface} />
-                  </Pressable>
-                </View>
-              </View>
-              <View style={{ alignItems: "flex-end", gap: spacing.sm }}>
-                <Pressable onPress={() => cart.remove(l.key)} testID={`cart-remove-${l.key}`}>
-                  <Ionicons name="trash-outline" size={20} color={colors.error} />
+            <View key={l.key} style={[styles.line, lastKey === l.key && styles.lineNew]} testID={`cart-line-${l.key}`}>
+              <View style={styles.qtyBox}>
+                <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
+                  <Ionicons name="remove" size={16} color={colors.onSurface} />
                 </Pressable>
-                <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
+                <Text style={styles.qtyTxt}>{l.quantity}</Text>
+                <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
+                  <Ionicons name="add" size={16} color={colors.onSurface} />
+                </Pressable>
               </View>
+
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={styles.lineName} numberOfLines={1}>{l.name}</Text>
+                <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
+                  <Text style={styles.linePrice}>{rupiah(l.price)}/{l.unit}</Text>
+                  <Ionicons name="create-outline" size={13} color={colors.brand} />
+                </Pressable>
+              </View>
+
+              <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
+              <Pressable onPress={() => cart.remove(l.key)} style={styles.delBtn} testID={`cart-remove-${l.key}`}>
+                <Ionicons name="close" size={18} color={colors.muted} />
+              </Pressable>
             </View>
           ))}
         </ScrollView>
@@ -148,6 +220,45 @@ export default function TransaksiScreen() {
           <Text style={styles.payBtnTxt}>Bayar</Text>
         </Pressable>
       </View>
+
+      {/* Edit Harga */}
+      <BottomSheetModal
+        ref={priceSheet}
+        enableDynamicSizing
+        keyboardBehavior="interactive"
+        android_keyboardInputMode="adjustResize"
+        backgroundStyle={{ backgroundColor: colors.surfaceSecondary }}
+        handleIndicatorStyle={{ backgroundColor: colors.borderStrong }}
+        backdropComponent={(props) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />}
+      >
+        <BottomSheetView style={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.lg, gap: spacing.md }}>
+          <Text style={styles.sheetTitle} numberOfLines={1}>{editLine?.name}</Text>
+          <Text style={styles.sheetLabel}>Harga Satuan (Rp)</Text>
+          <View style={styles.priceInputBox}>
+            <Text style={styles.rpPrefix}>Rp</Text>
+            <TextInput
+              value={priceInput}
+              onChangeText={setPriceInput}
+              keyboardType="numeric"
+              style={styles.priceInput}
+              testID="edit-price-input"
+            />
+          </View>
+          <Pressable style={styles.optRed} onPress={applyTemporary} testID="price-temporary">
+            <Ionicons name="pricetag-outline" size={18} color={colors.onBrandPrimary} />
+            <Text style={styles.optRedTxt}>Simpan untuk transaksi ini saja</Text>
+          </Pressable>
+          {editLine?.product_id ? (
+            <Pressable style={styles.optDark} onPress={applyPermanent} testID="price-permanent">
+              <Ionicons name="save-outline" size={18} color={colors.onSurfaceInverse} />
+              <Text style={styles.optDarkTxt}>Simpan sebagai harga permanen</Text>
+            </Pressable>
+          ) : null}
+          <Pressable style={styles.optCancel} onPress={() => priceSheet.current?.dismiss()} testID="price-cancel">
+            <Text style={styles.optCancelTxt}>Batal</Text>
+          </Pressable>
+        </BottomSheetView>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -156,16 +267,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   top: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.sm },
   topRow: { flexDirection: "row", gap: spacing.md },
-  scanBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 64, borderRadius: radius.md },
+  scanBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 60, borderRadius: radius.md },
   scanTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
-  cariBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 64, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  cariBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 60, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   cariTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  manualBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 52, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  manualBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 48, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   manualTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
-  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 56, borderRadius: radius.md, borderWidth: 2, borderColor: colors.brand, paddingHorizontal: spacing.md },
+  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 52, borderRadius: radius.md, borderWidth: 2, borderColor: colors.brand, paddingHorizontal: spacing.md },
   scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
-  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.xs },
+  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   listHeadTxt: { color: colors.onSurfaceSecondary, fontFamily: font.bold, fontSize: fontSize.base, letterSpacing: 1 },
   listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },
@@ -173,18 +284,32 @@ const styles = StyleSheet.create({
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
   startBtn: { backgroundColor: colors.brand, paddingHorizontal: spacing["2xl"], paddingVertical: spacing.md, borderRadius: radius.md, marginTop: spacing.sm },
   startTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
-  line: { flexDirection: "row", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginTop: spacing.md, overflow: "hidden" },
-  lineAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4, backgroundColor: colors.brand },
-  lineName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
-  qtyBox: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginTop: spacing.sm, backgroundColor: colors.surfaceTertiary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
-  qtyBtn: { width: 40, height: 36, alignItems: "center", justifyContent: "center" },
-  qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, minWidth: 32, textAlign: "center" },
-  lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  // compact line
+  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface },
+  lineNew: { backgroundColor: colors.brandTertiary },
+  qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
+  qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
+  qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
+  lineName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
+  linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
+  lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 78, textAlign: "right" },
+  delBtn: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: 2 },
   payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.surfaceSecondary, borderTopWidth: 1, borderTopColor: colors.border },
   payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
   payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
-  payBtn: { flex: 1, maxWidth: 260, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 60, borderRadius: radius.md },
+  payBtn: { flex: 1, maxWidth: 260, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 56, borderRadius: radius.md },
   payBtnDisabled: { backgroundColor: "#E7A9A2" },
   payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.xl },
+  sheetTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
+  sheetLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
+  priceInputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 54 },
+  rpPrefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg, marginRight: 6 },
+  priceInput: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
+  optRed: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand },
+  optRedTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  optDark: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.surfaceInverse },
+  optDarkTxt: { color: colors.onSurfaceInverse, fontFamily: font.bold, fontSize: fontSize.lg },
+  optCancel: { alignItems: "center", justifyContent: "center", height: 48 },
+  optCancelTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.lg },
 });

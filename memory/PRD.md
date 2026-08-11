@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v3 — Transaksi (Kasir) improvements
+- Auto scan: mode-scan input auto-focus saat tab Transaksi fokus (siap scan tanpa tekan tombol; softInput disabled untuk HW scanner).
+- Auto-scroll ke item terbaru setelah scan + highlight sekilas.
+- Edit Harga per baris: 3 opsi (transaksi ini saja / harga permanen via PUT produk / batal).
+- Tambah Item dari Transaksi: Nama, Harga Beli, Harga Jual, Barcode, Jumlah + 2 opsi (transaksi ini saja / simpan ke produk permanen via POST).
+- Daftar belanja dibuat kompak (baris kecil) agar lebih banyak item terlihat.
+- Fix: ganti BottomSheetTextInput → TextInput (hilangkan red overlay web). Verified: testing_agent iteration_3 PASS.
+
 ### v2 — Match original screenshots (LIGHT theme)
 - Switched to original LIGHT cream (#F5F0E6) + brick-red (#D13A2C) theme, StatusBar dark.
 - Tabs → Transaksi / Produk / Cek Harga / Riwayat (removed Pengaturan tab).

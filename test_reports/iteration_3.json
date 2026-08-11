@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 3 — Transaksi (Kasir) tab improvements. Backend: 13/13 pytest pass; seed data preserved (products=2268 [1 legacy leftover from prior iteration], settings.shopName='TOKO BAGUS'). Frontend Transaksi tab verified end-to-end via mobile viewport 390x844:  (1) scan-mode-input auto-focused on tab open (document.activeElement match, showSoftInputOnFocus disabled, autoFocus works). (2) Simulated HW scanner via fill+Enter (onSubmitEditing) hits /api/products/barcode/{code} and adds line; scanning the SAME barcode 6× correctly aggregates into 1 line with quantity increment. (3) After scanning 9 distinct items (overflow) the newest cart-line-* row is scrolled into viewport (bottom<=window.innerHeight) and briefly highlighted (backgroundColor: brandTertiary, cleared after ~1.6s). (4) Compact rows show qty stepper (cart-dec-*/cart-inc-* verified inc 1→3 and dec 3→2 update subtotal Rp 6.000→18.000→12.000), name, price/unit with pencil (edit-price-*), subtotal, and X remove (cart-remove-* verified line disappears). (5) Edit Harga bottom-sheet opens with edit-price-input + price-temporary + price-permanent + price-cancel; temporary edit changes ONLY the cart line (verified line shows Rp 99.999 but /api/products still returns original sell_price=14.500 for that product). (6) Permanent edit persists via PUT /api/products/{id} (verified 3.000→4.500 persisted; cart line also updates). (7) For a MANUAL cart line the edit-price sheet correctly hides price-permanent (only temp+cancel shown). (8) Tambah Item screen has all 5 testIDs: manual-name / manual-buy / manual-price / manual-barcode / manual-qty + manual-temporary (adds to cart, NOT to products — verified 0 rows for the manual-only name) and manual-permanent (POST /api/products, then addProduct into cart — verified new row appears in /api/products and cart in one action, cleanup successful). (9) Bayar → /checkout?step=pay renders numpad (numpad-0..9/000/back) + checkout-confirm-button; Uang Pas quick action + confirm creates transaction (tx count 90→91, 'Transaksi Berhasil' receipt shown with correct TOKO BAGUS header). Regressions: /api/products/pos still returns 2268 (~seeded 2267 + 1 legacy), /api/settings.shopName='TOKO BAGUS'. Non-blocking: @gorhom/bottom-sheet BottomSheetTextInput triggers a dev-only red-box error overlay on web after the edit-price sheet's input loses focus ('RNTextInput.default.State.currentlyFocusedInput is not a function' at BottomSheetTextInput.js:37) — functional flow completes but the overlay is noisy in dev. Deprecated-package check: expo-file-system/legacy import still present in /app/frontend/app/backup.tsx (carried over from iteration_2).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "DELETE /api/transactions/{id}", "issue": "Missing — end-to-end tests keep drifting transaction count up (currently 91; started 85). Same as iteration_2."},
+      {"endpoint": "POST /api/backup/import", "issue": "Destructive; no schema validation / rollback. Same as iteration_2."},
+      {"endpoint": "POST /api/transactions", "issue": "Stock decrement not atomic; no oversell guard. Same as iteration_2."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "@gorhom/bottom-sheet BottomSheetTextInput", "issue": "On web (react-native-web) the BottomSheetTextInput's handleOnBlur calls `TextInputState.currentlyFocusedInput()`, which is not exported on RNW and throws 'RNTextInput.default.State.currentlyFocusedInput is not a function'. Triggered after opening the edit-price sheet in the Transaksi tab and dismissing it — shows a red LogBox overlay in dev. Consider replacing BottomSheetTextInput with a plain RN <TextInput> inside the sheet body (edit-price only has one field, so BottomSheetTextInput's keyboard-avoidance benefit is minimal on web). Reference: /app/frontend/app/(tabs)/index.tsx line 239."},
+      {"component": "expo-file-system/legacy", "issue": "Deprecated SDK54 subpath still imported. Reference: /app/frontend/app/backup.tsx:6 (unchanged from iteration_2)."},
+      {"component": "react-native-web pointerEvents", "issue": "Persistent console warning 'props.pointerEvents is deprecated. Use style.pointerEvents' from a dependency. Non-blocking."},
+      {"component": "React 19 element.ref", "issue": "Persistent console error 'Accessing element.ref was removed in React 19' when opening bottom-sheet. Non-blocking dependency warning."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Replace BottomSheetTextInput with plain <TextInput> in Transaksi edit-price sheet (index.tsx:239) — or upgrade @gorhom/bottom-sheet — to eliminate the RNTextInput.State.currentlyFocusedInput crash on web (dev overlay is jarring even though native flow works).",
+    "Migrate expo-file-system/legacy import in /app/frontend/app/backup.tsx to modern expo-file-system API (carry-over).",
+    "Add DELETE /api/transactions/{id} so test-created transactions can be cleaned up (carry-over)."
+  ],
+  "critical_code_review_comments": [
+    "Transaksi screen (/app/frontend/app/(tabs)/index.tsx): 1 file, 316 lines — within limits.",
+    "useFocusEffect focuses scan-mode-input on tab focus (350ms delay) — good UX for HW scanners; showSoftInputOnFocus={false} prevents soft-keyboard flicker.",
+    "cart.setPrice correctly zeros out tiers so tier recomputation on qty change does not override the manual price (src/cart.tsx:117-121).",
+    "applyPermanent strips id/created_at/updated_at and merges variation sell_price when variation_id set (index.tsx:96-118) — correct.",
+    "Manual line has product_id=null and thus applyPermanent early-returns; UI additionally hides the price-permanent button (index.tsx:251-256) — matches spec.",
+    "All new interactive elements have testIDs: scan-mode-input, cart-inc/dec/remove-*, edit-price-*, price-temporary/permanent/cancel, edit-price-input, manual-name/buy/price/barcode/qty, manual-temporary/permanent.",
+    "No MongoDB _id leaked (backend regression tests confirm).",
+    "All API calls go through EXPO_PUBLIC_BACKEND_URL (indirectly confirmed via successful barcode fetches, product create/update/delete)."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_3.json (new)",
+    "/app/test_reports/pytest/pytest_results.xml (regenerated)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "No new persistent seed data. Test flow created and cleaned up 1 product (TEST_PERM_<ts>). One end-to-end Bayar test added 1 transaction (tx count 90→91). Products count remained 2268 across all tests (returned to baseline after cleanup).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL from EXPO_PUBLIC_BACKEND_URL in /app/frontend/.env. Reuse /app/backend/tests/test_api.py (13 tests, 100% pass). To simulate the HW scanner in web: focus [data-testid=\"scan-mode-input\"], fill(barcode), press('Enter'). Transaksi flow known-good testIDs: scan-mode-input, cart-line-<key>, cart-inc/dec/remove-<key>, edit-price-<key>, edit-price-input, price-temporary, price-permanent, price-cancel, item-manual-button, manual-name/buy/price/barcode/qty, manual-temporary, manual-permanent, bayar-button, checkout-confirm-button. Avoid clicks on the highlighted newest row within ~1.5s of adding it while the edit-price sheet is still animating — in one attempt inc/dec did not register right after applyTemporary; unclear if backdrop pointer-events lingered, but repeat runs on non-highlighted rows worked cleanly. To test permanent price edits WITHOUT mutating seeded data: create a product via manual-permanent first, then edit its price permanently, then DELETE it — this pattern is verified working.",
+  "rca_of_issue": "BottomSheetTextInput dev overlay RCA: @gorhom/bottom-sheet's BottomSheetTextInput.js calls `TextInputState.currentlyFocusedInput()` in handleOnBlur (line 37) to compare focused input; on react-native-web the exported API is `currentlyFocusedField` (or the compat path differs by version), so the call throws. It is caught by React's error boundary and surfaces as LogBox red overlay in dev only. Fix: swap to a plain react-native TextInput inside the BottomSheetView (the price sheet is short enough that KeyboardAvoidingView + BottomSheetModal's own keyboardBehavior='interactive' will handle iOS keyboard), OR bump @gorhom/bottom-sheet to a version with the RNW patch, OR shim `TextInputState.currentlyFocusedInput` on web."
+}
