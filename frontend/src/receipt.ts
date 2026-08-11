@@ -22,6 +22,12 @@ const LINE = "-".repeat(WIDTH);
 // Plain-text receipt for a 58mm thermal printer (32 chars).
 export function buildReceiptText(tx: Transaction, s: Settings): string {
   const out: string[] = [];
+  const shortfall = Math.max(0, (tx.total || 0) - (tx.cash_paid || 0));
+  if (shortfall > 0) {
+    out.push(center("*** PEMBAYARAN KURANG ***"));
+    out.push(center(rupiah(shortfall)));
+    out.push(LINE);
+  }
   if (s.showShopName && s.shopName) out.push(center(s.shopName.toUpperCase()));
   if (s.showAddress && s.address) {
     s.address.match(/.{1,32}/g)?.forEach((l) => out.push(center(l.trim())));

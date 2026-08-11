@@ -14,8 +14,15 @@ export default function ReceiptPreview({
   settings: Settings;
 }) {
   const s = settings;
+  const shortfall = Math.max(0, (tx.total || 0) - (tx.cash_paid || 0));
   return (
     <View style={styles.paper} testID="receipt-preview">
+      {shortfall > 0 && (
+        <View style={styles.unpaidBox} testID="receipt-unpaid">
+          <Text style={styles.unpaidTitle}>PEMBAYARAN KURANG</Text>
+          <Text style={styles.unpaidAmount}>{rupiah(shortfall)}</Text>
+        </View>
+      )}
       {s.showShopName && !!s.shopName && (
         <Text style={styles.shop}>{s.shopName.toUpperCase()}</Text>
       )}
@@ -63,6 +70,9 @@ function Row({ left, right, bold }: { left: string; right: string; bold?: boolea
 
 const styles = StyleSheet.create({
   paper: { backgroundColor: "#FFFFFF", padding: 16, borderRadius: 8 },
+  unpaidBox: { alignItems: "center", borderWidth: 2, borderColor: "#000", borderStyle: "dashed", borderRadius: 4, paddingVertical: 6, marginBottom: 8 },
+  unpaidTitle: { fontFamily: MONO, fontSize: 14, fontWeight: "700", color: "#000", letterSpacing: 1 },
+  unpaidAmount: { fontFamily: MONO, fontSize: 16, fontWeight: "700", color: "#000" },
   shop: { fontFamily: MONO, fontSize: 16, fontWeight: "700", color: "#000", textAlign: "center", marginBottom: 2 },
   center: { fontFamily: MONO, fontSize: 11, color: "#111", textAlign: "center" },
   small: { fontFamily: MONO, fontSize: 11, color: "#111" },
