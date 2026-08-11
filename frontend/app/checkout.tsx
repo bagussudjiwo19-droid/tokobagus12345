@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -65,17 +65,25 @@ export default function CheckoutScreen() {
     setCashStr((s) => (s + d).replace(/^0+/, ""));
   };
 
-  const quick = (amount: number | "pas") => {
+  const setCash = (amount: number) => {
     Haptics.selectionAsync();
-    if (amount === "pas") setCashStr(String(Math.round(total)));
-    else setCashStr((s) => String(Number(s || "0") + amount));
+    setCashStr(String(Math.round(amount)));
   };
 
+  // Saran nominal pembayaran otomatis dari total belanja.
+  const suggestions = useMemo(() => {
+    if (total <= 0) return [] as number[];
+    const ceilTo = (n: number, step: number) => Math.ceil(n / step) * step;
+    const base = ceilTo(total, 1000);
+    const arr = [base, base + 1000, base + 2000, base + 3000];
+    [10000, 25000, 50000, 100000].forEach((s) => arr.push(ceilTo(base, s)));
+    return Array.from(new Set(arr))
+      .filter((v) => v >= base)
+      .sort((a, b) => a - b);
+  }, [total]);
+
   const confirmPay = useCallback(async () => {
-    if (cash < total) {
-      toast.show("Uang bayar kurang dari total", "error");
-      return;
-    }
+    if (cart.lines.length === 0) return;
     setSaving(true);
     try {
       const created = await api.createTransaction({
@@ -212,28 +220,33 @@ export default function CheckoutScreen() {
       <View style={styles.container}>
         <Header title="Pembayaran" onClose={() => (params.step === "pay" ? router.back() : setStep("cart"))} />
         <View style={{ padding: spacing.lg }}>
-          <Text style={styles.payLabel}>Total Tagihan</Text>
+          <Text style={styles.payLabel}>Total Belanja</Text>
           <Text style={styles.payTotal}>{rupiah(total)}</Text>
           <View style={styles.cashDisplay}>
-            <Text style={styles.cashLabel}>Uang Bayar Tunai</Text>
+            <Text style={styles.cashLabel}>Uang Diterima</Text>
             <Text style={styles.cashValue} testID="checkout-cash-display">
               {cashStr ? `Rp ${numberID(cash)}` : "Rp 0"}
             </Text>
           </View>
           <View style={styles.changeRow}>
-            <Text style={styles.changeLabel}>Kembalian</Text>
-            <Text style={[styles.changeValue, { color: change < 0 ? colors.error : colors.brand }]}>
-              {rupiah(Math.max(0, change))}
+            <Text style={styles.changeLabel}>{change < 0 ? "Kekurangan" : "Kembalian"}</Text>
+            <Text style={[styles.changeValue, { color: change < 0 ? colors.error : colors.brand }]} testID="checkout-change-display">
+              {change < 0 ? rupiah(-change) : rupiah(change)}
             </Text>
           </View>
+          {change < 0 && (
+            <View style={styles.shortBanner} testID="checkout-short-banner">
+              <Ionicons name="alert-circle" size={16} color={colors.error} />
+              <Text style={styles.shortTxt}>Pembayaran kurang {rupiah(-change)}</Text>
+            </View>
+          )}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRow}>
-          <QuickChip label="Uang Pas" onPress={() => quick("pas")} />
-          <QuickChip label="+10rb" onPress={() => quick(10000)} />
-          <QuickChip label="+20rb" onPress={() => quick(20000)} />
-          <QuickChip label="+50rb" onPress={() => quick(50000)} />
-          <QuickChip label="+100rb" onPress={() => quick(100000)} />
+          <QuickChip label="Uang Pas" active onPress={() => setCash(total)} />
+          {suggestions.map((s) => (
+            <QuickChip key={s} label={rupiah(s)} onPress={() => setCash(s)} />
+          ))}
         </ScrollView>
 
         <View style={styles.numpad}>
@@ -252,14 +265,14 @@ export default function CheckoutScreen() {
           <Pressable
             testID="checkout-confirm-button"
             onPress={confirmPay}
-            disabled={saving || cash < total}
-            style={[styles.primaryBtn, (saving || cash < total) && styles.btnDisabled]}
+            disabled={saving || cart.lines.length === 0}
+            style={[styles.primaryBtn, (saving || cart.lines.length === 0) && styles.btnDisabled]}
           >
             {saving ? (
               <ActivityIndicator color={colors.onBrandPrimary} />
             ) : (
               <>
-                <Text style={styles.primaryBtnTxt}>Selesaikan Transaksi</Text>
+                <Text style={styles.primaryBtnTxt}>{change < 0 ? "Simpan (Bayar Sebagian)" : "Selesaikan Transaksi"}</Text>
                 <Ionicons name="checkmark-circle" size={20} color={colors.onBrandPrimary} />
               </>
             )}
@@ -298,10 +311,10 @@ export default function CheckoutScreen() {
   );
 }
 
-function QuickChip({ label, onPress }: { label: string; onPress: () => void }) {
+function QuickChip({ label, onPress, active }: { label: string; onPress: () => void; active?: boolean }) {
   return (
-    <Pressable style={styles.quickChip} onPress={onPress} testID={`quick-${label}`}>
-      <Text style={styles.quickChipTxt}>{label}</Text>
+    <Pressable style={[styles.quickChip, active && styles.quickChipActive]} onPress={onPress} testID={`quick-${label}`}>
+      <Text style={[styles.quickChipTxt, active && styles.quickChipTxtActive]}>{label}</Text>
     </Pressable>
   );
 }
@@ -352,8 +365,12 @@ const styles = StyleSheet.create({
   changeLabel: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg },
   changeValue: { fontFamily: font.bold, fontSize: fontSize.xl },
   quickRow: { gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
-  quickChip: { flexShrink: 0, height: 40, justifyContent: "center", paddingHorizontal: spacing.lg, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary },
-  quickChipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  quickChip: { flexShrink: 0, height: 44, justifyContent: "center", paddingHorizontal: spacing.lg, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border },
+  quickChipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  quickChipTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
+  quickChipTxtActive: { color: colors.onBrandPrimary },
+  shortBanner: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md, backgroundColor: colors.brandTertiary, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  shortTxt: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.base },
   numpad: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: spacing.lg, gap: spacing.sm },
   numKey: { width: "31.5%", height: 56, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   numKeyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize["2xl"] },
