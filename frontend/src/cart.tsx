@@ -7,6 +7,7 @@ type CartContextType = {
   count: number;
   total: number;
   addProduct: (product: Product, variation?: Variation | null) => void;
+  addManual: (name: string, price: number, qty?: number) => void;
   setQty: (key: string, qty: number) => void;
   inc: (key: string) => void;
   dec: (key: string) => void;
@@ -56,6 +57,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addManual = useCallback((name: string, price: number, qty: number = 1) => {
+    const key = `manual-${Date.now()}`;
+    setLines((prev) => [
+      ...prev,
+      {
+        key,
+        product_id: null,
+        variation_id: null,
+        name: name.trim() || "Item Manual",
+        barcode: null,
+        unit: "pcs",
+        quantity: qty,
+        base_price: price,
+        price,
+        tiers: [],
+        manual: true,
+      },
+    ]);
+  }, []);
+
   const setQty = useCallback((key: string, qty: number) => {
     setLines((prev) =>
       prev
@@ -100,6 +121,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     count,
     total,
     addProduct,
+    addManual,
     setQty,
     inc,
     dec,

@@ -80,7 +80,7 @@ export type Printer = { address?: string | null; name?: string | null };
 
 export type CartLine = {
   key: string;
-  product_id: string;
+  product_id?: string | null;
   variation_id?: string | null;
   name: string;
   barcode?: string | null;
@@ -89,4 +89,5 @@ export type CartLine = {
   base_price: number; // reference sell price
   price: number; // effective unit price (after tiers)
   tiers: Tier[];
+  manual?: boolean;
 };

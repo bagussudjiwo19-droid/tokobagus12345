@@ -31,3 +31,16 @@ export function formatDateID(iso: string): string {
 export function shortTxNo(id: string): string {
   return "#" + id.replace(/-/g, "").slice(0, 6).toUpperCase();
 }
+
+// Header date like "Selasa, 11 Agustus"
+export function headerDate(): string {
+  try {
+    return new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  } catch {
+    return "";
+  }
+}

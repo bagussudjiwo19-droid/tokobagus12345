@@ -1,6 +1,5 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, font, fontSize } from "@/src/theme";
 
@@ -11,47 +10,44 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarInactiveTintColor: "#6B6B6B",
         tabBarStyle: {
-          backgroundColor: "#0A0A0A",
+          backgroundColor: colors.surfaceSecondary,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 58 + insets.bottom,
+          height: 60 + insets.bottom,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 8,
         },
-        tabBarLabelStyle: {
-          fontFamily: font.medium,
-          fontSize: fontSize.sm,
-        },
+        tabBarLabelStyle: { fontFamily: font.medium, fontSize: fontSize.sm },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Kasir",
-          tabBarIcon: ({ color, size }) => <Ionicons name="calculator" size={size} color={color} />,
+          title: "Transaksi",
+          tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="produk"
         options={{
           title: "Produk",
-          tabBarIcon: ({ color, size }) => <Ionicons name="cube" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="cek-harga"
+        options={{
+          title: "Cek Harga",
+          tabBarIcon: ({ color, size }) => <Ionicons name="pricetag-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="riwayat"
         options={{
           title: "Riwayat",
-          tabBarIcon: ({ color, size }) => <Ionicons name="receipt" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="pengaturan"
-        options={{
-          title: "Pengaturan",
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" size={size} color={color} />,
         }}
       />
     </Tabs>

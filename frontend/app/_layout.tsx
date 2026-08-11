@@ -53,7 +53,7 @@ export default function RootLayout() {
           <ToastProvider>
             <CartProvider>
               <DataProvider>
-                <StatusBar style="light" />
+                <StatusBar style="dark" />
                 <Stack
                   screenOptions={{
                     headerShown: false,
@@ -64,6 +64,12 @@ export default function RootLayout() {
                   <Stack.Screen name="scan" options={{ presentation: "fullScreenModal" }} />
                   <Stack.Screen name="produk-form" options={{ presentation: "modal" }} />
                   <Stack.Screen name="checkout" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="cari" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="item-manual" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="backup" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="pengaturan-struk" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="pengaturan-printer" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="kelola-stok" options={{ presentation: "modal" }} />
                 </Stack>
               </DataProvider>
             </CartProvider>

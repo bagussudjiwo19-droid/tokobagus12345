@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Sharing from "expo-sharing";
@@ -30,11 +30,12 @@ type Step = "cart" | "pay" | "done";
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams<{ step?: string }>();
   const cart = useCart();
   const { reload } = useData();
   const toast = useToast();
 
-  const [step, setStep] = useState<Step>("cart");
+  const [step, setStep] = useState<Step>(params.step === "pay" ? "pay" : "cart");
   const [cashStr, setCashStr] = useState("");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [printer, setPrinter] = useState<{ address?: string | null; name?: string | null }>({});
@@ -209,7 +210,7 @@ export default function CheckoutScreen() {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "back"];
     return (
       <View style={styles.container}>
-        <Header title="Pembayaran" onClose={() => setStep("cart")} />
+        <Header title="Pembayaran" onClose={() => (params.step === "pay" ? router.back() : setStep("cart"))} />
         <View style={{ padding: spacing.lg }}>
           <Text style={styles.payLabel}>Total Tagihan</Text>
           <Text style={styles.payTotal}>{rupiah(total)}</Text>
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, minWidth: 28, textAlign: "center" },
   cartSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 74, textAlign: "right" },
-  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: "#0A0A0A" },
+  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surfaceSecondary },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
   totalLabel: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg },
   totalValue: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },

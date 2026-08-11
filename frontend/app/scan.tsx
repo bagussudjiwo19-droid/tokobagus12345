@@ -9,15 +9,20 @@ import * as Haptics from "expo-haptics";
 import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
+import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
+import { useLocalSearchParams } from "expo-router";
 
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const cart = useCart();
   const toast = useToast();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isPrice = mode === "price";
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
+  const [priceResult, setPriceResult] = useState<{ name: string; price: number } | null>(null);
   const lastScan = useRef<{ code: string; at: number }>({ code: "", at: 0 });
 
   const onScanned = useCallback(
@@ -30,17 +35,25 @@ export default function ScanScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       try {
         const product = await api.getByBarcode(data);
-        const variation =
-          product.variations?.find((v) => v.barcode === data) || null;
-        cart.addProduct(product, variation);
-        toast.show(`${product.name}${variation ? " — " + variation.name : ""} ditambahkan`, "success");
+        const variation = product.variations?.find((v) => v.barcode === data) || null;
+        if (isPrice) {
+          const price = variation
+            ? variation.inherit_tiers
+              ? product.sell_price
+              : variation.sell_price
+            : product.sell_price;
+          setPriceResult({ name: `${product.name}${variation ? " — " + variation.name : ""}`, price });
+        } else {
+          cart.addProduct(product, variation);
+          toast.show(`${product.name}${variation ? " — " + variation.name : ""} ditambahkan`, "success");
+        }
       } catch (e: any) {
         toast.show(`Barcode ${data} belum terdaftar`, "error");
       } finally {
         setTimeout(() => setBusy(false), 900);
       }
     },
-    [busy, cart, toast],
+    [busy, cart, toast, isPrice],
   );
 
   // Permission states
@@ -96,18 +109,32 @@ export default function ScanScreen() {
 
         <View style={styles.frameWrap} pointerEvents="none">
           <View style={styles.frame} />
-          <Text style={styles.hint}>Arahkan barcode ke dalam kotak</Text>
+          <Text style={styles.hint}>{isPrice ? "Arahkan barcode untuk cek harga" : "Arahkan barcode ke dalam kotak"}</Text>
         </View>
 
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.lg }]}>
-          <View style={styles.cartInfo}>
-            <Ionicons name="cart" size={20} color={colors.brand} />
-            <Text style={styles.cartInfoTxt}>{cart.count} item di keranjang</Text>
+        {isPrice ? (
+          <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.lg, flexDirection: "column", alignItems: "stretch", gap: spacing.md }]}>
+            {priceResult && (
+              <View style={styles.priceBanner} testID="scan-price-result">
+                <Text style={styles.priceName} numberOfLines={1}>{priceResult.name}</Text>
+                <Text style={styles.priceValue}>{rupiah(priceResult.price)}</Text>
+              </View>
+            )}
+            <Pressable style={styles.doneBtnFull} onPress={() => router.back()} testID="scan-done">
+              <Text style={styles.doneTxt}>Selesai</Text>
+            </Pressable>
           </View>
-          <Pressable style={styles.doneBtn} onPress={() => router.back()} testID="scan-done">
-            <Text style={styles.doneTxt}>Selesai</Text>
-          </Pressable>
-        </View>
+        ) : (
+          <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.lg }]}>
+            <View style={styles.cartInfo}>
+              <Ionicons name="cart" size={20} color={colors.brand} />
+              <Text style={styles.cartInfoTxt}>{cart.count} item di keranjang</Text>
+            </View>
+            <Pressable style={styles.doneBtn} onPress={() => router.back()} testID="scan-done">
+              <Text style={styles.doneTxt}>Selesai</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -126,7 +153,11 @@ const styles = StyleSheet.create({
   cartInfo: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: spacing.md, paddingVertical: spacing.md, borderRadius: radius.md },
   cartInfoTxt: { color: "#fff", fontFamily: font.medium, fontSize: fontSize.base },
   doneBtn: { backgroundColor: colors.brand, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.md },
+  doneBtnFull: { backgroundColor: colors.brand, alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.md },
   doneTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  priceBanner: { backgroundColor: "#fff", borderRadius: radius.md, padding: spacing.lg },
+  priceName: { color: "#111", fontFamily: font.medium, fontSize: fontSize.lg },
+  priceValue: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["3xl"], marginTop: 2 },
   permWrap: { flex: 1, backgroundColor: colors.surface },
   closeTop: { padding: spacing.lg },
   permCenter: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl, gap: spacing.md, marginTop: -60 },

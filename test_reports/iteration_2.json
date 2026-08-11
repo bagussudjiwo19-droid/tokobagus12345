@@ -1,0 +1,53 @@
+{
+  "summary": "Post-redesign regression on Toko Bagus (light theme cream #F5F0E6, brick-red #D13A2C). All 13 pytest backend tests pass (100%). Seed data preserved: 2267 products, shopName='TOKO BAGUS'. Transactions=87 (85 original + 2 from prior/current test create-transaction; product test data is auto-cleaned). Frontend: 4-tab layout (Transaksi, Produk, Cek Harga, Riwayat) — Pengaturan tab correctly removed. All redesigned screens verified: Transaksi scan-first UI with Scan Barcode / Cari Barang / Item Manual + DAFTAR BELANJA + Mulai Scan + disabled Bayar bar when empty; Cari Barang modal adds to cart with snackbar 'X ditambahkan' + Selesai bar; Bayar checkout opens payment step (numpad, Uang Pas / +10rb/+20rb/+50rb/+100rb quick amounts, checkout-confirm-button); Item Manual modal has manual-name/manual-price/manual-qty/manual-save; Produk tab shows KASIR WARUNG header + Siap pill + '+ Tambah' + 3-dot menu (Edit Produk / Kelola Stok / Duplikat / Hapus); Cek Harga tab shows 'Siap Cek Harga' with Scan Kamera + Cari Produk buttons (testIDs cekharga-scan, cekharga-search); Riwayat tab shows summary 'Rp 2.483.361 · 87 transaksi', rows with 'N baris · Tunai · Ketuk untuk struk' + green 'Kembali Rp', and header icons open Backup / Pengaturan Struk / Pengaturan Printer modals. Currency renders 'Rp 6.000' / 'Rp 2.483.361' (dot separator, no decimals). All 3 Riwayat modals functional; Pengaturan Struk shows INFO TOKO/INFO TRANSAKSI/RINCIAN ITEM/RINGKASAN/PENUTUP with working toggles + disabled Logo/QR ('Belum aktif (menyusul)') + Simpan Pengaturan. Printer modal shows info box, Cari Printer, Terhubung: RPP02N, Tes Cetak, Selesai. Backup export works; import NOT run destructively. Deprecated packages detected: 'expo-file-system/legacy' import in backup.tsx. No RN red screen. Console warnings: 'props.pointerEvents deprecated' (3rd-party lib) and 'element.ref removed in React 19' (library) — non-blocking.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/backup/import", "issue": "Destructive endpoint has no snapshot/rollback safety and no schema validation on incoming payload beyond `products` key presence. A malformed payload with valid `products` key but garbage entries would wipe & repopulate DB."},
+      {"endpoint": "POST /api/transactions", "issue": "Stock decrement is not atomic with transaction insert (no session/transaction). No validation prevents overselling (stock can go negative)."},
+      {"endpoint": "DELETE /api/transactions/{id}", "issue": "Missing — cannot delete test/erroneous transactions; spurious tx from creation test persists in seed history (currently at 87 vs. original 85)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Produk / Kasir", "issues": ["All seeded products show 'Stok 9999 pcs' — carried over from prior iteration; likely by design (seed default) but user-facing stock is misleading."]}
+    ],
+    "react_native_issues": [
+      {"component": "expo-file-system/legacy", "issue": "backup.tsx still imports 'expo-file-system/legacy'. This is the deprecated SDK54 subpath — main agent should migrate to the modern expo-file-system API before it is removed in a future SDK. Reference: /app/frontend/app/backup.tsx:6"},
+      {"component": "react-native-web pointerEvents", "issue": "Console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents' — from a third-party lib (likely @gorhom/bottom-sheet or similar). Non-blocking, worth a dep bump."},
+      {"component": "React 19 element.ref", "issue": "Console error: 'Accessing element.ref was removed in React 19. ref is now a regular prop.' Comes from a dependency when opening bottom-sheet on Produk tab. Non-blocking but should be tracked."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Migrate 'expo-file-system/legacy' import in /app/frontend/app/backup.tsx to the modern expo-file-system API.",
+    "Add DELETE /api/transactions/{id} endpoint (or a hidden admin cleanup) so test-created transactions do not accumulate in seed history.",
+    "Add schema validation & atomicity/rollback for POST /api/backup/import.",
+    "Prevent (or at least flag) negative stock on POST /api/transactions.",
+    "Optional: bump/patch dependencies emitting 'pointerEvents' and 'element.ref' React-19 warnings."
+  ],
+  "critical_code_review_comments": [
+    "Tab layout correctly restructured to 4 tabs (Transaksi/Produk/Cek Harga/Riwayat) — no leftover Pengaturan tab.",
+    "All redesigned screens use light theme colors from src/theme (brand brick-red, cream surface) via StyleSheet — no HTML/CSS leakage.",
+    "All interactive elements audited have testID attributes (scan-barcode-button, cari-barang-button, item-manual-button, mulai-scan-button, bayar-button, checkout-*, numpad-*, cari-*, manual-*, produk-menu-*, cekharga-*, riwayat-*, backup-*, printer-*).",
+    "backup.tsx still imports 'expo-file-system/legacy' (line 6) — deprecated.",
+    "Backend server.py returns clean JSON (no MongoDB _id leaks) — confirmed via test_products_pos_returns_seeded.",
+    "Frontend uses EXPO_PUBLIC_BACKEND_URL from .env for all API calls (confirmed indirectly via successful data fetches)."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_2.json (new)",
+    "/app/test_reports/pytest/pytest_results.xml (regenerated)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "No new seed data created. Test suite creates and cleans up TEST_ prefixed products. One additional transaction (Rp 3.000) from create-transaction stock-decrement test persists (transactions now 87). All 2267 seeded products intact; shopName='TOKO BAGUS' intact.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL: EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env. Reuse /app/backend/tests/test_api.py (13 tests, 100% pass). Backup import test is self-restoring (round-trips same export). If product count drifts below 2000, wipe MongoDB `products` collection and restart backend (seed_if_empty triggers on empty). Do NOT call POST /api/backup/import with foreign payloads — it wipes+replaces all data. Transaction count will keep drifting up until a DELETE /api/transactions endpoint is added.",
+  "rca_of_issue": "N/A — no bugs to root-cause. Redesign is functionally complete. Only non-blocking items are the deprecated 'expo-file-system/legacy' import and third-party library console warnings."
+}

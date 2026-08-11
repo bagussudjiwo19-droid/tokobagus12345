@@ -1,32 +1,32 @@
-// Toko Bagus design tokens — dark-first POS utility.
+// Toko Bagus / Kasir Warung — LIGHT theme (cream + red) matching the original app.
 export const colors = {
-  surface: "#000000",
-  onSurface: "#F3F4F6",
-  surfaceSecondary: "#18181B",
-  onSurfaceSecondary: "#E5E7EB",
-  surfaceTertiary: "#27272A",
-  onSurfaceTertiary: "#D1D5DB",
-  surfaceInverse: "#F9FAFB",
-  onSurfaceInverse: "#030712",
-  brand: "#10B981",
-  brandPrimary: "#10B981",
-  onBrandPrimary: "#022C22",
-  brandSecondary: "#047857",
-  onBrandSecondary: "#D1FAE5",
-  brandTertiary: "#065F46",
-  onBrandTertiary: "#A7F3D0",
-  success: "#10B981",
-  onSuccess: "#022C22",
-  warning: "#EAB308",
-  onWarning: "#422006",
-  error: "#EF4444",
-  onError: "#450A0A",
-  info: "#6B7280",
-  muted: "#9CA3AF",
-  onInfo: "#F9FAFB",
-  border: "#27272A",
-  borderStrong: "#3F3F46",
-  divider: "#27272A",
+  surface: "#F5F0E6", // warm cream app background
+  onSurface: "#1A1A1A",
+  surfaceSecondary: "#FFFFFF", // cards & inputs
+  onSurfaceSecondary: "#3F3F46",
+  surfaceTertiary: "#EFE8DA", // subtle pressed / chip bg
+  onSurfaceTertiary: "#52525B",
+  surfaceInverse: "#1F2430", // dark button (e.g. Pilih File Backup)
+  onSurfaceInverse: "#FFFFFF",
+  brand: "#D13A2C", // brick red
+  brandPrimary: "#D13A2C",
+  onBrandPrimary: "#FFFFFF",
+  brandSecondary: "#B02A20",
+  onBrandSecondary: "#FFFFFF",
+  brandTertiary: "#FBE7E3", // light red tint (badges / info box)
+  onBrandTertiary: "#B02A20",
+  success: "#12894A",
+  onSuccess: "#FFFFFF",
+  warning: "#B7791F",
+  onWarning: "#FFFFFF",
+  error: "#D13A2C",
+  onError: "#FFFFFF",
+  info: "#8A8A8A",
+  muted: "#8A8A8A",
+  onInfo: "#FFFFFF",
+  border: "#E6DECE",
+  borderStrong: "#D8CEB9",
+  divider: "#ECE5D7",
 };
 
 export const spacing = {
@@ -42,7 +42,7 @@ export const spacing = {
 export const radius = {
   sm: 6,
   md: 12,
-  lg: 20,
+  lg: 16,
   pill: 999,
 };
 
