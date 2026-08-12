@@ -19,6 +19,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v20 — Cari (pilih, bukan scan): tampilkan semua variasi dulu sebelum dipilih
+- `cari.tsx`: daftar hasil cari kini HANYA menampilkan induk (produk tanpa parent_id) — produk anak (variasi datar) disembunyikan; pencarian tetap menemukan induk lewat nama/barcode anak. Baris induk ditandai "Bervariasi".
+- Ketuk produk ber-variasi → tampil panel "Pilih variasi" berisi SEMUA variasi (nested lama + produk anak baru) lengkap harga; ketuk salah satu → otomatis masuk daftar belanja & kembali ke Transaksi. Untuk mode harga (Cek Harga) → memilih variasi menampilkan harganya.
+- Panel punya tombol tutup (X). Scan barcode TETAP langsung (tidak lewat panel) sesuai permintaan ("saat dipilih, bukan discan").
+- Tidak mengubah logika harga/stok/transaksi/scanner. Verified: cari "ZBERAS" → hanya induk tampil → ketuk → 2 variasi anak → pilih → masuk keranjang; cari "Mie Instan" (nested lama) → ketuk → Ayam Bawang & Soto → pilih Soto → "Mie Instan — Soto" masuk keranjang. Data uji dibersihkan.
+
 ### v19 — Cek Harga: identitas toko + harga ecer & grosir
 - `cek-harga.tsx` (UI only, tanpa ubah scanner/pencarian/harga/stok/transaksi/variasi/reset): kartu hasil kini urut: NAMA TOKO (hijau, tebal, sedang; dari settings.shopName, fallback "TOKO BAGUS") → "CEK HARGA" → nama produk → "HARGA ECER" + harga (merah) → "HARGA GROSIR" + semua tingkat grosir (hijau).
 - Harga grosir diambil LANGSUNG dari data (`variation.inherit_tiers ? product.tiers : variation.tiers`, atau `product.tiers`), difilter price>0, diurutkan min_qty. Tiap baris: "Mulai {min_qty} {unit}" ↔ "Rp harga". Jika tidak ada tier → bagian grosir tidak ditampilkan (tidak ada Rp 0 kosong). Tidak menghitung grosir sendiri.

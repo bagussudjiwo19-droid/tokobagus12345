@@ -51,18 +51,38 @@ export default function CariScreen() {
   };
 
   const deferredQuery = useDeferredValue(query);
+  // Kelompokkan produk anak (variasi datar) di bawah induk. Daftar hanya tampilkan induk.
+  const childrenByParent = useMemo(() => {
+    const m = new Map<string, Product[]>();
+    for (const p of products) {
+      if (p.parent_id) {
+        const a = m.get(p.parent_id) || [];
+        a.push(p);
+        m.set(p.parent_id, a);
+      }
+    }
+    return m;
+  }, [products]);
+  const roots = useMemo(() => products.filter((p) => !p.parent_id), [products]);
+  const variantsOf = (p: Product) => childrenByParent.get(p.id) || [];
+  const hasVariants = (p: Product) => (p.variations && p.variations.length > 0) || variantsOf(p).length > 0;
+
   const filtered = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
-    if (!q) return products.slice(0, 60);
-    return products
-      .filter(
-        (p) =>
+    if (!q) return roots.slice(0, 60);
+    return roots
+      .filter((p) => {
+        const kids = childrenByParent.get(p.id) || [];
+        return (
           p.name.toLowerCase().includes(q) ||
           (p.barcode || "").toLowerCase().includes(q) ||
-          p.variations.some((v) => v.barcode?.toLowerCase().includes(q)),
-      )
+          p.variations.some((v) => v.barcode?.toLowerCase().includes(q)) ||
+          // cari juga lewat data variasi (anak) → induk tetap muncul
+          kids.some((k) => k.name.toLowerCase().includes(q) || (k.barcode || "").toLowerCase().includes(q))
+        );
+      })
       .slice(0, 100);
-  }, [products, deferredQuery]);
+  }, [roots, childrenByParent, deferredQuery]);
 
   const pickForPrice = (p: Product, v: Variation | null) => {
     setPricePick({ productId: p.id, variationId: v?.id ?? null, ts: Date.now() });
@@ -71,25 +91,27 @@ export default function CariScreen() {
   };
 
   const onTap = (p: Product) => {
-    if (isPrice) {
-      // Produk dengan varian: tampilkan detail agar user pilih varian.
-      if (p.variations && p.variations.length > 0) {
-        setSelected(p);
-        Haptics.selectionAsync();
-        return;
-      }
-      pickForPrice(p, null);
-      return;
-    }
-    // mode cart
-    if (p.variations && p.variations.length > 0) {
+    // Produk punya variasi (nested lama ATAU produk anak baru) → tampilkan semua
+    // pilihan variasi dulu, baru dipilih.
+    if (hasVariants(p)) {
       setSelected(p);
+      Haptics.selectionAsync();
       return;
     }
+    if (isPrice) { pickForPrice(p, null); return; }
     cart.addProduct(p);
     Haptics.selectionAsync();
     toast.show(`${p.name} ditambahkan`, "success");
-    router.back(); // 1) langsung kembali ke Transaksi
+    router.back(); // langsung kembali ke Transaksi
+  };
+
+  // Pilih satu variasi anak (produk terpisah) → langsung masuk daftar belanja.
+  const pickChild = (child: Product) => {
+    if (isPrice) { pickForPrice(child, null); return; }
+    cart.addProduct(child);
+    Haptics.selectionAsync();
+    toast.show(`${child.name} ditambahkan`, "success");
+    router.back();
   };
 
   // Scanner Bluetooth: setelah seluruh barcode diterima, resolusi persis → langsung pilih.
@@ -163,29 +185,49 @@ export default function CariScreen() {
 
       {selected && (
         <View style={styles.detail} testID="cari-detail">
-          <Text style={styles.detailName}>{selected.name}</Text>
-          <Text style={styles.detailPrice}>{rupiah(selected.sell_price)}</Text>
-          <Text style={styles.detailMeta}>
-            {selected.barcode || "Tanpa barcode"}{isPrice ? "" : ` • Stok ${selected.stock} ${selected.unit}`}
-          </Text>
-          {selected.variations?.length > 0 &&
-            selected.variations.map((v) => (
-              <Pressable
-                key={v.id}
-                style={styles.varRow}
-                testID={`cari-var-${v.id}`}
-                onPress={() => {
-                  if (isPrice) { pickForPrice(selected, v); return; }
-                  cart.addProduct(selected, v);
-                  toast.show(`${selected.name} — ${v.name} ditambahkan`, "success");
-                  router.back();
-                }}
-              >
-                <Text style={styles.varName}>{v.name}</Text>
-                <Text style={styles.varPrice}>{rupiah(v.inherit_tiers ? selected.sell_price : v.sell_price)}</Text>
-                <Ionicons name={isPrice ? "chevron-forward" : "add-circle"} size={22} color={colors.brand} />
-              </Pressable>
-            ))}
+          <View style={styles.detailHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detailName} numberOfLines={2}>{selected.name}</Text>
+              <Text style={styles.detailHint}>Pilih variasi — ketuk untuk {isPrice ? "lihat harga" : "tambah ke daftar belanja"}</Text>
+            </View>
+            <Pressable onPress={() => setSelected(null)} style={styles.detailClose} testID="cari-detail-close">
+              <Ionicons name="close" size={20} color={colors.muted} />
+            </Pressable>
+          </View>
+
+          {/* Variasi lama (nested) */}
+          {selected.variations?.map((v) => (
+            <Pressable
+              key={v.id}
+              style={styles.varRow}
+              testID={`cari-var-${v.id}`}
+              onPress={() => {
+                if (isPrice) { pickForPrice(selected, v); return; }
+                cart.addProduct(selected, v);
+                Haptics.selectionAsync();
+                toast.show(`${selected.name} — ${v.name} ditambahkan`, "success");
+                router.back();
+              }}
+            >
+              <Text style={styles.varName} numberOfLines={1}>{v.name}</Text>
+              <Text style={styles.varPrice}>{rupiah(v.inherit_tiers ? selected.sell_price : v.sell_price)}</Text>
+              <Ionicons name={isPrice ? "chevron-forward" : "add-circle"} size={22} color={colors.brand} />
+            </Pressable>
+          ))}
+
+          {/* Variasi baru (produk anak tertaut) */}
+          {variantsOf(selected).map((c) => (
+            <Pressable
+              key={c.id}
+              style={styles.varRow}
+              testID={`cari-child-${c.id}`}
+              onPress={() => pickChild(c)}
+            >
+              <Text style={styles.varName} numberOfLines={1}>{c.name}</Text>
+              <Text style={styles.varPrice}>{rupiah(c.sell_price)}</Text>
+              <Ionicons name={isPrice ? "chevron-forward" : "add-circle"} size={22} color={colors.brand} />
+            </Pressable>
+          ))}
         </View>
       )}
 
@@ -206,7 +248,7 @@ export default function CariScreen() {
                 <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"}{isPrice ? "" : ` • Stok ${item.stock}`}</Text>
               </View>
-              <Text style={styles.rowPrice}>{item.variations.length ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+              <Text style={styles.rowPrice}>{hasVariants(item) ? "Bervariasi" : rupiah(item.sell_price)}</Text>
               {!isPrice && <Ionicons name="add-circle-outline" size={24} color={colors.brand} style={{ marginLeft: 8 }} />}
             </Pressable>
             {!isPrice && (
@@ -255,9 +297,10 @@ const styles = StyleSheet.create({
   searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 48, marginHorizontal: spacing.lg, marginBottom: spacing.md },
   searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
   detail: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.lg, marginHorizontal: spacing.lg, marginBottom: spacing.md },
+  detailHead: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
   detailName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  detailPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["3xl"], marginTop: 2 },
-  detailMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base, marginTop: 4 },
+  detailHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
+  detailClose: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   varRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginTop: spacing.sm },
   varName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   varPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
