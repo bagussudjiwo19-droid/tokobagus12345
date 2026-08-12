@@ -168,7 +168,7 @@ export default function CariScreen() {
         initialNumToRender={12}
         maxToRenderPerBatch={12}
         windowSize={7}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + 24 }}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -229,16 +229,16 @@ const styles = StyleSheet.create({
   detailName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   detailPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["3xl"], marginTop: 2 },
   detailMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base, marginTop: 4 },
-  varRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, marginTop: spacing.sm },
+  varRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginTop: spacing.sm },
   varName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   varPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
-  row: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg },
+  row: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md },
   rowMain: { flex: 1, flexDirection: "row", alignItems: "center", paddingVertical: spacing.md },
-  rowName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   rowPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   trashBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: spacing.xs },
-  sep: { height: 1, backgroundColor: colors.border, marginLeft: spacing.lg },
+  sep: { height: spacing.md },
   confirmTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   confirmName: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.lg },
   confirmNote: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 18 },

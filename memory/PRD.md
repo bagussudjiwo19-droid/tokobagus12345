@@ -19,6 +19,15 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v16 — Gaya kartu konsisten untuk semua daftar barang (referensi: kartu Riwayat)
+- UI-only, tanpa ubah fungsi/logika/data/alur. Kartu seragam: bg surfaceSecondary, border 1px colors.border, radius.md, jarak antar kartu spacing.md, padding cukup, nama tebal, harga posisi konsisten.
+- `produk.tsx`: baris produk → kartu terpisah (height 64, border, radius); pemisah jadi jarak spacing.md; list diberi paddingHorizontal spacing.lg. PRODUK_ROW_H 63→76 (kartu 64 + gap 12) agar getItemLayout scroll tetap cepat. Induk tetap kartu utama; variasi tetap disembunyikan & muncul saat induk dibuka.
+- `cari.tsx` (hasil pencarian / pilih produk untuk Transaksi & Cek Harga): tiap hasil → kartu (border, radius, bg surfaceSecondary) + tombol tambah/hapus; pemisah jadi jarak; baris variasi di panel detail → kartu kecil (bg surface + border). Fungsi pilih (masuk keranjang / pilih harga / kelola) tetap.
+- `index.tsx` Daftar Belanja: kartu belanja bg surfaceSecondary + border tipis + jarak spacing.md (hapus shadow berat). Layout: nama kiri/atas (hijau bila grosir), harga satuan + edit di bawah, Tambah Variasi, kontrol − qty +, total kanan, hapus. Semua fungsi (edit harga, qty, hapus, variasi) tetap.
+- `produk-form.tsx`: kartu variasi anak diselaraskan ke gaya seragam (surfaceSecondary + border).
+- `edit-transaksi.tsx` & editor variasi di produk-form sudah kartu → dibiarkan.
+- Verified via screenshot: Produk (kartu), Cari (kartu), Cart (kartu) + uji interaksi qty +/− (qty 3, harga grosir hijau Rp 5.750, total Rp 17.250) & tombol hapus berfungsi. Lint clean.
+
 ### v15 — Tata letak struk mengikuti referensi thermal
 - `src/format.ts`: tambah `receiptDateTime` → "DD/MM/YYYY - HH:MM".
 - `src/receipt.ts` (teks printer 58mm/32 kolom, DIKIRIM sebagai teks murni): margin kiri 1 karakter (geser ke kanan, hindari cetakan/stempel sisi kiri) dgn kolom dihitung dalam 31 lalu +1 spasi → tetap ≤32. Kepala: nama toko (tengah) + alamat (tengah) + garis "-". Info transaksi 2 sisi: "Id Transaksi"/no, "Tanggal"/tgl-jam, "Kasir"/nama. Barang: baris1 nama(+", unit" bila bukan pcs) kiri & total kanan; baris2 "  qty x hargaSatuan". Nama panjang dipotong agar tak bertabrakan/keluar lebar. Ringkasan: Total (tebal), Dibayar, Kembalian; bila kurang → "Pembayaran Kurang" + nominal. Nominal tanpa "Rp" (numberID) meniru struk.

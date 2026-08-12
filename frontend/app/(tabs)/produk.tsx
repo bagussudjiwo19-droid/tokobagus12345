@@ -23,7 +23,7 @@ import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
 
-const PRODUK_ROW_H = 63; // tinggi baris tetap → getItemLayout untuk scroll cepat
+const PRODUK_ROW_H = 76; // tinggi kartu (64) + jarak antar kartu (12) → getItemLayout scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
   item, childCount, onEdit, onMenu,
@@ -252,7 +252,7 @@ export default function ProdukScreen() {
           maxToRenderPerBatch={12}
           updateCellsBatchingPeriod={40}
           windowSize={9}
-          contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 24 + insets.bottom }}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
@@ -311,12 +311,12 @@ const styles = StyleSheet.create({
   scanCardMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   scanCardPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   scanCardClose: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.surfaceSecondary },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, height: 64, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
   rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   rowPrice: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   menuBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  sep: { height: 1, backgroundColor: colors.border },
+  sep: { height: spacing.md },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80, gap: spacing.md },
   dim: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg },
   menuTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
