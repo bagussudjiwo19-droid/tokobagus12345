@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
   qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
-  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 40, height: 34, paddingVertical: 0, textAlign: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, width: 30, height: 32, paddingVertical: 0, paddingHorizontal: 2, textAlign: "center" },
   lineName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
   linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
