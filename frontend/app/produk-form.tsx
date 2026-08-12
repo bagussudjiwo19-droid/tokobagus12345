@@ -160,11 +160,42 @@ export default function ProdukFormScreen() {
           <Field label="Stok" value={stock} onChange={setStock} keyboardType="numeric" testID="form-stock" />
         )}
 
-        {/* Variasi produk (produk anak tertaut) — hanya muncul saat mengedit induk */}
+        {/* Tiered / wholesale pricing */}
+        <TierEditor title="Harga Bertingkat (grosir)" tiers={tiers} onChange={setTiers} testPrefix="form-tier" />
+
+        {/* Variasi: gabungan variasi lama (nested, diedit inline) + variasi baru (produk anak tertaut).
+            Semua tampil di dalam induk. Tombol Tambah Variasi membuat produk anak (datar) ke induk ini. */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>Variasi ({childVariations.length + variations.length})</Text>
+          {editing ? (
+            <Pressable
+              testID="form-add-variation"
+              onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: editing.id } })}
+              style={styles.addSmall}
+            >
+              <Ionicons name="add" size={18} color={colors.brand} />
+              <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              testID="form-add-variation"
+              onPress={() =>
+                setVariations((v) => [
+                  ...v,
+                  { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: true },
+                ])
+              }
+              style={styles.addSmall}
+            >
+              <Ionicons name="add" size={18} color={colors.brand} />
+              <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Variasi baru (produk anak) — ketuk untuk mengubah data masing-masing */}
         {editing && childVariations.length > 0 && (
-          <View style={styles.childSection} testID="form-child-variations">
-            <Text style={styles.sectionTitle}>Variasi ({childVariations.length})</Text>
-            <Text style={styles.childHint}>Ketuk untuk mengubah variasi. Tiap variasi punya data sendiri.</Text>
+          <View testID="form-child-variations">
             {childVariations.map((c) => (
               <Pressable
                 key={c.id}
@@ -183,27 +214,10 @@ export default function ProdukFormScreen() {
           </View>
         )}
 
-        {/* Tiered / wholesale pricing */}
-        <TierEditor title="Harga Bertingkat (grosir)" tiers={tiers} onChange={setTiers} testPrefix="form-tier" />
-
-        {/* Variations */}
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Variasi</Text>
-          <Pressable
-            testID="form-add-variation"
-            onPress={() =>
-              setVariations((v) => [
-                ...v,
-                { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: true },
-              ])
-            }
-            style={styles.addSmall}
-          >
-            <Ionicons name="add" size={18} color={colors.brand} />
-            <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
-          </Pressable>
-        </View>
-
+        {/* Variasi lama (bawaan/nested) — tetap bisa diedit di sini, data tidak diubah */}
+        {variations.length > 0 && (
+          <Text style={styles.childHint}>Variasi bawaan (dalam produk) — ubah langsung di kolom di bawah.</Text>
+        )}
         {variations.map((v, idx) => (
           <View key={v.id} style={styles.varCard} testID={`form-variation-${idx}`}>
             <View style={styles.varHead}>

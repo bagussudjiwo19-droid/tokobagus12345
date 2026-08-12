@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v17 — Variasi: satukan variasi lama (nested) + baru (produk anak) dalam satu bagian
+- Konteks: user uji di APK lama; kode terbaru sudah benar (diverifikasi ulang end-to-end: A→B lalu C dari B → C tetih induk A; berlaku juga saat B adalah variasi NESTED lama, mis. Mie Instan/Ayam Bawang → variasi baru tetap tertaut ke Mie Instan; data nested lama utuh).
+- Masalah nyata yang ditemukan di build terbaru: saat induk dibuka, variasi BARU (produk anak/datar) tampil di bagian "Variasi (N)" ATAS, tapi variasi LAMA (nested di `variations[]`) tampil di bagian editor terpisah JAUH di bawah → hitungan "(N)" hanya menghitung yang datar, terasa seperti variasi tidak tergrup.
+- Fix `produk-form.tsx` (UI only, tanpa ubah/rusak data): satu bagian "Variasi (N)" dengan N = jumlah anak datar + nested. Isi: kartu variasi baru (produk anak, ketuk → form anak) lalu editor variasi lama (nested, tetap bisa diedit inline). Tombol "Tambah Variasi" di form induk kini membuat PRODUK ANAK datar (router → variasi-cepat dgn id induk) agar konsisten dgn alur Transaksi; untuk produk BARU (belum ada id) tombol tetap menambah nested seperti semula.
+- Verified: buka Mie Instan → "Variasi (3)" = Ayam Bawang + Soto (nested lama, tier/stok/barcode utuh) + MIETEST C (anak baru). Data uji dibersihkan; nested lama tetap utuh.
+- CATATAN: perbaikan v14–v17 hanya aktif setelah user membuat BUILD APK BARU (Publish). Build lama tidak memuat perbaikan ini.
+
 ### v16 — Gaya kartu konsisten untuk semua daftar barang (referensi: kartu Riwayat)
 - UI-only, tanpa ubah fungsi/logika/data/alur. Kartu seragam: bg surfaceSecondary, border 1px colors.border, radius.md, jarak antar kartu spacing.md, padding cukup, nama tebal, harga posisi konsisten.
 - `produk.tsx`: baris produk → kartu terpisah (height 64, border, radius); pemisah jadi jarak spacing.md; list diberi paddingHorizontal spacing.lg. PRODUK_ROW_H 63→76 (kartu 64 + gap 12) agar getItemLayout scroll tetap cepat. Induk tetap kartu utama; variasi tetap disembunyikan & muncul saat induk dibuka.
