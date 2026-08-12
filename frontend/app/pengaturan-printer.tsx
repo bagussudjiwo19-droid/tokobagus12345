@@ -87,7 +87,10 @@ export default function PengaturanPrinterScreen() {
         {devices.map((d) => (
           <Pressable key={d.address} style={styles.deviceRow} onPress={() => choose(d)} disabled={!!connecting} testID={`printer-device-${d.address}`}>
             <Ionicons name="bluetooth" size={20} color={colors.brand} />
-            <Text style={styles.deviceName} numberOfLines={1}>{d.name}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.deviceName} numberOfLines={1}>{d.name}</Text>
+              <Text style={styles.deviceAddr} numberOfLines={1}>{d.address}</Text>
+            </View>
             {connecting === d.address ? (
               <Text style={styles.connectingTxt}>Menghubungkan…</Text>
             ) : printer.address === d.address ? (
@@ -131,6 +134,7 @@ const styles = StyleSheet.create({
   connectingTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   deviceRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, marginTop: spacing.sm },
   deviceName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  deviceAddr: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2, letterSpacing: 0.5 },
   connected: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg },
   connectedTxt: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.lg },
   darkBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: spacing.lg },
