@@ -57,6 +57,7 @@ class ProductIn(BaseModel):
     sell_price: float = 0
     stock: float = 0
     tiers: List[Tier] = Field(default_factory=list)
+    inherit_tiers: bool = False
     variations: List[Variation] = Field(default_factory=list)
 
 
@@ -189,7 +190,17 @@ async def root():
 @api_router.get("/products/pos")
 async def get_products_pos():
     docs = await db.products.find().sort("name", 1).to_list(100000)
-    return [clean(d) for d in docs]
+    by_id = {d["id"]: d for d in docs}
+    out = []
+    for d in docs:
+        c = clean(d)
+        # Variasi "ikut induk" → harga bertingkat diambil DINAMIS dari induk utama.
+        if d.get("parent_id") and d.get("inherit_tiers"):
+            root = by_id.get(d["parent_id"])
+            if root:
+                c["tiers"] = root.get("tiers") or []
+        out.append(c)
+    return out
 
 
 @api_router.get("/products")
@@ -207,12 +218,17 @@ async def get_products(search: Optional[str] = None, limit: int = 100000):
 @api_router.get("/products/barcode/{code}")
 async def get_by_barcode(code: str):
     doc = await db.products.find_one({"barcode": code})
-    if doc:
-        return clean(doc)
-    doc = await db.products.find_one({"variations.barcode": code})
-    if doc:
-        return clean(doc)
-    raise HTTPException(status_code=404, detail="Barcode belum terdaftar")
+    if not doc:
+        doc = await db.products.find_one({"variations.barcode": code})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Barcode belum terdaftar")
+    c = clean(doc)
+    # Variasi "ikut induk" → harga bertingkat diambil dinamis dari induk utama.
+    if doc.get("parent_id") and doc.get("inherit_tiers"):
+        root = await db.products.find_one({"id": doc["parent_id"]})
+        if root:
+            c["tiers"] = root.get("tiers") or []
+    return c
 
 
 async def _resolve_root_parent(parent_id: str) -> str:

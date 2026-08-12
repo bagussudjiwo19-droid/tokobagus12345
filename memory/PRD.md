@@ -18,7 +18,25 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
-## Implemented (2026-08-11)
+## Implemented (2026-08-12)
+### v23 — Riwayat filter tanggal + struk: nama toko besar/tebal + alamat rapi
+- `riwayat.tsx`: chip filter periode (Hari Ini [default] / Kemarin / Bulan Ini / Pilih Tanggal / Semua). "Pilih Tanggal" menampilkan stepper ◀ tanggal ▶ (per hari). Omzet & jumlah transaksi IKUT periode terpilih. Data lama TIDAK dihapus (hanya disaring tampilan). Limit fetch dinaikkan 200→5000 agar data lama bisa dibuka. Verified via screenshot: Hari Ini 23 tx Rp 243.100; step ke Sel 11 Agu → 33 tx Rp 1.484.755.
+- `receipt.ts` (printer thermal): NAMA TOKO kini ESC/POS dobel-tinggi + tebal (ESC ! 0x18), rata tengah oleh printer (ESC a). Reset ukuran/rata (ESC ! 0x00 + ESC a 0) diselipkan sebelum baris berikutnya agar nama tercetak besar. ALAMAT dibungkus PER KATA (wrapWords) → tidak terpotong di tengah kata, tetap rata tengah. CATATAN: hasil cetak fisik hanya bisa diuji di BUILD APK (bukan Expo Go/preview).
+- `ReceiptPreview.tsx`: nama toko diperbesar (fontSize 26, bold 800) agar preview cocok dengan hasil cetak. Verified via screenshot: "TOKO BAGUS" besar, alamat "jln mangir rt 4 rw 1 sumber bahagia" tampil utuh.
+
+
+### v22 — Tambah Variasi (dari Transaksi): auto-nama induk + toggle grosir ikut induk + cegah duplikat
+- `variasi-cepat.tsx` (rombak, tanpa ubah transaksi/fitur lain):
+  1. Auto-nama: input hanya isi NAMA VARIAN (suffix). Nama produk tersimpan = "[Nama Induk] [Varian]" (mis. "Mie Sedaap" + "Goreng" = "Mie Sedaap Goreng"), dgn preview live. Prefix selalu memakai nama INDUK UTAMA (root), bukan nama variasi sumber.
+  2. Barcode: opsional, boleh beda dari induk.
+  3. Toggle "Harga Bertingkat Ikut Induk" ON/OFF. ON → inherit_tiers=true, tiers=[] (grosir ikut induk, DINAMIS). OFF → editor grosir sendiri (TierEditor) → inherit_tiers=false, tiers milik variasi. Tidak mengubah harga/grosir induk.
+  4. Harga jual/beli prefill dari induk (via useEffect saat root tersedia), tetap bisa diedit.
+  5. Cegah duplikat sebelum simpan: nama produk akhir sudah dipakai → toast merah "✕ Nama produk sudah digunakan"; barcode sudah dipakai (produk/variasi lain) → "✕ Barcode sudah digunakan".
+  6. Root parent konsisten: variasi dari variasi tetap tertaut ke induk utama (A→B, A→C; tanpa A→B→C).
+- Backend `server.py`: `ProductIn.inherit_tiers` ditambah. `/products/pos` & `/products/barcode` resolve tiers DINAMIS dari induk untuk anak dgn inherit_tiers=true (ikut perubahan grosir induk). Root-parent safeguard (create) tetap.
+- Shared `components/TierEditor.tsx` (mandiri) untuk editor grosir variasi.
+- Verified: backend (Goreng inherit→ikut tiers induk 6/12; Soto dari Goreng→root Mie Sedaap, tiers sendiri) + UI (preview auto-nama, toggle→editor grosir, tolak duplikat nama & barcode dgn ✕ merah, simpan valid sukses). Data uji dibersihkan.
+
 ### v21 — Cek Harga tampilan 3D (harga besar & jelas) + notifikasi barcode tidak ditemukan
 - `cek-harga.tsx` (UI): kartu hasil dibuat gaya 3D sesuai mockup. TOKO BAGUS hijau (font display, text-shadow), "CEK HARGA" merah dgn garis dash kiri-kanan, nama produk besar. HARGA ECER = pil 3D merah (borderBottom tebal + shadow/elevation) berisi chip putih "HARGA ECER" + harga putih raksasa (font display 66). HARGA GROSIR = header hijau + tiap tier pil 3D hijau dua-nada: kiri hijau "Mulai N unit", kanan putih harga hijau (font display). Tombol "Scan Barang Lain" jadi tombol 3D merah. Konten dibungkus ScrollView agar tidak terpotong di layar kecil.
 - Notifikasi: bila barcode tidak ditemukan → toast error "Barcode {kode} tidak ditemukan" (sebelumnya diam saja).

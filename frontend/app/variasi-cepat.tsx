@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +16,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/src/api";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
+import type { Tier } from "@/src/types";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
+import TierEditor from "@/components/TierEditor";
 
 const digits = (s: string) => Number((s || "").replace(/[^\d]/g, "")) || 0;
 
@@ -28,41 +30,75 @@ export default function VariasiCepatScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const source = useMemo(() => products.find((p) => p.id === id), [products, id]);
-  // Selalu pakai induk ASLI/original (hindari rantai A->B->C).
+  // Selalu pakai induk ASLI/original (root) — hindari rantai A->B->C.
   const parentId = source?.parent_id || source?.id || null;
-  const parentName = useMemo(() => {
-    const parent = products.find((p) => p.id === parentId);
-    return parent?.name || source?.name || "-";
-  }, [products, parentId, source]);
+  const root = useMemo(() => products.find((p) => p.id === parentId) || source, [products, parentId, source]);
+  const rootName = root?.name || "-";
 
-  const [name, setName] = useState(source ? source.name : "");
+  const [suffix, setSuffix] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [sell, setSell] = useState(String(Math.round(source?.sell_price ?? 0)));
-  const [buy, setBuy] = useState(String(Math.round(source?.buy_price ?? 0)));
+  const [sell, setSell] = useState(String(Math.round(root?.sell_price ?? 0)));
+  const [buy, setBuy] = useState(String(Math.round(root?.buy_price ?? 0)));
+  const [inheritTiers, setInheritTiers] = useState(true);
+  const [ownTiers, setOwnTiers] = useState<Tier[]>(() => (root?.tiers || []).map((t) => ({ ...t })));
   const [saving, setSaving] = useState(false);
 
+  // Prefill harga & grosir dari induk begitu data induk tersedia (mis. saat deep-link
+  // atau data belum sempat termuat saat mount). Hanya sekali, tidak menimpa editan user.
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (root && !didInit.current) {
+      didInit.current = true;
+      setSell(String(Math.round(root.sell_price ?? 0)));
+      setBuy(String(Math.round(root.buy_price ?? 0)));
+      setOwnTiers((root.tiers || []).map((t) => ({ ...t })));
+    }
+  }, [root]);
+
+  // Nama akhir = [Nama Induk] + [Nama Varian]
+  const finalName = `${rootName} ${suffix.trim()}`.replace(/\s+/g, " ").trim();
+
   const onSave = async () => {
-    if (!name.trim()) { toast.show("Nama variasi wajib diisi", "error"); return; }
-    if (!parentId) { toast.show("Produk induk tidak ditemukan", "error"); return; }
+    const suf = suffix.trim();
+    if (!suf) { toast.show("✕ Nama varian wajib diisi", "error"); return; }
+    if (!parentId) { toast.show("✕ Produk induk tidak ditemukan", "error"); return; }
+
+    // Cegah duplikat: nama produk akhir sudah dipakai produk lain
+    const nameTaken = products.some((p) => p.name.trim().toLowerCase() === finalName.toLowerCase());
+    if (nameTaken) { toast.show("✕ Nama produk sudah digunakan", "error"); return; }
+
+    // Cegah duplikat barcode (produk lain / variasi nested lain)
+    const bc = barcode.trim();
+    if (bc) {
+      const bcTaken = products.some(
+        (p) => (p.barcode || "").trim() === bc || (p.variations || []).some((v) => (v.barcode || "").trim() === bc),
+      );
+      if (bcTaken) { toast.show("✕ Barcode sudah digunakan", "error"); return; }
+    }
+
+    const tiers = inheritTiers ? [] : ownTiers.filter((t) => t.min_qty > 0 && t.price > 0);
+
     setSaving(true);
     try {
       await api.createProduct({
-        name: name.trim(),
-        barcode: barcode.trim() || null,
+        name: finalName,
+        barcode: bc || null,
         parent_id: parentId,
         buy_price: digits(buy),
         sell_price: digits(sell),
         stock: 999,
-        category: source?.category || "",
-        unit: source?.unit || "pcs",
-        tiers: [],
+        category: root?.category || "",
+        unit: root?.unit || "pcs",
+        tiers,
+        inherit_tiers: inheritTiers,
         variations: [],
       });
       await reload();
-      toast.show("Variasi berhasil ditambahkan", "success");
+      toast.show(`${finalName} ditambahkan`, "success");
       router.back();
     } catch (e: any) {
-      toast.show(e?.message || "Gagal menambah variasi", "error");
+      const msg = e?.message || "Gagal menambah variasi";
+      toast.show(`✕ ${msg}`, "error");
     } finally {
       setSaving(false);
     }
@@ -82,11 +118,25 @@ export default function VariasiCepatScreen() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           <View style={styles.parentBox}>
             <Ionicons name="git-branch-outline" size={16} color={colors.brand} />
-            <Text style={styles.parentTxt}>Induk: {parentName}</Text>
+            <Text style={styles.parentTxt}>Induk: {rootName}</Text>
           </View>
 
-          <Text style={styles.label}>Nama Barang</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Nama variasi" placeholderTextColor={colors.muted} style={styles.input} testID="variasi-name" />
+          <Text style={styles.label}>Nama Varian</Text>
+          <TextInput
+            value={suffix}
+            onChangeText={setSuffix}
+            placeholder="mis. Goreng / Soto / Merah"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+            testID="variasi-name"
+            autoFocus
+          />
+          <View style={styles.previewBox}>
+            <Text style={styles.previewLbl}>Nama produk tersimpan</Text>
+            <Text style={styles.previewName} numberOfLines={2}>
+              {suffix.trim() ? finalName : `${rootName} …`}
+            </Text>
+          </View>
 
           <Text style={styles.label}>Barcode</Text>
           <TextInput value={barcode} onChangeText={setBarcode} placeholder="Boleh dikosongkan / berbeda dari induk" placeholderTextColor={colors.muted} style={styles.input} testID="variasi-barcode" />
@@ -103,7 +153,22 @@ export default function VariasiCepatScreen() {
             <TextInput value={buy} onChangeText={(t) => setBuy(t.replace(/[^\d]/g, ""))} keyboardType="numeric" style={styles.moneyInput} testID="variasi-buy" />
           </View>
 
-          <Text style={styles.hint}>Harga otomatis mengikuti induk & tetap bisa diedit. Stok baru = 999.</Text>
+          {/* Harga Bertingkat Ikut Induk — ON/OFF */}
+          <Pressable style={styles.toggleRow} onPress={() => setInheritTiers((v) => !v)} testID="variasi-inherit-toggle">
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleTitle}>Harga Bertingkat Ikut Induk</Text>
+              <Text style={styles.toggleSub}>{inheritTiers ? "ON — grosir mengikuti induk (otomatis)" : "OFF — atur grosir sendiri"}</Text>
+            </View>
+            <View style={[styles.switch, inheritTiers && styles.switchOn]}>
+              <View style={[styles.knob, inheritTiers && styles.knobOn]} />
+            </View>
+          </Pressable>
+
+          {!inheritTiers && (
+            <TierEditor title="Harga Grosir Variasi" tiers={ownTiers} onChange={setOwnTiers} testPrefix="variasi-tier" />
+          )}
+
+          <Text style={styles.hint}>Harga jual & beli mengikuti induk sebagai nilai awal dan bisa diedit. Stok baru = 999.</Text>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
@@ -125,13 +190,23 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  parentBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.brandTertiary, borderRadius: radius.sm, padding: spacing.md, marginBottom: spacing.lg },
+  parentBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.brandTertiary, borderRadius: radius.sm, padding: spacing.md, marginBottom: spacing.md },
   parentTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   label: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm, marginBottom: 6, marginTop: spacing.sm },
   input: { backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 48, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
+  previewBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginTop: spacing.sm },
+  previewLbl: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
+  previewName: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg, marginTop: 2 },
   moneyBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 48 },
   rp: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
   moneyInput: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  toggleRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginTop: spacing.lg },
+  toggleTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
+  toggleSub: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
+  switch: { width: 52, height: 30, borderRadius: 15, backgroundColor: colors.border, padding: 3, justifyContent: "center" },
+  switchOn: { backgroundColor: colors.success },
+  knob: { width: 24, height: 24, borderRadius: 12, backgroundColor: "#FFFFFF" },
+  knobOn: { alignSelf: "flex-end" },
   hint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: spacing.md },
   footer: { flexDirection: "row", gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
   cancelBtn: { flex: 1, alignItems: "center", justifyContent: "center", height: 54, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },

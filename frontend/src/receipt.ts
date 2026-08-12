@@ -9,10 +9,31 @@ const WIDTH = 32;
 const MARGIN = " ";
 const CW = WIDTH - MARGIN.length; // 31
 
+// Perintah ESC/POS untuk printer thermal.
+const ESC = "\x1B";
+const C_CENTER = ESC + "\x61\x01"; // rata tengah (dilakukan oleh printer)
+const C_LEFT = ESC + "\x61\x00"; // kembali rata kiri
+const C_BIG_BOLD = ESC + "\x21\x18"; // dobel tinggi + tebal (nama toko)
+const C_NORMAL = ESC + "\x21\x00"; // ukuran normal + tebal mati
+
 function center(text: string): string {
   const t = text.slice(0, CW);
   const pad = Math.max(0, Math.floor((CW - t.length) / 2));
   return MARGIN + " ".repeat(pad) + t;
+}
+
+// Bungkus teks per KATA agar tidak terpotong di tengah kata (alamat rapi/cantik).
+function wrapWords(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of text.trim().split(/\s+/)) {
+    if (!cur) cur = w;
+    else if ((cur + " " + w).length <= width) cur += " " + w;
+    else { lines.push(cur); cur = w; }
+    while (cur.length > width) { lines.push(cur.slice(0, width)); cur = cur.slice(width); }
+  }
+  if (cur) lines.push(cur);
+  return lines;
 }
 
 function line(text: string): string {
@@ -40,13 +61,20 @@ const qtyStr = (q: number) => (Number.isInteger(q) ? String(q) : String(q));
 export function buildReceiptText(tx: Transaction, s: Settings): string {
   const out: string[] = [];
 
-  // Kepala: nama toko (rata tengah) + alamat (rata tengah) + telepon
-  if (s.showShopName && s.shopName) out.push(center(s.shopName.toUpperCase()));
-  if (s.showAddress && s.address) {
-    s.address.match(new RegExp(`.{1,${CW}}`, "g"))?.forEach((l) => out.push(center(l.trim())));
+  // Kepala: NAMA TOKO besar & tebal (dobel tinggi, rata tengah oleh printer),
+  // lalu ALAMAT (rata tengah, otomatis turun baris per kata → tidak terpotong)
+  // + telepon. Kode reset (ukuran normal + rata kiri) diselipkan sebelum baris
+  // berikutnya agar nama toko tetap tercetak besar & di tengah.
+  let reset = "";
+  if (s.showShopName && s.shopName) {
+    out.push(C_CENTER + C_BIG_BOLD + s.shopName.toUpperCase());
+    reset = C_NORMAL + C_LEFT;
   }
-  if (s.showPhone && s.phone) out.push(center(s.phone));
-  out.push(LINE);
+  if (s.showAddress && s.address) {
+    wrapWords(s.address, CW).forEach((l) => { out.push(reset + center(l)); reset = ""; });
+  }
+  if (s.showPhone && s.phone) { out.push(reset + center(s.phone)); reset = ""; }
+  out.push(reset + LINE);
 
   // Info transaksi: label kiri, nilai kanan
   if (s.showTxNumber) out.push(twoCols("Id Transaksi", shortTxNo(tx.id)));

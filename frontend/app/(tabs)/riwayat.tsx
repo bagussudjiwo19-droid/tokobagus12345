@@ -4,6 +4,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -25,6 +26,27 @@ import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
 
+type FilterKey = "today" | "yesterday" | "month" | "date" | "all";
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "today", label: "Hari Ini" },
+  { key: "yesterday", label: "Kemarin" },
+  { key: "month", label: "Bulan Ini" },
+  { key: "date", label: "Pilih Tanggal" },
+  { key: "all", label: "Semua" },
+];
+
+const sameDay = (iso: string, d: Date) => {
+  const x = new Date(iso);
+  return (
+    x.getFullYear() === d.getFullYear() &&
+    x.getMonth() === d.getMonth() &&
+    x.getDate() === d.getDate()
+  );
+};
+
+const fmtDateLabel = (d: Date) =>
+  d.toLocaleDateString("id-ID", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+
 export default function RiwayatScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -35,12 +57,14 @@ export default function RiwayatScreen() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [printer, setPrinter] = useState<{ address?: string | null }>({});
   const [selected, setSelected] = useState<Transaction | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("today");
+  const [pickDate, setPickDate] = useState<Date>(new Date());
   const sheetRef = useRef<BottomSheetModal>(null);
   const receiptRef = useRef<View>(null);
 
   const load = useCallback(async () => {
     try {
-      const [t, s, p] = await Promise.all([api.getTransactions(200), api.getSettings(), api.getPrinter()]);
+      const [t, s, p] = await Promise.all([api.getTransactions(5000), api.getSettings(), api.getPrinter()]);
       setTxs(t); setSettings(s); setPrinter(p);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
@@ -48,7 +72,32 @@ export default function RiwayatScreen() {
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const omzet = useMemo(() => txs.reduce((s, t) => s + (t.total || 0), 0), [txs]);
+  // Filter transaksi berdasarkan periode terpilih. Data lama TIDAK dihapus,
+  // hanya disaring untuk tampilan; omzet & jumlah ikut periode terpilih.
+  const filtered = useMemo(() => {
+    const now = new Date();
+    if (filter === "all") return txs;
+    if (filter === "today") return txs.filter((t) => sameDay(t.created_at, now));
+    if (filter === "yesterday") {
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      return txs.filter((t) => sameDay(t.created_at, y));
+    }
+    if (filter === "month") {
+      return txs.filter((t) => {
+        const x = new Date(t.created_at);
+        return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth();
+      });
+    }
+    return txs.filter((t) => sameDay(t.created_at, pickDate)); // "date"
+  }, [txs, filter, pickDate]);
+
+  const omzet = useMemo(() => filtered.reduce((s, t) => s + (t.total || 0), 0), [filtered]);
+  const periodLabel =
+    filter === "today" ? "Hari Ini"
+    : filter === "yesterday" ? "Kemarin"
+    : filter === "month" ? "Bulan Ini"
+    : filter === "all" ? "Semua Transaksi"
+    : fmtDateLabel(pickDate);
 
   const openDetail = (tx: Transaction) => { setSelected(tx); sheetRef.current?.present(); };
 
@@ -137,8 +186,49 @@ export default function RiwayatScreen() {
         </View>
       </View>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+        style={{ flexGrow: 0 }}
+      >
+        {FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            testID={`riwayat-filter-${f.key}`}
+            onPress={() => setFilter(f.key)}
+            style={[styles.chip, filter === f.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipTxt, filter === f.key && styles.chipTxtActive]}>{f.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {filter === "date" && (
+        <View style={styles.stepper} testID="riwayat-date-stepper">
+          <Pressable
+            style={styles.stepBtn}
+            testID="riwayat-date-prev"
+            onPress={() => setPickDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; })}
+          >
+            <Ionicons name="chevron-back" size={20} color={colors.brand} />
+          </Pressable>
+          <View style={styles.stepDateBox}>
+            <Ionicons name="calendar-outline" size={16} color={colors.brand} />
+            <Text style={styles.stepDateTxt}>{fmtDateLabel(pickDate)}</Text>
+          </View>
+          <Pressable
+            style={styles.stepBtn}
+            testID="riwayat-date-next"
+            onPress={() => setPickDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; })}
+          >
+            <Ionicons name="chevron-forward" size={20} color={colors.brand} />
+          </Pressable>
+        </View>
+      )}
+
       <View style={styles.summary} testID="riwayat-summary">
-        <Text style={styles.sumLabel}>Total Pendapatan · {txs.length} transaksi</Text>
+        <Text style={styles.sumLabel}>{periodLabel} · {filtered.length} transaksi</Text>
         <Text style={styles.sumValue}>{rupiah(omzet)}</Text>
       </View>
 
@@ -146,7 +236,7 @@ export default function RiwayatScreen() {
         <View style={styles.centerFill}><ActivityIndicator color={colors.brand} size="large" /></View>
       ) : (
         <FlatList
-          data={txs}
+          data={filtered}
           keyExtractor={(t) => t.id}
           renderItem={renderRow}
           removeClippedSubviews
@@ -159,7 +249,7 @@ export default function RiwayatScreen() {
           ListEmptyComponent={
             <View style={styles.centerFill}>
               <Ionicons name="receipt-outline" size={40} color={colors.muted} />
-              <Text style={styles.dim}>Belum ada transaksi</Text>
+              <Text style={styles.dim}>Belum ada transaksi pada periode ini</Text>
             </View>
           }
         />
@@ -221,6 +311,15 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: spacing.sm },
   actionIcon: { width: 42, height: 42, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   summary: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.lg },
+  chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.md },
+  chip: { paddingHorizontal: spacing.md, height: 36, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  chipTxtActive: { color: colors.onBrandPrimary, fontFamily: font.bold },
+  stepper: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: spacing.lg, marginBottom: spacing.md, gap: spacing.sm },
+  stepBtn: { width: 44, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  stepDateBox: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
+  stepDateTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   sumLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
   sumValue: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["2xl"], marginTop: 2 },
   row: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.lg },

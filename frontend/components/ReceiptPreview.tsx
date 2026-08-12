@@ -86,7 +86,7 @@ function Row({ left, right, bold }: { left: string; right: string; bold?: boolea
 const styles = StyleSheet.create({
   // padding kiri sedikit lebih besar → tulisan bergeser ke kanan (meniru margin kertas)
   paper: { backgroundColor: "#FFFFFF", paddingVertical: 16, paddingLeft: 22, paddingRight: 16, borderRadius: 8 },
-  shop: { fontFamily: MONO, fontSize: 19, fontWeight: "700", color: "#000", textAlign: "center", marginBottom: 2 },
+  shop: { fontFamily: MONO, fontSize: 26, fontWeight: "800", color: "#000", textAlign: "center", marginBottom: 4, letterSpacing: 0.5 },
   center: { fontFamily: MONO, fontSize: 12, color: "#111", textAlign: "center" },
   small: { fontFamily: MONO, fontSize: 12, color: "#111" },
   item: { flex: 1, fontFamily: MONO, fontSize: 13, color: "#000", fontWeight: "600", marginRight: 8 },

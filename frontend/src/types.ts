@@ -22,6 +22,7 @@ export type Product = {
   sell_price: number;
   stock: number;
   tiers: Tier[];
+  inherit_tiers?: boolean;
   variations: Variation[];
   created_at?: string;
   updated_at?: string;
