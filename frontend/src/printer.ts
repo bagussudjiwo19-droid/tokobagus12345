@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, PermissionsAndroid } from "react-native";
 
 // react-native-bluetooth-classic is a NATIVE module — unavailable in Expo Go / web.
 // We guard the require so the app still boots in preview; real printing only
@@ -18,6 +18,60 @@ export const NATIVE_ONLY_MSG =
 
 export function isBluetoothAvailable(): boolean {
   return !!RNBluetoothClassic && Platform.OS !== "web";
+}
+
+// Minta izin Bluetooth/Location yang diperlukan Android (runtime).
+export async function requestBluetoothPermissions(): Promise<boolean> {
+  if (Platform.OS !== "android") return true;
+  try {
+    const apiLevel = Number(Platform.Version) || 0;
+    const perms: string[] = [];
+    if (apiLevel >= 31) {
+      perms.push(
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      );
+    }
+    // Android <= 11 (dan sebagian perangkat) butuh lokasi untuk discovery.
+    perms.push(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+    const res = await PermissionsAndroid.requestMultiple(perms as any);
+    return Object.values(res).every((v) => v === PermissionsAndroid.RESULTS.GRANTED);
+  } catch {
+    return false;
+  }
+}
+
+async function ensureEnabled(): Promise<void> {
+  const enabled = await RNBluetoothClassic.isBluetoothEnabled();
+  if (!enabled) {
+    try {
+      await RNBluetoothClassic.requestBluetoothEnabled();
+    } catch {
+      throw new Error("Bluetooth belum aktif. Nyalakan Bluetooth HP Anda.");
+    }
+  }
+}
+
+// Cari perangkat Bluetooth di sekitar (discovery) + gabung dengan yang sudah dipasangkan.
+export async function discoverPrinters(): Promise<BTDevice[]> {
+  if (!isBluetoothAvailable()) throw new Error(NATIVE_ONLY_MSG);
+  const ok = await requestBluetoothPermissions();
+  if (!ok) {
+    throw new Error("Izin Bluetooth/Lokasi ditolak. Aktifkan izin di Pengaturan HP untuk mencari perangkat.");
+  }
+  await ensureEnabled();
+  const map = new Map<string, BTDevice>();
+  try {
+    const bonded = await RNBluetoothClassic.getBondedDevices();
+    (bonded || []).forEach((d: any) => map.set(d.address, { address: d.address, name: d.name || d.address }));
+  } catch { /* ignore */ }
+  try {
+    const found = await RNBluetoothClassic.startDiscovery();
+    (found || []).forEach((d: any) => map.set(d.address, { address: d.address, name: d.name || d.address }));
+  } catch { /* ignore discovery errors, tetap kembalikan bonded */ } finally {
+    try { await RNBluetoothClassic.cancelDiscovery(); } catch { /* ignore */ }
+  }
+  return Array.from(map.values());
 }
 
 export async function listPairedPrinters(): Promise<BTDevice[]> {

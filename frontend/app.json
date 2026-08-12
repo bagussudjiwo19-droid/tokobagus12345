@@ -15,7 +15,9 @@
         "NSCameraUsageDescription": "Scan barcode produk saat berjualan",
         "NSBluetoothAlwaysUsageDescription": "Hubungkan printer struk Bluetooth",
         "NSBluetoothPeripheralUsageDescription": "Cetak struk ke printer Bluetooth",
-        "LSApplicationQueriesSchemes": ["whatsapp"]
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
       }
     },
     "android": {
@@ -26,13 +28,14 @@
       "edgeToEdgeEnabled": true,
       "package": "com.emergent.appauditpreview.b4uyup",
       "permissions": [
-        "android.permission.CAMERA",
         "android.permission.INTERNET",
+        "android.permission.CAMERA",
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {

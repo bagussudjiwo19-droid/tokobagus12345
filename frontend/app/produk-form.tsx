@@ -136,7 +136,7 @@ export default function ProdukFormScreen() {
 
         {hasVar && (
           <Text style={styles.hint}>
-            Produk punya variasi — harga jual & bertingkat induk dipakai oleh variasi yang memilih "Ikuti Induk". Cukup isi Harga Induk.
+            {`Produk punya variasi — harga jual & bertingkat induk dipakai oleh variasi yang memilih "Ikuti Induk". Cukup isi Harga Induk.`}
           </Text>
         )}
 

@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 9 — Bluetooth Printer settings screen (frontend only, web preview 390x844). Backend not re-tested (unchanged). VERIFIED: (1) Riwayat tab renders and its header contains testID='riwayat-printer-settings' (count=1) which navigates to /pengaturan-printer. (2) Pengaturan Printer screen renders WITHOUT CRASH — all required testIDs present: printer-scan, printer-test, printer-done, printer-close (each count=1); body text contains 'Cari Perangkat Bluetooth' and the permissions note 'Aplikasi akan meminta izin Bluetooth & Lokasi lalu mencari perangkat di sekitar.'; a previously-saved printer 'Terhubung: RPP02N' is displayed (persistence via GET /api/printer works). (3) Web graceful degradation: tapping printer-scan shows the info toast 'Fitur printer Bluetooth hanya tersedia di aplikasi hasil build (bukan Expo Go/preview).' — NO crash, NO white screen, printer-scan still mounted after tap. Tapping printer-test shows the same native-only toast — NO crash. printer-rescan is correctly NOT shown on web because discoverPrinters() throws before setScannedOnce(true) (expected behavior per code: isBluetoothAvailable() returns false so scan() short-circuits with toast). (4) Static code review: /app/frontend/src/printer.ts exports requestBluetoothPermissions() (Android SDK ≥31 requests BLUETOOTH_SCAN+BLUETOOTH_CONNECT, all versions ACCESS_FINE_LOCATION) and discoverPrinters() (merges getBondedDevices + startDiscovery via Map keyed by address, cancelDiscovery in finally, returns unified BTDevice[]); connectPrinter/printText throw clear Indonesian errors ('Gagal terhubung ke printer…', 'Gagal mengirim data ke printer…'); ensureEnabled() throws 'Bluetooth belum aktif. Nyalakan Bluetooth HP Anda.' NATIVE_ONLY_MSG exported and used consistently as toast('info') on the settings screen. /app/frontend/app/pengaturan-printer.tsx choose() flow: setConnecting(d.address) → await connectPrinter → api.savePrinter → setPrinter → GREEN toast('Berhasil terhubung ke {name}', 'success'); on error RED toast('Gagal terhubung…', 'error'); per-row 'Menghubungkan…' text shown while connecting===d.address; 'Scan Ulang' Pressable (testID='printer-rescan') is rendered after first successful scan (scannedOnce && !scanning). /app/frontend/app.json android.permissions include android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_CONNECT, android.permission.ACCESS_FINE_LOCATION (plus legacy BLUETOOTH, BLUETOOTH_ADMIN, ACCESS_COARSE_LOCATION). iOS infoPlist has NSBluetoothAlwaysUsageDescription + NSBluetoothPeripheralUsageDescription. Plugin 'with-rn-bluetooth-classic' is registered. (5) Regression: navigated Transaksi, Produk, Cek Harga, Riwayat tabs — all render content, no white screens, no red-screen error. No new deprecated Expo packages detected (no expo-av / expo-barcode-scanner / expo-background-fetch imports).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_9.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "printer.ts: guard `let RNBluetoothClassic = require(...)` in try/catch — correct pattern for Expo Go / web (module may be absent). isBluetoothAvailable() also checks Platform.OS !== 'web' so the settings screen never hits native APIs in preview.",
+    "printer.ts discoverPrinters(): correctly uses Map<address, BTDevice> to dedupe bonded + discovered results, calls cancelDiscovery in finally. Discovery errors are swallowed so bonded devices are still returned (good UX).",
+    "printer.ts requestBluetoothPermissions(): API-level branching for Android 12+ (BLUETOOTH_SCAN/CONNECT) plus ACCESS_FINE_LOCATION for older devices — matches Android BT discovery requirements.",
+    "pengaturan-printer.tsx: choose() sets per-row 'Menghubungkan…' state; success uses toast('...', 'success') (green) and failure uses toast(err.message, 'error') (red) — matches the requested color semantics via the shared toast component.",
+    "pengaturan-printer.tsx: 'Scan Ulang' (printer-rescan) is rendered conditionally after scannedOnce=true — only appears after a successful native scan, so it's correctly hidden on web preview.",
+    "app.json: all three modern Android runtime permissions declared (BLUETOOTH_SCAN, BLUETOOTH_CONNECT, ACCESS_FINE_LOCATION). Native plugin 'with-rn-bluetooth-classic' present. iOS Bluetooth usage descriptions present."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not re-tested (unchanged)", "frontend": "100% on all spec-critical checks for this iteration"},
+  "seed_data_creation": "None. A previously-saved printer record ('RPP02N') was already in Mongo from prior iterations — this is unrelated to code and served to visually verify the 'Terhubung: …' block renders correctly.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "react-native-bluetooth-classic is a NATIVE module. Web preview and Expo Go CANNOT exercise real scan/connect/print — those paths correctly short-circuit with the Indonesian info toast 'Fitur printer Bluetooth hanya tersedia di aplikasi hasil build (bukan Expo Go/preview).' Do NOT mark absence of real BT discovery/print as a failure on web. Only physical device / EAS native build can validate actual scanning, permission prompts, connect status transitions ('Menghubungkan…' → 'Terhubung'), and printer output. Preview URL: https://app-audit-preview.preview.emergentagent.com. Entry point to the screen: Riwayat tab → header icon testID='riwayat-printer-settings' → route /pengaturan-printer.",
+  "rca_of_issue": "N/A — this iteration is a verification-only pass on the printer settings feature. All specified behaviors are implemented correctly."
+}

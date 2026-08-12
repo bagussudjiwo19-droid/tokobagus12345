@@ -94,7 +94,7 @@ export default function ItemManualScreen() {
           <Text style={styles.optDarkTxt}>Simpan ke data permanen</Text>
         </Pressable>
         <Text style={styles.note}>
-          "Transaksi ini saja" tidak masuk data produk. "Data permanen" menambah produk baru yang bisa dipakai transaksi berikutnya.
+          {`"Transaksi ini saja" tidak masuk data produk. "Data permanen" menambah produk baru yang bisa dipakai transaksi berikutnya.`}
         </Text>
       </KeyboardAwareScrollView>
     </View>
