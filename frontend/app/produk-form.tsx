@@ -30,7 +30,7 @@ export default function ProdukFormScreen() {
   const [barcode, setBarcode] = useState(editing?.barcode ?? "");
   const [buyPrice, setBuyPrice] = useState(String(editing?.buy_price ?? ""));
   const [sellPrice, setSellPrice] = useState(String(editing?.sell_price ?? ""));
-  const [stock, setStock] = useState(String(editing?.stock ?? ""));
+  const [stock, setStock] = useState(editing ? String(editing.stock ?? 0) : "999");
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
   const [saving, setSaving] = useState(false);
