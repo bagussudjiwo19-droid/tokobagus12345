@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,6 +10,7 @@ import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
+import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
 
@@ -21,6 +22,7 @@ export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { products, pricePick, setPricePick } = useData();
+  const toast = useToast();
   const [result, setResult] = useState<ScanResult | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [countdown, setCountdown] = useState(0);
@@ -109,10 +111,11 @@ export default function CekHargaScreen() {
       showResult(product, variation);
     } catch {
       setResult(null);
+      toast.show(`Barcode ${c} tidak ditemukan`, "error");
       // Stay in scan mode, ready for the next barcode.
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [showResult]);
+  }, [showResult, toast]);
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(handleScan, { isScanMode: () => !kbdRef.current });
 
@@ -146,21 +149,39 @@ export default function CekHargaScreen() {
 
       <View style={styles.body}>
         {result ? (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
           <View style={styles.resultCard} testID="cekharga-result">
             <Text style={styles.shopName}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
-            <Text style={styles.resultLabel}>CEK HARGA</Text>
-            <Text style={styles.resultName} numberOfLines={3}>{result.name}</Text>
+            <View style={styles.labelRow}>
+              <View style={styles.dashRed} />
+              <Text style={styles.cekLabel}>CEK HARGA</Text>
+              <View style={styles.dashRed} />
+            </View>
+            <Text style={styles.resultName} numberOfLines={2}>{result.name}</Text>
 
-            <Text style={styles.ecerLabel}>HARGA ECER</Text>
-            <Text style={styles.resultPrice}>{rupiah(result.price)}</Text>
+            {/* HARGA ECER — kartu 3D merah */}
+            <View style={styles.ecerPill}>
+              <View style={styles.ecerChip}>
+                <Text style={styles.ecerChipTxt}>HARGA ECER</Text>
+              </View>
+              <Text style={styles.ecerPrice}>{rupiah(result.price)}</Text>
+            </View>
 
             {result.tiers.length > 0 && (
               <View style={styles.grosirBox} testID="cekharga-grosir">
-                <Text style={styles.grosirHead}>HARGA GROSIR</Text>
+                <View style={styles.labelRow}>
+                  <View style={styles.dashGreen} />
+                  <Text style={styles.grosirHead}>HARGA GROSIR</Text>
+                  <View style={styles.dashGreen} />
+                </View>
                 {result.tiers.map((t, i) => (
-                  <View key={i} style={styles.grosirRow}>
-                    <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
-                    <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
+                  <View key={i} style={styles.grosirPill}>
+                    <View style={styles.grosirLeft}>
+                      <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
+                    </View>
+                    <View style={styles.grosirRight}>
+                      <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -171,10 +192,11 @@ export default function CekHargaScreen() {
               <Text style={styles.countdownTxt}>Reset otomatis dalam {countdown}s · siap scan berikutnya</Text>
             </View>
             <Pressable style={styles.againBtn} onPress={backToScan} testID="cekharga-again">
-              <Ionicons name="barcode-outline" size={18} color={colors.onBrandPrimary} />
+              <Ionicons name="barcode-outline" size={20} color={colors.onBrandPrimary} />
               <Text style={styles.againTxt}>Scan Barang Lain</Text>
             </Pressable>
           </View>
+          </ScrollView>
         ) : (
           <View style={styles.idle}>
             <Ionicons name="barcode-outline" size={64} color={colors.brand} />
@@ -206,19 +228,31 @@ const styles = StyleSheet.create({
   idleDesc: { fontFamily: font.regular, fontSize: fontSize.lg, color: colors.muted, textAlign: "center", marginBottom: spacing.lg, paddingHorizontal: spacing.md },
   searchCard: { width: "100%", height: 64, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
   searchTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  resultCard: { backgroundColor: colors.brandTertiary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.xl, alignItems: "center" },
-  shopName: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.xl, letterSpacing: 1.5 },
-  resultLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, marginTop: 2 },
-  resultName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize["2xl"], textAlign: "center", marginTop: spacing.sm },
-  ecerLabel: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, marginTop: spacing.md },
-  resultPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["4xl"], marginTop: 2 },
-  grosirBox: { alignSelf: "stretch", marginTop: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
-  grosirHead: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, textAlign: "center", marginBottom: spacing.sm },
-  grosirRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 5 },
-  grosirQty: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base },
-  grosirPrice: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.xl },
-  countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.lg },
+  resultCard: { backgroundColor: colors.brandTertiary, borderRadius: 28, borderWidth: 1, borderColor: "#F3D3CD", padding: spacing.xl, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  shopName: { color: colors.success, fontFamily: font.display, fontSize: 40, letterSpacing: 1, textShadowColor: "rgba(11,92,51,0.35)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 1 },
+  labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: 2 },
+  dashRed: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.brand },
+  dashGreen: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.success },
+  cekLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, letterSpacing: 3, textShadowColor: "rgba(176,42,32,0.3)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 1 },
+  resultName: { color: colors.onSurface, fontFamily: font.display, fontSize: 44, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.sm },
+
+  // HARGA ECER — pil 3D merah
+  ecerPill: { alignSelf: "stretch", backgroundColor: colors.brand, borderRadius: 24, paddingTop: spacing.md, paddingBottom: spacing.lg, paddingHorizontal: spacing.md, alignItems: "center", borderBottomWidth: 8, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8, marginTop: spacing.sm },
+  ecerChip: { backgroundColor: "#FFFFFF", borderRadius: 14, paddingVertical: 8, paddingHorizontal: 26, borderBottomWidth: 3, borderBottomColor: "#E8D2CE", marginBottom: 6 },
+  ecerChipTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg, letterSpacing: 3 },
+  ecerPrice: { color: "#FFFFFF", fontFamily: font.display, fontSize: 66, lineHeight: 72, letterSpacing: 1, textShadowColor: "rgba(0,0,0,0.28)", textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 2 },
+
+  // HARGA GROSIR — pil 3D hijau dua nada
+  grosirBox: { alignSelf: "stretch", marginTop: spacing.lg },
+  grosirHead: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.lg, letterSpacing: 2, textAlign: "center" },
+  grosirPill: { flexDirection: "row", alignSelf: "stretch", borderRadius: 20, marginTop: spacing.md, borderBottomWidth: 6, borderBottomColor: "#0B5C33", overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  grosirLeft: { flex: 1, backgroundColor: colors.success, paddingVertical: 16, paddingHorizontal: 18, justifyContent: "center" },
+  grosirRight: { minWidth: 128, backgroundColor: "#FFFFFF", paddingVertical: 16, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
+  grosirQty: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.xl },
+  grosirPrice: { color: colors.success, fontFamily: font.display, fontSize: 32, letterSpacing: 0.5 },
+
+  countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.xl },
   countdownTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
-  againBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand, alignSelf: "stretch", marginTop: spacing.lg },
-  againTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  againBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 60, borderRadius: 20, backgroundColor: colors.brand, alignSelf: "stretch", marginTop: spacing.md, borderBottomWidth: 6, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 7 },
+  againTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.xl },
 });

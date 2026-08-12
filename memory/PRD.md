@@ -19,6 +19,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v21 — Cek Harga tampilan 3D (harga besar & jelas) + notifikasi barcode tidak ditemukan
+- `cek-harga.tsx` (UI): kartu hasil dibuat gaya 3D sesuai mockup. TOKO BAGUS hijau (font display, text-shadow), "CEK HARGA" merah dgn garis dash kiri-kanan, nama produk besar. HARGA ECER = pil 3D merah (borderBottom tebal + shadow/elevation) berisi chip putih "HARGA ECER" + harga putih raksasa (font display 66). HARGA GROSIR = header hijau + tiap tier pil 3D hijau dua-nada: kiri hijau "Mulai N unit", kanan putih harga hijau (font display). Tombol "Scan Barang Lain" jadi tombol 3D merah. Konten dibungkus ScrollView agar tidak terpotong di layar kecil.
+- Notifikasi: bila barcode tidak ditemukan → toast error "Barcode {kode} tidak ditemukan" (sebelumnya diam saja).
+- Harga grosir tetap diambil langsung dari data (tidak dihitung); tanpa tier → bagian grosir tidak muncul. Reset 15s, Scan Barang Lain, scanner, pencarian — tidak berubah.
+- Verified: dove → Rp 1.000 + grosir 6→916 & 12→833 tampil 3D; barcode 0000000000000 → toast "tidak ditemukan".
+
 ### v20 — Cari (pilih, bukan scan): tampilkan semua variasi dulu sebelum dipilih
 - `cari.tsx`: daftar hasil cari kini HANYA menampilkan induk (produk tanpa parent_id) — produk anak (variasi datar) disembunyikan; pencarian tetap menemukan induk lewat nama/barcode anak. Baris induk ditandai "Bervariasi".
 - Ketuk produk ber-variasi → tampil panel "Pilih variasi" berisi SEMUA variasi (nested lama + produk anak baru) lengkap harga; ketuk salah satu → otomatis masuk daftar belanja & kembali ke Transaksi. Untuk mode harga (Cek Harga) → memilih variasi menampilkan harganya.
