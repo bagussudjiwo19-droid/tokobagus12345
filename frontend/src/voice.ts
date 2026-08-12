@@ -40,15 +40,17 @@ export function terbilang(input: number): string {
 
 // Bacakan jumlah kembalian dengan TTS Bahasa Indonesia. Fire-and-forget,
 // tidak mengganggu proses pembayaran / cetak struk.
+// Suara santai & natural: kecepatan diperlambat + jeda nyaman (koma).
 export function speakChange(amount: number): void {
   try {
     if (!amount || amount <= 0) return;
     const words = terbilang(amount).trim().replace(/\s+/g, " ");
     if (!words) return;
     Speech.stop();
-    Speech.speak(`Kembalian ${words} rupiah.`, {
+    // Koma memberi jeda alami; nominal (words) tidak dipotong.
+    Speech.speak(`Total kembalian, ${words}, rupiah.`, {
       language: "id-ID",
-      rate: 1.0,
+      rate: 0.82,
       pitch: 1.0,
     });
   } catch {
