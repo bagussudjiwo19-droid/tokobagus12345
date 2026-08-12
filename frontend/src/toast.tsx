@@ -34,9 +34,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const color =
-    type === "success" ? colors.brand : type === "error" ? colors.error : colors.surfaceTertiary;
+    type === "success" ? colors.success : type === "error" ? colors.error : colors.surfaceTertiary;
   const icon =
-    type === "success" ? "checkmark-circle" : type === "error" ? "alert-circle" : "information-circle";
+    type === "success" ? "checkmark-circle" : type === "error" ? "close-circle" : "information-circle";
 
   return (
     <Ctx.Provider value={{ show }}>
