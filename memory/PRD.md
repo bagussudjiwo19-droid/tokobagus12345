@@ -19,6 +19,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v15 — Tata letak struk mengikuti referensi thermal
+- `src/format.ts`: tambah `receiptDateTime` → "DD/MM/YYYY - HH:MM".
+- `src/receipt.ts` (teks printer 58mm/32 kolom, DIKIRIM sebagai teks murni): margin kiri 1 karakter (geser ke kanan, hindari cetakan/stempel sisi kiri) dgn kolom dihitung dalam 31 lalu +1 spasi → tetap ≤32. Kepala: nama toko (tengah) + alamat (tengah) + garis "-". Info transaksi 2 sisi: "Id Transaksi"/no, "Tanggal"/tgl-jam, "Kasir"/nama. Barang: baris1 nama(+", unit" bila bukan pcs) kiri & total kanan; baris2 "  qty x hargaSatuan". Nama panjang dipotong agar tak bertabrakan/keluar lebar. Ringkasan: Total (tebal), Dibayar, Kembalian; bila kurang → "Pembayaran Kurang" + nominal. Nominal tanpa "Rp" (numberID) meniru struk.
+- `components/ReceiptPreview.tsx`: preview layar mengikuti tata letak sama (nama toko besar 19px tengah, info 2 sisi, barang nama+total lalu qty x harga, Total tebal, Dibayar, Kembalian / Pembayaran Kurang). Banner atas "PEMBAYARAN KURANG" dipindah jadi baris di ringkasan. paddingLeft lebih besar agar sedikit geser kanan. Tanpa gambar latar.
+- Verified: screenshot preview di Riwayat cocok referensi; cek lebar teks printer via Node → semua baris ≤32 kolom, nama panjang terpotong rapi.
+
 ### v14 — Variasi Produk: kelompok datar 1 induk + tampil di dalam induk
 - Aturan: 1 produk induk utama (A) dengan banyak variasi datar (A→B, A→C, A→D). Produk yang sudah punya induk TIDAK boleh jadi induk baru; variasi dari B otomatis memakai induk A. Tanpa rantai bertingkat.
 - Backend (`server.py`): `create_product` kini menelusuri `parent_id` ke atas sampai root (`_resolve_root_parent`) → variasi SELALU tertaut ke induk utama walau client mengirim id anak. Verified via curl: buat A→B, lalu C dgn parent_id=B → C.parent_id resolve ke A.

@@ -32,6 +32,17 @@ export function shortTxNo(id: string): string {
   return "#" + id.replace(/-/g, "").slice(0, 6).toUpperCase();
 }
 
+// Tanggal + jam untuk struk: "11/08/2026 - 16:04"
+export function receiptDateTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} - ${p(d.getHours())}:${p(d.getMinutes())}`;
+  } catch {
+    return iso;
+  }
+}
+
 // Header date like "Selasa, 11 Agustus"
 export function headerDate(): string {
   try {
