@@ -52,6 +52,7 @@ class ProductIn(BaseModel):
     category: Optional[str] = ""
     unit: Optional[str] = "pcs"
     barcode: Optional[str] = None
+    parent_id: Optional[str] = None
     buy_price: float = 0
     sell_price: float = 0
     stock: float = 0
@@ -79,6 +80,7 @@ class TxItem(BaseModel):
 class TransactionIn(BaseModel):
     items: List[TxItem]
     total: float
+    discount: float = 0
     cash_paid: float = 0
     change: float = 0
 
@@ -343,6 +345,7 @@ async def update_transaction(tid: str, payload: TransactionUpdate):
     update = {
         "items": [i.model_dump() for i in payload.items],
         "total": payload.total,
+        "discount": payload.discount,
         "cash_paid": payload.cash_paid,
         "change": payload.change,
     }

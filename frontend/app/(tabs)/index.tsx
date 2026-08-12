@@ -201,6 +201,16 @@ export default function TransaksiScreen() {
                   <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
                   <Ionicons name="create-outline" size={13} color={colors.brand} />
                 </Pressable>
+                {l.product_id ? (
+                  <Pressable
+                    style={styles.variasiBtn}
+                    testID={`cart-variasi-${l.key}`}
+                    onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
+                  >
+                    <Ionicons name="git-branch-outline" size={13} color={colors.brand} />
+                    <Text style={styles.variasiTxt}>Tambah Variasi</Text>
+                  </Pressable>
+                ) : null}
               </View>
 
               <View style={styles.qtyBox}>
@@ -358,6 +368,8 @@ const styles = StyleSheet.create({
   lineName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   lineNameGrosir: { color: colors.success },
   priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  variasiBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4, alignSelf: "flex-start" },
+  variasiTxt: { color: colors.brand, fontFamily: font.medium, fontSize: fontSize.sm },
   linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   lineRight: { alignItems: "flex-end", marginLeft: spacing.sm, minWidth: 78 },
   lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right" },

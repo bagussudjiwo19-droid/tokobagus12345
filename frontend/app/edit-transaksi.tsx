@@ -35,6 +35,7 @@ export default function EditTransaksiScreen() {
   const [createdAt, setCreatedAt] = useState<string>("");
   const [items, setItems] = useState<TxItem[]>([]);
   const [cashPaid, setCashPaid] = useState<number>(0);
+  const [discount, setDiscount] = useState<number>(0);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +46,7 @@ export default function EditTransaksiScreen() {
         if (!active) return;
         setItems(tx.items.map((it) => ({ ...it })));
         setCashPaid(tx.cash_paid || 0);
+        setDiscount(tx.discount || 0);
         setCreatedAt(tx.created_at);
       } catch {
         toast.show("Gagal memuat transaksi", "error");
@@ -56,10 +58,11 @@ export default function EditTransaksiScreen() {
     return () => { active = false; };
   }, [id]);
 
-  const total = useMemo(
+  const itemsTotal = useMemo(
     () => items.reduce((s, it) => s + it.price * it.quantity, 0),
     [items],
   );
+  const total = Math.max(0, itemsTotal - discount);
   const change = cashPaid - total;
 
   const setQty = (idx: number, q: number) => {
@@ -81,6 +84,7 @@ export default function EditTransaksiScreen() {
       await api.updateTransaction(id, {
         items: payloadItems,
         total,
+        discount,
         cash_paid: cashPaid,
         change,
         // created_at sengaja tidak dikirim -> tanggal/waktu asli dipertahankan

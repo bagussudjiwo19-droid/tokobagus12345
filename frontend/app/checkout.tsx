@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,7 +50,10 @@ export default function CheckoutScreen() {
     api.getPrinter().then(setPrinter).catch(() => {});
   }, []);
 
-  const total = cart.total;
+  const subtotal = cart.total;
+  const [discountStr, setDiscountStr] = useState("");
+  const discount = Math.min(subtotal, Math.max(0, Number(discountStr || "0")));
+  const total = Math.max(0, subtotal - discount);
   const cash = Number(cashStr || "0");
   const change = cash - total;
 
@@ -100,6 +104,7 @@ export default function CheckoutScreen() {
           subtotal: l.price * l.quantity,
         })),
         total,
+        discount,
         cash_paid: cash,
         change: Math.max(0, change),
       });
@@ -117,7 +122,7 @@ export default function CheckoutScreen() {
     } finally {
       setSaving(false);
     }
-  }, [cash, total, change, cart, reload, toast, settings]);
+  }, [cash, total, discount, change, cart, reload, toast, settings]);
 
   const shareReceipt = useCallback(async () => {
     try {
@@ -204,7 +209,7 @@ export default function CheckoutScreen() {
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>{rupiah(total)}</Text>
+            <Text style={styles.totalValue}>{rupiah(subtotal)}</Text>
           </View>
           <Pressable
             testID="checkout-bayar-button"
@@ -228,6 +233,32 @@ export default function CheckoutScreen() {
         <View style={{ padding: spacing.lg }}>
           <Text style={styles.payLabel}>Total Belanja</Text>
           <Text style={styles.payTotal}>{rupiah(total)}</Text>
+          <View style={styles.discountRow}>
+            <View style={styles.discountLabelWrap}>
+              <Ionicons name="pricetag-outline" size={16} color={colors.brand} />
+              <Text style={styles.discountLabel}>Diskon</Text>
+            </View>
+            <View style={styles.discountInputBox}>
+              <Text style={styles.rpPrefix}>Rp</Text>
+              <TextInput
+                value={discountStr}
+                onChangeText={(t) => setDiscountStr(t.replace(/[^\d]/g, ""))}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+                style={styles.discountInput}
+                testID="checkout-discount-input"
+              />
+              {discountStr !== "" && (
+                <Pressable onPress={() => setDiscountStr("")} testID="checkout-discount-clear">
+                  <Ionicons name="close-circle" size={18} color={colors.muted} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+          {discount > 0 && (
+            <Text style={styles.discountCaption}>Subtotal {rupiah(subtotal)} · Diskon -{rupiah(discount)}</Text>
+          )}
           <View style={styles.cashDisplay}>
             <Text style={styles.cashLabel}>Uang Diterima</Text>
             <Text style={styles.cashValue} testID="checkout-cash-display">
@@ -356,6 +387,16 @@ const styles = StyleSheet.create({
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, minWidth: 28, textAlign: "center" },
   cartSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 74, textAlign: "right" },
   footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surfaceSecondary },
+  discountRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
+  discountLabelWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
+  discountLabel: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  discountInputBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 42, minWidth: 130 },
+  rpPrefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
+  discountInput: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right", paddingVertical: 0 },
+  subRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
+  subLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
+  subValue: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base },
+  discountCaption: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 6 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
   totalLabel: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg },
   totalValue: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },

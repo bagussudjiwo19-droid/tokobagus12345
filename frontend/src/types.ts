@@ -17,6 +17,7 @@ export type Product = {
   category?: string;
   unit?: string;
   barcode?: string | null;
+  parent_id?: string | null;
   buy_price: number;
   sell_price: number;
   stock: number;
@@ -41,6 +42,7 @@ export type Transaction = {
   id: string;
   items: TxItem[];
   total: number;
+  discount?: number;
   cash_paid: number;
   change: number;
   created_at: string;

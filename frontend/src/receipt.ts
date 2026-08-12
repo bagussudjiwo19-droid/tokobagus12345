@@ -45,6 +45,11 @@ export function buildReceiptText(tx: Transaction, s: Settings): string {
     out.push(twoCols("  " + (s.showQty ? qtyPrice : ""), rupiah(it.subtotal)));
   }
   out.push(LINE);
+  const discount = tx.discount || 0;
+  if (discount > 0) {
+    if (s.showSubtotal) out.push(twoCols("Subtotal", rupiah(tx.total + discount)));
+    if (s.showDiscount) out.push(twoCols("Diskon", "-" + rupiah(discount)));
+  }
   if (s.showTotal) out.push(twoCols("TOTAL", rupiah(tx.total)));
   if (s.showCashPaid) out.push(twoCols("Tunai", rupiah(tx.cash_paid)));
   if (s.showChange) out.push(twoCols("Kembali", rupiah(tx.change)));

@@ -49,6 +49,12 @@ export default function ReceiptPreview({
       ))}
 
       <View style={styles.dash} />
+      {(tx.discount || 0) > 0 && (
+        <>
+          {s.showSubtotal && <Row left="Subtotal" right={rupiah(tx.total + (tx.discount || 0))} />}
+          {s.showDiscount && <Row left="Diskon" right={"-" + rupiah(tx.discount || 0)} />}
+        </>
+      )}
       {s.showTotal && <Row left="TOTAL" right={rupiah(tx.total)} bold />}
       {s.showCashPaid && <Row left="Tunai" right={rupiah(tx.cash_paid)} />}
       {s.showChange && <Row left="Kembali" right={rupiah(tx.change)} />}

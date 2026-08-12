@@ -45,12 +45,13 @@ export const api = {
   createTransaction: (payload: {
     items: TxItem[];
     total: number;
+    discount?: number;
     cash_paid: number;
     change: number;
   }) => req<Transaction>(`/api/transactions`, { method: "POST", body: JSON.stringify(payload) }),
   updateTransaction: (
     id: string,
-    payload: { items: TxItem[]; total: number; cash_paid: number; change: number; created_at?: string },
+    payload: { items: TxItem[]; total: number; discount?: number; cash_paid: number; change: number; created_at?: string },
   ) => req<Transaction>(`/api/transactions/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
 
   // Settings & printer

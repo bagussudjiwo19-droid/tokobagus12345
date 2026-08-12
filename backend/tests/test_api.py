@@ -301,6 +301,135 @@ def test_update_transaction_preserves_id_and_reconciles_stock(api_client, base_u
     assert r6.json()["items"][0]["name"] == "TEST_EDIT_TX_PROD"
 
 
+# ---------------- Discount persistence + Lunasi flow ----------------
+def test_transaction_discount_persists_on_create(api_client, base_url):
+    """POST /api/transactions accepts and persists a 'discount' field."""
+    prod = api_client.post(f"{base_url}/api/products", json={
+        "name": "TEST_DISC_PROD", "unit": "pcs", "buy_price": 500,
+        "sell_price": 5000, "stock": 20, "tiers": [], "variations": [],
+    }).json()
+    pid = prod["id"]
+    CREATED_PRODUCT_IDS.append(pid)
+
+    # subtotal 10000, discount 2000, total 8000, cash 10000, change 2000
+    tx_payload = {
+        "items": [{
+            "product_id": pid, "variation_id": None, "name": prod["name"],
+            "barcode": None, "unit": "pcs", "price": 5000,
+            "quantity": 2, "subtotal": 10000,
+        }],
+        "total": 8000, "discount": 2000, "cash_paid": 10000, "change": 2000,
+    }
+    r = api_client.post(f"{base_url}/api/transactions", json=tx_payload)
+    assert r.status_code == 200, r.text
+    tx = r.json()
+    assert tx["discount"] == 2000, f"discount not persisted on create: {tx}"
+    assert tx["total"] == 8000
+    tx_id = tx["id"]
+
+    # GET verify persistence
+    r2 = api_client.get(f"{base_url}/api/transactions/{tx_id}")
+    assert r2.status_code == 200
+    assert r2.json()["discount"] == 2000
+    assert r2.json()["total"] == 8000
+
+    # cleanup
+    api_client.delete(f"{base_url}/api/products/{pid}")
+    CREATED_PRODUCT_IDS.remove(pid)
+
+
+def test_transaction_discount_persists_on_update(api_client, base_url):
+    """PUT /api/transactions/{id} accepts and persists a 'discount' field."""
+    prod = api_client.post(f"{base_url}/api/products", json={
+        "name": "TEST_DISC_UPD_PROD", "unit": "pcs", "buy_price": 500,
+        "sell_price": 3000, "stock": 20, "tiers": [], "variations": [],
+    }).json()
+    pid = prod["id"]
+    CREATED_PRODUCT_IDS.append(pid)
+
+    tx = api_client.post(f"{base_url}/api/transactions", json={
+        "items": [{
+            "product_id": pid, "variation_id": None, "name": prod["name"],
+            "barcode": None, "unit": "pcs", "price": 3000,
+            "quantity": 2, "subtotal": 6000,
+        }],
+        "total": 6000, "discount": 0, "cash_paid": 6000, "change": 0,
+    }).json()
+    tx_id = tx["id"]
+
+    # Edit: introduce a discount of 1000. subtotal 6000, total 5000.
+    r = api_client.put(f"{base_url}/api/transactions/{tx_id}", json={
+        "items": tx["items"],
+        "total": 5000, "discount": 1000, "cash_paid": 6000, "change": 1000,
+    })
+    assert r.status_code == 200, r.text
+    assert r.json()["discount"] == 1000
+    assert r.json()["total"] == 5000
+
+    # GET verify persistence
+    r2 = api_client.get(f"{base_url}/api/transactions/{tx_id}")
+    assert r2.status_code == 200
+    assert r2.json()["discount"] == 1000
+
+    # cleanup
+    api_client.delete(f"{base_url}/api/products/{pid}")
+    CREATED_PRODUCT_IDS.remove(pid)
+
+
+def test_lunasi_flow_partial_then_payoff_preserves_id_date_discount(api_client, base_url):
+    """Belum Lunas -> Lunasi: PUT sets cash_paid=total, change=0, preserves id/created_at/discount/items/stock."""
+    prod = api_client.post(f"{base_url}/api/products", json={
+        "name": "TEST_LUNASI_PROD", "unit": "pcs", "buy_price": 500,
+        "sell_price": 5000, "stock": 30, "tiers": [], "variations": [],
+    }).json()
+    pid = prod["id"]
+    CREATED_PRODUCT_IDS.append(pid)
+
+    # partial: subtotal 10000, discount 2000, total 8000, cash 3000 -> shortfall 5000
+    tx = api_client.post(f"{base_url}/api/transactions", json={
+        "items": [{
+            "product_id": pid, "variation_id": None, "name": prod["name"],
+            "barcode": None, "unit": "pcs", "price": 5000,
+            "quantity": 2, "subtotal": 10000,
+        }],
+        "total": 8000, "discount": 2000, "cash_paid": 3000, "change": 0,
+    }).json()
+    tx_id = tx["id"]
+    original_created_at = tx["created_at"]
+
+    # stock after create: 30 - 2 = 28
+    stock_after_create = [p for p in api_client.get(
+        f"{base_url}/api/products", params={"search": "TEST_LUNASI_PROD"}
+    ).json() if p["id"] == pid][0]["stock"]
+    assert stock_after_create == 28
+
+    # LUNASI: same items, same discount, cash_paid=total=8000, change=0
+    r = api_client.put(f"{base_url}/api/transactions/{tx_id}", json={
+        "items": tx["items"],
+        "total": 8000, "discount": 2000, "cash_paid": 8000, "change": 0,
+    })
+    assert r.status_code == 200, r.text
+    paid = r.json()
+    assert paid["id"] == tx_id, "id must be preserved after Lunasi"
+    assert paid["created_at"] == original_created_at, "created_at must be preserved after Lunasi"
+    assert paid["discount"] == 2000, "discount must be preserved after Lunasi"
+    assert paid["cash_paid"] == 8000
+    assert paid["change"] == 0
+    assert paid["total"] == 8000
+    # shortfall == 0
+    assert max(0, paid["total"] - paid["cash_paid"]) == 0
+
+    # stock unchanged after Lunasi (same items, delta = 0)
+    stock_after_lunasi = [p for p in api_client.get(
+        f"{base_url}/api/products", params={"search": "TEST_LUNASI_PROD"}
+    ).json() if p["id"] == pid][0]["stock"]
+    assert stock_after_lunasi == 28, f"Stock must remain 28 after Lunasi, got {stock_after_lunasi}"
+
+    # cleanup
+    api_client.delete(f"{base_url}/api/products/{pid}")
+    CREATED_PRODUCT_IDS.remove(pid)
+
+
 def test_update_transaction_404(api_client, base_url):
     r = api_client.put(f"{base_url}/api/transactions/nonexistent-xyz-123", json={
         "items": [], "total": 0, "cash_paid": 0, "change": 0,

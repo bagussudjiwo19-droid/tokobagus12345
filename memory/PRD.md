@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v12 — Tambah Variasi dari Daftar Belanja (produk anak + parent_id)
+- Backend: Product menambah field `parent_id` (Optional). Variasi = produk baru yang menyimpan parent_id ke induk ASLI.
+- Frontend: ikon kecil "Tambah Variasi" pada tiap baris keranjang (hanya bila punya product_id) → modal /variasi-cepat.
+- Form: Nama, Barcode, Harga Jual, Harga Beli (harga prefilled dari induk, tetap bisa diedit). Stok variasi baru = 999. Barcode boleh berbeda/kosong.
+- Hierarki DATAR (tanpa rantai A→B→C): parentId = source.parent_id || source.id. Duplikat dari variasi tetap memakai induk original.
+- Tidak mengubah produk induk maupun fungsi transaksi/scan/harga/stok.
+- Verified: backend (parent_id persist, duplikat-dari-variasi tetap root, stok 999) + UI (form prefill 6000/5250, simpan, kembali ke Transaksi). Data uji dibersihkan.
+
 ### v11 — Penjaga keyboard Mode Scan (anti keyboard saat scan)
 - Hook baru `src/scanKeyboard.ts` (useHideScanKeyboard): listener `keyboardDidShow` → bila sedang mode scan (kbdRef=false), `Keyboard.dismiss()` lalu fokus ulang input. Karena mode scan pakai `showSoftInputOnFocus={false}`, fokus ulang TIDAK memunculkan keyboard lagi → scanner tetap aktif & siap barcode berikutnya (tanpa loop, tanpa menghentikan input).
 - Diterapkan di 4 kolom scan: Transaksi (scan-mode-input), Cek Harga (cekharga-scan-input), Produk (produk-search-input), dan Cari Barang (cari-input).

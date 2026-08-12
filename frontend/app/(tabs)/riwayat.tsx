@@ -70,18 +70,51 @@ export default function RiwayatScreen() {
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const renderRow = ({ item }: { item: Transaction }) => (
-    <Pressable style={styles.row} onPress={() => openDetail(item)} testID={`riwayat-row-${item.id}`}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowDate}>{formatDateID(item.created_at)}</Text>
-        <Text style={styles.rowSub}>{item.items.length} baris · Tunai · Ketuk untuk struk</Text>
-      </View>
-      <View style={{ alignItems: "flex-end" }}>
-        <Text style={styles.rowTotal}>{rupiah(item.total)}</Text>
-        <Text style={styles.rowChange}>Kembali {rupiah(item.change)}</Text>
-      </View>
-    </Pressable>
-  );
+  // Lunasi sisa: tandai transaksi bayar sebagian menjadi lunas (tanpa ubah item/stok/tanggal).
+  const payOff = async () => {
+    if (!selected) return;
+    try {
+      await api.updateTransaction(selected.id, {
+        items: selected.items,
+        total: selected.total,
+        discount: selected.discount || 0,
+        cash_paid: selected.total,
+        change: 0,
+      });
+      toast.show("Transaksi ditandai lunas", "success");
+      sheetRef.current?.dismiss();
+      await load();
+    } catch (e: any) {
+      toast.show(e?.message || "Gagal melunasi transaksi", "error");
+    }
+  };
+
+  const renderRow = ({ item }: { item: Transaction }) => {
+    const shortfall = Math.max(0, (item.total || 0) - (item.cash_paid || 0));
+    return (
+      <Pressable style={[styles.row, shortfall > 0 && styles.rowUnpaid]} onPress={() => openDetail(item)} testID={`riwayat-row-${item.id}`}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.rowTopLine}>
+            <Text style={styles.rowDate}>{formatDateID(item.created_at)}</Text>
+            {shortfall > 0 && (
+              <View style={styles.unpaidBadge} testID={`riwayat-unpaid-${item.id}`}>
+                <Text style={styles.unpaidBadgeTxt}>BELUM LUNAS</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.rowSub}>{item.items.length} baris · Ketuk untuk struk</Text>
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <Text style={styles.rowTotal}>{rupiah(item.total)}</Text>
+          {shortfall > 0 ? (
+            <Text style={styles.rowKurang}>Kurang {rupiah(shortfall)}</Text>
+          ) : (
+            <Text style={styles.rowChange}>Kembali {rupiah(item.change)}</Text>
+          )}
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -154,6 +187,14 @@ export default function RiwayatScreen() {
               <Text style={styles.actionTxt}>Cetak Struk</Text>
             </Pressable>
           </View>
+          {selected && Math.max(0, (selected.total || 0) - (selected.cash_paid || 0)) > 0 && (
+            <Pressable style={styles.lunasiBtn} testID="riwayat-lunasi" onPress={payOff}>
+              <Ionicons name="checkmark-done" size={20} color={colors.onBrandPrimary} />
+              <Text style={styles.lunasiTxt}>
+                Lunasi Sisa {rupiah(Math.max(0, (selected.total || 0) - (selected.cash_paid || 0)))}
+              </Text>
+            </Pressable>
+          )}
           <Pressable
             style={styles.editBtn}
             testID="riwayat-edit"
@@ -183,10 +224,17 @@ const styles = StyleSheet.create({
   sumLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
   sumValue: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["2xl"], marginTop: 2 },
   row: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.lg },
+  rowUnpaid: { borderColor: colors.error, borderWidth: 1.5 },
+  rowTopLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  unpaidBadge: { backgroundColor: colors.error, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  unpaidBadgeTxt: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 0.5 },
   rowDate: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   rowSub: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   rowTotal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   rowChange: { color: colors.success, fontFamily: font.medium, fontSize: fontSize.sm, marginTop: 2 },
+  rowKurang: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.sm, marginTop: 2 },
+  lunasiBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.success, width: "100%", maxWidth: 320, marginTop: spacing.md },
+  lunasiTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   centerFill: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: spacing.md },
   dim: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg },
   detailTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl, marginBottom: spacing.lg },
