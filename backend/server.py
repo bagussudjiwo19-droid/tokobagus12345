@@ -215,9 +215,33 @@ async def get_by_barcode(code: str):
     raise HTTPException(status_code=404, detail="Barcode belum terdaftar")
 
 
+async def _resolve_root_parent(parent_id: str) -> str:
+    """Telusuri ke atas rantai parent_id sampai menemukan induk utama (root)
+    yang tidak punya parent_id. Menjamin pengelompokan datar A -> B/C/D."""
+    seen: set = set()
+    current = parent_id
+    while current and current not in seen:
+        seen.add(current)
+        doc = await db.products.find_one({"id": current})
+        if not doc:
+            break
+        pid = doc.get("parent_id")
+        if not pid:
+            return current
+        current = pid
+    return parent_id
+
+
 @api_router.post("/products")
 async def create_product(payload: ProductIn):
-    prod = Product(**payload.model_dump())
+    data = payload.model_dump()
+    # Pengaman induk: variasi SELALU tertaut ke induk utama/original (A).
+    # Bila client mengirim id produk yang sendirinya sudah punya induk (mis. B),
+    # telusuri ke atas sampai root sehingga tidak pernah terbentuk rantai
+    # bertingkat (A -> B -> C). Yang diizinkan hanya A -> B, A -> C, A -> D.
+    if data.get("parent_id"):
+        data["parent_id"] = await _resolve_root_parent(data["parent_id"])
+    prod = Product(**data)
     d = prod.model_dump()
     await db.products.insert_one(dict(d))
     return clean(d)

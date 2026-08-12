@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v14 — Variasi Produk: kelompok datar 1 induk + tampil di dalam induk
+- Aturan: 1 produk induk utama (A) dengan banyak variasi datar (A→B, A→C, A→D). Produk yang sudah punya induk TIDAK boleh jadi induk baru; variasi dari B otomatis memakai induk A. Tanpa rantai bertingkat.
+- Backend (`server.py`): `create_product` kini menelusuri `parent_id` ke atas sampai root (`_resolve_root_parent`) → variasi SELALU tertaut ke induk utama walau client mengirim id anak. Verified via curl: buat A→B, lalu C dgn parent_id=B → C.parent_id resolve ke A.
+- Frontend logika induk sudah benar sebelumnya (`variasi-cepat`: parentId = source.parent_id || source.id) + kini dijamin server.
+- Produk list (`produk.tsx`): HANYA menampilkan induk (produk tanpa parent_id). Produk anak disembunyikan dari daftar. Pencarian tetap menemukan induk A saat mengetik nama/barcode anak (B/C). Baris induk menampilkan "Bervariasi · N variasi".
+- Produk form (`produk-form.tsx`): saat induk A dibuka, muncul section "Variasi (N)" berisi kartu tiap anak (nama, barcode, stok, harga jual/beli) yang bisa diketuk → buka form anak untuk edit terpisah. Tiap variasi punya data sendiri; membuka/menyimpan induk tidak mengubah data anak.
+- Verified: backend curl chain (A→B→C resolve ke A) + UI (list hanya induk 1 baris; form induk tampil 2 variasi tappable). Data uji dibersihkan.
+
 ### v13 — Fix bug keyboard global (keyboard tidak muncul di form/modal)
 - Root cause: `useHideScanKeyboard` memasang listener keyboard GLOBAL via useEffect di 3 layar tab (Transaksi/Produk/Cek Harga). Layar tab tetap ter-mount di balik modal (Tambah Produk, Item Manual, Checkout, Variasi, Edit Transaksi, Cari) & antar-tab, sehingga listener tersembunyi (kbdRef=false) ikut memanggil Keyboard.dismiss() di layar lain → keyboard tidak pernah muncul saat kolom disentuh.
 - Fix di `src/scanKeyboard.ts` (TANPA ubah fungsi lain):

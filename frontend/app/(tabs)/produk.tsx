@@ -26,16 +26,18 @@ import type { Product } from "@/src/types";
 const PRODUK_ROW_H = 63; // tinggi baris tetap → getItemLayout untuk scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
-  item, onEdit, onMenu,
-}: { item: Product; onEdit: (id: string) => void; onMenu: (p: Product) => void }) {
-  const hasVar = item.variations.length > 0;
-  const stock = hasVar ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
+  item, childCount, onEdit, onMenu,
+}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void }) {
+  const nestedCount = item.variations.length;
+  const totalVar = nestedCount + childCount;
+  const hasVar = totalVar > 0;
+  const stock = nestedCount > 0 ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
   return (
     <View style={styles.row} testID={`produk-row-${item.id}`}>
       <Pressable style={{ flex: 1 }} onPress={() => onEdit(item.id)}>
         <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.rowMeta} numberOfLines={1}>
-          {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${item.variations.length} varian` : ""}
+          {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${totalVar} variasi` : ""}
         </Text>
       </Pressable>
       <Text style={styles.rowPrice}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
@@ -115,17 +117,38 @@ export default function ProdukScreen() {
   useHideScanKeyboard(inputRef, kbdRef);
 
   const deferredQuery = useDeferredValue(query);
+  // Kelompokkan produk anak (punya parent_id) di bawah induk utama.
+  const childrenByParent = useMemo(() => {
+    const m = new Map<string, Product[]>();
+    for (const p of products) {
+      if (p.parent_id) {
+        const arr = m.get(p.parent_id) || [];
+        arr.push(p);
+        m.set(p.parent_id, arr);
+      }
+    }
+    return m;
+  }, [products]);
+
+  // Daftar HANYA menampilkan induk (produk tanpa parent_id). Variasi (anak)
+  // disembunyikan dari daftar & hanya muncul saat induknya dibuka.
+  const roots = useMemo(() => products.filter((p) => !p.parent_id), [products]);
+
   const filtered = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
+    if (!q) return roots;
+    return roots.filter((p) => {
+      const kids = childrenByParent.get(p.id) || [];
+      return (
         p.name.toLowerCase().includes(q) ||
         (p.barcode || "").toLowerCase().includes(q) ||
         (p.category || "").toLowerCase().includes(q) ||
-        p.variations.some((v) => v.barcode?.toLowerCase().includes(q)),
-    );
-  }, [products, deferredQuery]);
+        p.variations.some((v) => v.barcode?.toLowerCase().includes(q)) ||
+        // Cari juga lewat data anak → tetap menemukan induk A saat mengetik nama/barcode B/C.
+        kids.some((k) => k.name.toLowerCase().includes(q) || (k.barcode || "").toLowerCase().includes(q))
+      );
+    });
+  }, [roots, childrenByParent, deferredQuery]);
 
   const onRefresh = async () => { setRefreshing(true); await reload(); setRefreshing(false); };
 
@@ -151,8 +174,10 @@ export default function ProdukScreen() {
   const openEdit = useCallback((id: string) => router.push({ pathname: "/produk-form", params: { id } }), [router]);
 
   const renderRow = useCallback(
-    ({ item }: { item: Product }) => <ProdukRow item={item} onEdit={openEdit} onMenu={openMenu} />,
-    [openEdit, openMenu],
+    ({ item }: { item: Product }) => (
+      <ProdukRow item={item} childCount={(childrenByParent.get(item.id) || []).length} onEdit={openEdit} onMenu={openMenu} />
+    ),
+    [openEdit, openMenu, childrenByParent],
   );
 
   return (

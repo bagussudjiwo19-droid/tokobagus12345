@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
+import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Tier, Variation } from "@/src/types";
 
@@ -23,6 +24,12 @@ export default function ProdukFormScreen() {
   const toast = useToast();
 
   const editing = useMemo(() => products.find((p) => p.id === id), [products, id]);
+  // Variasi = produk anak yang tertaut ke induk ini (parent_id === induk).
+  // Tiap variasi punya data sendiri (nama/barcode/harga/stok) & diedit terpisah.
+  const childVariations = useMemo(
+    () => (editing ? products.filter((p) => p.parent_id === editing.id) : []),
+    [products, editing],
+  );
 
   const [name, setName] = useState(editing?.name ?? "");
   const [category, setCategory] = useState(editing?.category ?? "");
@@ -151,6 +158,29 @@ export default function ProdukFormScreen() {
 
         {!hasVar && (
           <Field label="Stok" value={stock} onChange={setStock} keyboardType="numeric" testID="form-stock" />
+        )}
+
+        {/* Variasi produk (produk anak tertaut) — hanya muncul saat mengedit induk */}
+        {editing && childVariations.length > 0 && (
+          <View style={styles.childSection} testID="form-child-variations">
+            <Text style={styles.sectionTitle}>Variasi ({childVariations.length})</Text>
+            <Text style={styles.childHint}>Ketuk untuk mengubah variasi. Tiap variasi punya data sendiri.</Text>
+            {childVariations.map((c) => (
+              <Pressable
+                key={c.id}
+                style={styles.childCard}
+                testID={`child-variation-${c.id}`}
+                onPress={() => router.push({ pathname: "/produk-form", params: { id: c.id } })}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.childName} numberOfLines={1}>{c.name}</Text>
+                  <Text style={styles.childMeta} numberOfLines={1}>{c.barcode || "Tanpa barcode"} · Stok {c.stock} {c.unit}</Text>
+                  <Text style={styles.childMeta} numberOfLines={1}>Jual {rupiah(c.sell_price)} · Beli {rupiah(c.buy_price)}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.brand} />
+              </Pressable>
+            ))}
+          </View>
         )}
 
         {/* Tiered / wholesale pricing */}
@@ -343,6 +373,11 @@ const styles = StyleSheet.create({
   unitTxt: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base },
   unitTxtActive: { color: colors.onBrandPrimary, fontFamily: font.bold },
   hint: { color: colors.warning, fontFamily: font.regular, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 18 },
+  childSection: { marginBottom: spacing.md },
+  childHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2, marginBottom: spacing.sm },
+  childCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.brandTertiary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.md, marginBottom: spacing.sm },
+  childName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  childMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm, marginBottom: spacing.sm },
   sectionTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   addSmall: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 6, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.brandTertiary },
