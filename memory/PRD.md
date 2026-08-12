@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v8 — Suara Kembalian (TTS)
+- Setting baru `voiceChange` (default ON) di Settings model + types; get_settings di-merge dengan default agar field baru selalu ada & tersimpan lintas transaksi.
+- Toggle "Suara Kembalian" di Pengaturan Struk (bagian SUARA), diakses via header tab Riwayat → ikon struk.
+- src/voice.ts: terbilang (angka→kata Indonesia) + speakChange() pakai expo-speech (language id-ID). Contoh 48.000 → "Kembalian empat puluh delapan ribu rupiah." (terbilang diuji beberapa nilai).
+- Trigger di checkout confirmPay SETELAH transaksi sukses: hanya jika voiceChange ON DAN change > 0. Bayar pas (change=0) / kurang (change<0) → tidak bersuara. Fire-and-forget (try/catch) → tidak mengganggu simpan/cetak/pembayaran.
+- CATATAN: audio TTS hanya terdengar di perangkat (Expo Go/native build), tidak di preview web.
+
 ### v7 — Backup/Restore audit + Printer audit
 - Backup export SUDAH lengkap: produk (buy_price/sell_price/barcode/stock/variasi/tiers), transaksi, settings, printer. Verified round-trip 2262 produk + 100 transaksi tanpa kehilangan/duplikat.
 - Restore DIPERBAIKI agar aman: validasi struktur + model SEBELUM hapus data; staging ke koleksi *_tmp; baru swap bila sukses; dedupe by id. Data lama TIDAK dihapus jika file rusak. Pesan error jelas dalam Bahasa Indonesia. Verified: 4 skenario rusak → 400 + data lama utuh, tanpa sisa koleksi tmp.

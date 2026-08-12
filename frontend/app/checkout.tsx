@@ -24,6 +24,7 @@ import type { Settings, Transaction } from "@/src/types";
 import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
+import { speakChange } from "@/src/voice";
 
 type Step = "cart" | "pay" | "done";
 
@@ -105,6 +106,10 @@ export default function CheckoutScreen() {
       setTx(created);
       setStep("done");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Suara Kembalian: hanya jika aktif & ada kembalian (change > 0).
+      if (settings?.voiceChange && change > 0) {
+        speakChange(change);
+      }
       cart.clear();
       reload();
     } catch (e: any) {
@@ -112,7 +117,7 @@ export default function CheckoutScreen() {
     } finally {
       setSaving(false);
     }
-  }, [cash, total, change, cart, reload, toast]);
+  }, [cash, total, change, cart, reload, toast, settings]);
 
   const shareReceipt = useCallback(async () => {
     try {

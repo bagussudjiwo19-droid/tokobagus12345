@@ -118,6 +118,7 @@ class Settings(BaseModel):
     showTotal: bool = True
     showCashPaid: bool = True
     showChange: bool = True
+    voiceChange: bool = True
     showNote: bool = False
     showThanks: bool = True
 
@@ -359,7 +360,8 @@ async def get_settings():
     if not s:
         await ensure_settings()
         s = await db.settings.find_one({"_id": SETTINGS_ID})
-    return clean(s)
+    # Merge dengan default model agar field baru (mis. voiceChange) selalu ada.
+    return {**Settings().model_dump(), **clean(s)}
 
 
 @api_router.put("/settings")

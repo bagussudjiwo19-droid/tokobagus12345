@@ -72,6 +72,7 @@ export type Settings = {
   showTotal: boolean;
   showCashPaid: boolean;
   showChange: boolean;
+  voiceChange: boolean;
   showNote: boolean;
   showThanks: boolean;
 };
