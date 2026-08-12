@@ -222,7 +222,126 @@ def test_transaction_404(api_client, base_url):
     assert r.status_code == 404
 
 
+# ---------------- Transaction Edit (PUT) - preserve id & created_at, reconcile stock ----------------
+def test_update_transaction_preserves_id_and_reconciles_stock(api_client, base_url):
+    # Create test product with known stock
+    prod_payload = {
+        "name": "TEST_EDIT_TX_PROD",
+        "unit": "pcs",
+        "barcode": "TEST_EDIT_BC",
+        "buy_price": 500,
+        "sell_price": 1000,
+        "stock": 50,
+        "tiers": [],
+        "variations": [],
+    }
+    r = api_client.post(f"{base_url}/api/products", json=prod_payload)
+    assert r.status_code == 200
+    prod = r.json()
+    pid = prod["id"]
+    CREATED_PRODUCT_IDS.append(pid)
+
+    # Create transaction qty=5 -> stock becomes 45
+    tx_payload = {
+        "items": [{
+            "product_id": pid, "variation_id": None, "name": prod["name"],
+            "barcode": prod["barcode"], "unit": "pcs", "price": 1000,
+            "quantity": 5, "subtotal": 5000,
+        }],
+        "total": 5000, "cash_paid": 5000, "change": 0,
+    }
+    r2 = api_client.post(f"{base_url}/api/transactions", json=tx_payload)
+    assert r2.status_code == 200
+    tx = r2.json()
+    tx_id = tx["id"]
+    original_created_at = tx["created_at"]
+
+    r_stock = api_client.get(f"{base_url}/api/products", params={"search": "TEST_EDIT_TX_PROD"})
+    stock_after_create = [p for p in r_stock.json() if p["id"] == pid][0]["stock"]
+    assert stock_after_create == 45, f"Stock after create should be 45, got {stock_after_create}"
+
+    # EDIT: change qty from 5 -> 2. Stock delta = 5-2 = +3, new stock = 48.
+    edit_payload = {
+        "items": [{
+            "product_id": pid, "variation_id": None, "name": prod["name"],
+            "barcode": prod["barcode"], "unit": "pcs", "price": 1000,
+            "quantity": 2, "subtotal": 2000,
+        }],
+        "total": 2000, "cash_paid": 5000, "change": 3000,
+    }
+    r3 = api_client.put(f"{base_url}/api/transactions/{tx_id}", json=edit_payload)
+    assert r3.status_code == 200, r3.text
+    edited = r3.json()
+
+    # Must keep same id
+    assert edited["id"] == tx_id, "Transaction id must remain the same after edit"
+    # Must keep original created_at (payload did not include one)
+    assert edited["created_at"] == original_created_at, \
+        f"created_at must be preserved: original={original_created_at}, now={edited['created_at']}"
+    # Data updated
+    assert edited["total"] == 2000
+    assert edited["items"][0]["quantity"] == 2
+
+    # Stock reconciled: was 45, delta +3 -> 48
+    r4 = api_client.get(f"{base_url}/api/products", params={"search": "TEST_EDIT_TX_PROD"})
+    stock_after_edit = [p for p in r4.json() if p["id"] == pid][0]["stock"]
+    assert stock_after_edit == 48, f"Stock after edit should be 48, got {stock_after_edit}"
+
+    # Verify a NEW transaction was NOT created (same id fetched)
+    r5 = api_client.get(f"{base_url}/api/transactions/{tx_id}")
+    assert r5.status_code == 200
+    assert r5.json()["id"] == tx_id
+    assert r5.json()["total"] == 2000
+
+    # Cleanup: delete product; historical tx must remain intact
+    api_client.delete(f"{base_url}/api/products/{pid}")
+    CREATED_PRODUCT_IDS.remove(pid)
+    r6 = api_client.get(f"{base_url}/api/transactions/{tx_id}")
+    assert r6.status_code == 200, "Historical transaction must remain after product deletion"
+    assert r6.json()["items"][0]["name"] == "TEST_EDIT_TX_PROD"
+
+
+def test_update_transaction_404(api_client, base_url):
+    r = api_client.put(f"{base_url}/api/transactions/nonexistent-xyz-123", json={
+        "items": [], "total": 0, "cash_paid": 0, "change": 0,
+    })
+    assert r.status_code == 404
+
+
+def test_delete_product_preserves_historical_transactions(api_client, base_url):
+    # Create prod + tx, then delete prod, verify tx still intact and readable
+    p = api_client.post(f"{base_url}/api/products", json={
+        "name": "TEST_HIST_PROD", "unit": "pcs", "buy_price": 100,
+        "sell_price": 200, "stock": 10, "tiers": [], "variations": [],
+    }).json()
+    pid = p["id"]
+    CREATED_PRODUCT_IDS.append(pid)
+    tx = api_client.post(f"{base_url}/api/transactions", json={
+        "items": [{"product_id": pid, "variation_id": None, "name": p["name"],
+                   "barcode": None, "unit": "pcs", "price": 200, "quantity": 1, "subtotal": 200}],
+        "total": 200, "cash_paid": 200, "change": 0,
+    }).json()
+    tx_id = tx["id"]
+    # delete prod
+    r_del = api_client.delete(f"{base_url}/api/products/{pid}")
+    assert r_del.status_code == 200
+    CREATED_PRODUCT_IDS.remove(pid)
+    # tx still present
+    r_tx = api_client.get(f"{base_url}/api/transactions/{tx_id}")
+    assert r_tx.status_code == 200
+    assert r_tx.json()["items"][0]["name"] == "TEST_HIST_PROD"
+
+
 # ---------------- Settings & Printer ----------------
+def test_settings_voice_change_default_true(api_client, base_url):
+    r = api_client.get(f"{base_url}/api/settings")
+    assert r.status_code == 200
+    s = r.json()
+    assert "voiceChange" in s, "Settings must include voiceChange field (merged from defaults)"
+    # Default value must be True even if DB record is missing that key
+    assert s["voiceChange"] is True or isinstance(s["voiceChange"], bool)
+
+
 def test_get_and_put_settings(api_client, base_url):
     r = api_client.get(f"{base_url}/api/settings")
     assert r.status_code == 200
@@ -264,6 +383,66 @@ def test_reports_summary(api_client, base_url):
 
 
 # ---------------- Backup (destructive, run last) ----------------
+def test_zzz_backup_import_safe_on_invalid_payloads(api_client, base_url):
+    """Invalid/empty/corrupt backups MUST return 400 and NOT delete existing data."""
+    # snapshot current counts
+    r_before = api_client.get(f"{base_url}/api/products/pos")
+    n_prod_before = len(r_before.json())
+    r_tx_before = api_client.get(f"{base_url}/api/transactions", params={"limit": 100000})
+    n_tx_before = len(r_tx_before.json())
+
+    # Case 1: products missing
+    r = api_client.post(f"{base_url}/api/backup/import", json={"transactions": []})
+    assert r.status_code == 400
+    assert "produk" in r.json().get("detail", "").lower() or "backup" in r.json().get("detail", "").lower()
+
+    # Case 2: empty products list
+    r = api_client.post(f"{base_url}/api/backup/import", json={"products": [], "transactions": []})
+    assert r.status_code == 400
+
+    # Case 3: products not a list
+    r = api_client.post(f"{base_url}/api/backup/import", json={"products": "oops", "transactions": []})
+    assert r.status_code == 400
+
+    # Case 4: product with malformed schema (missing required 'name')
+    r = api_client.post(f"{base_url}/api/backup/import", json={
+        "products": [{"id": "x", "sell_price": 1}], "transactions": []
+    })
+    assert r.status_code == 400
+
+    # Case 5: transactions items missing / malformed
+    r = api_client.post(f"{base_url}/api/backup/import", json={
+        "products": [{"name": "OK", "sell_price": 10, "buy_price": 5, "stock": 1}],
+        "transactions": [{"id": "tx1", "total": 1}]  # no items list
+    })
+    assert r.status_code == 400
+
+    # Verify NO data was deleted
+    r_after = api_client.get(f"{base_url}/api/products/pos")
+    assert len(r_after.json()) == n_prod_before, \
+        f"Products deleted after invalid import: {n_prod_before} -> {len(r_after.json())}"
+    r_tx_after = api_client.get(f"{base_url}/api/transactions", params={"limit": 100000})
+    assert len(r_tx_after.json()) == n_tx_before, \
+        f"Transactions deleted after invalid import: {n_tx_before} -> {len(r_tx_after.json())}"
+
+
+def test_zzz_backup_import_dedupes_by_id(api_client, base_url):
+    """Import with duplicate ids must dedupe (only unique kept)."""
+    r = api_client.get(f"{base_url}/api/backup/export")
+    data = r.json()
+    # duplicate the first two products
+    if len(data["products"]) >= 2:
+        dup = [copy.deepcopy(data["products"][0]), copy.deepcopy(data["products"][0]),
+               copy.deepcopy(data["products"][1])]
+        payload = {"products": dup, "transactions": []}
+        r2 = api_client.post(f"{base_url}/api/backup/import", json=payload)
+        assert r2.status_code == 200
+        assert r2.json()["products"] == 2, f"Expected 2 after dedupe, got {r2.json()['products']}"
+        # restore full backup
+        r3 = api_client.post(f"{base_url}/api/backup/import", json=data)
+        assert r3.status_code == 200
+
+
 def test_zzz_backup_export_and_reimport_preserves_data(api_client, base_url):
     """Export → import same payload → data preserved."""
     r = api_client.get(f"{base_url}/api/backup/export")

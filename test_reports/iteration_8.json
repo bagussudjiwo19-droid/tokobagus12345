@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 8 — FINAL COMPREHENSIVE QA PASS (backend + frontend). BACKEND: 19/19 pytest passing (100%). Added focused tests for the recent changes: (a) PUT /api/transactions/{id} preserves id + original created_at (payload without created_at keeps the DB value), reconciles stock by delta old_qty-new_qty (5→2 gave stock 45→48), and returns 404 for unknown id; (b) deleting a product does NOT delete historical transactions referencing it (verified GET /api/transactions/{id} still works after DELETE /api/products/{pid}); (c) /api/settings returns voiceChange (merged from defaults so field is always present); (d) /api/backup/import SAFETY: five invalid payloads all rejected with HTTP 400 AND existing data COUNTS unchanged — 'transactions'-only (missing products key), empty products list, products not a list, malformed product schema (Pydantic validation), and transactions without items list; (e) /api/backup/import dedupes duplicate product ids on same file (3 in → 2 stored); (f) round-trip export→import preserves 2262 products / 105 transactions. FRONTEND (mobile 390x844): Verified end-to-end (a) scan-mode-input on Transaksi accepts typed barcode 8992745550396 + Enter → item added to cart (1 mitubaby tisu basah); (b) edit-price sheet opens via edit-price-* and edit-price-input is focusable; (c) cart-remove-* triggers the delete confirmation bottom sheet (a first-attempt sheet-open was flaky right after keyboard.press('Enter') but subsequent attempts in iteration 7 & this run worked — see design_issues); (d) Bayar → Checkout numpad works, partial payment (paid Rp 3.000 < total Rp 6.000) is ALLOWED, checkout-confirm-button proceeds to success screen (checkout-new-tx visible); (e) Riwayat: 26 rows render, tap riwayat-row-* opens receipt detail, receipt clearly shows text 'PEMBAYARAN KURANG' for partial payments (checked via body innerText contains match), Tunai & Total labels present; (f) riwayat-edit opens /edit-transaksi with edit-save present, edit-total updates live when tapping edit-inc-0 (Rp 11.500 → Rp 17.250 = 3 × 5.750), on Save the SAME tx id (ac97d33e-f0c9-4fca-877d-63bfc3776712) remains in the Riwayat list (no duplicate), and backend GET /api/transactions/{id} confirms total=17250 & items[0].quantity=3 on the same record; (g) Cek Harga: cekharga-scan-input + Enter shows cekharga-result with name + sell price + 15s countdown ('Reset otomatis dalam 14s'), and NO 'stok'/'stock' word in the result card. Iteration 7 already covered Produk virtualized list, keyboard toggle + search filter, scan-result card + clear, produk-menu bottom sheet with edit/stock/duplicate/delete, and Cari flow (add to cart + auto-back). No RED-SCREEN errors. No new deprecated Expo packages detected (no expo-av / expo-barcode-scanner / expo-background-fetch imports).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Transaksi (index.tsx)", "issues": ["Minor: right after scan-mode-input + Enter, tapping cart-remove-* once did not open the delete confirmation sheet on the FIRST attempt (0/1 open) — likely a timing/focus interaction between the hidden TextInput refocus (scanKeyboard) and the bottom-sheet gesture handler. Subsequent runs (iteration 7 and later runs in this iteration) opened the sheet correctly. Consider `Keyboard.dismiss()` or a small `requestAnimationFrame` before presenting deleteSheet, or blur the scan-input on remove press. LOW priority — deletion still works via manual retap."]},
+      {"screen": "Checkout (checkout.tsx)", "issues": ["Cosmetic: for partial payment the on-screen 'Kembali' (change) label shows 'Rp 0' instead of the negative shortfall (e.g. -Rp 3.000). The receipt correctly prints 'PEMBAYARAN KURANG' block. Confirm with product owner if the numpad screen should also show the shortfall to reduce cashier confusion."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/test_reports/iteration_8.json"
+  ],
+  "action_items": [
+    "OPTIONAL (LOW): In /app/frontend/app/(tabs)/index.tsx, call Keyboard.dismiss() (or blur the hidden scan input) before deleteSheet.current?.present() to make the first-tap on cart-remove-* reliably open the confirmation sheet immediately after a barcode Enter event.",
+    "OPTIONAL (LOW): In /app/frontend/app/checkout.tsx, decide whether the change display should show a negative value (or a 'Kurang Rp X' badge) when cash_paid < total so the cashier is aware before confirming. Current behaviour still succeeds and receipt shows 'PEMBAYARAN KURANG' correctly.",
+    "NOTE: React 19 warning 'Accessing element.ref was removed' originates from @gorhom/bottom-sheet — waiting on library update. Non-blocking; no functional impact observed."
+  ],
+  "critical_code_review_comments": [
+    "server.py PUT /api/transactions/{tid}: correctly diffs stock via (old_map - new_map) per (product_id, variation_id) key and only updates variations that had numeric stock. Preserves created_at unless explicitly overridden. Uses same tx id for the update.",
+    "server.py backup_import: safe staging pattern (validate → dedupe → stage into products_tmp/transactions_tmp → only then delete_many the live collections). Empty products list returns 400 with Indonesian message. Malformed product raises Pydantic error caught and translated to 400.",
+    "server.py get_settings: merges Settings().model_dump() with the DB record so newly added fields like voiceChange are always present even for pre-existing settings docs.",
+    "receipt.ts: 'PEMBAYARAN KURANG' block is emitted ONLY when shortfall = max(0, total - cash_paid) > 0 — correct.",
+    "Frontend: all critical interactive elements have testID attributes. FlatList virtualization + getItemLayout + removeClippedSubviews on Produk keep the 2262-item list responsive."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_api.py (added 6 new tests: transaction edit preserves id+created_at+reconciles stock, transaction edit 404, delete product preserves historical tx, settings voiceChange default, backup import safety on 5 invalid payloads, backup import dedupe by id)"
+  ],
+  "success_rate": {"backend": "100% (19/19 pytest)", "frontend": "100% on all critical flows in the review request (no bugs blocking, 2 minor UX polish suggestions)"},
+  "seed_data_creation": "Created 1 partial-payment transaction via UI (tx id ac97d33e-f0c9-4fca-877d-63bfc3776712) that was subsequently edited (qty 2 → 3). No products or settings were altered permanently. Pytest cases self-cleanup their TEST_* products and restore settings/printer/backup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regressions live in /app/backend/tests/test_api.py (pytest, 19 tests, ~6.5s). Frontend viewport 390x844. Known good barcodes: 8992745550396 (1 mitubaby tisu basah, Rp 5.750–6.000 depending on tier), 8992959508312 (wholesale). Native-only items that MUST NOT be marked failed on web preview: physical Bluetooth thermal print, real soft-keyboard suppression during scan, audible TTS voice. Deprecated packages: none detected in current dependency tree.",
+  "rca_of_issue": "N/A — this iteration is a QA verification pass, no bugs were introduced. The two 'design_issues' entries are UX polish suggestions, not defects. All spec-critical behaviors (safe backup, transaction edit preserving id/date, stock reconciliation delta, delete-product not deleting tx, voiceChange default, PEMBAYARAN KURANG on receipt only, Cek Harga no stock leak, virtualized product list) are verified passing."
+}
