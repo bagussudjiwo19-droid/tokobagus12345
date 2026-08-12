@@ -181,7 +181,7 @@ export default function TransaksiScreen() {
                 <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
                   <Ionicons name="remove" size={16} color={colors.onSurface} />
                 </Pressable>
-                <Text style={styles.qtyTxt}>{l.quantity}</Text>
+                <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} testID={`cart-qty-${l.key}`} />
                 <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
                   <Ionicons name="add" size={16} color={colors.onSurface} />
                 </Pressable>
@@ -291,6 +291,29 @@ export default function TransaksiScreen() {
   );
 }
 
+function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: number) => void; testID?: string }) {
+  const [txt, setTxt] = useState(String(value));
+  useEffect(() => { setTxt(String(value)); }, [value]);
+  const commit = () => {
+    const n = Math.max(1, Math.floor(Number(txt.replace(/[^\d]/g, "")) || 0));
+    setTxt(String(n));
+    if (n !== value) onCommit(n);
+  };
+  return (
+    <TextInput
+      value={txt}
+      onChangeText={(t) => setTxt(t.replace(/[^\d]/g, ""))}
+      onEndEditing={commit}
+      onBlur={commit}
+      keyboardType="number-pad"
+      returnKeyType="done"
+      selectTextOnFocus
+      style={styles.qtyInput}
+      testID={testID}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   top: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
@@ -311,6 +334,7 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
   qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 40, height: 34, paddingVertical: 0, textAlign: "center" },
   lineName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
   linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
