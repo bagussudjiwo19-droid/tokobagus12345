@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
   emptyTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
   // compact line
-  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface },
-  lineNew: { backgroundColor: colors.brandTertiary },
+  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
+  lineNew: { borderColor: colors.brand, backgroundColor: colors.brandTertiary },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
   qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
