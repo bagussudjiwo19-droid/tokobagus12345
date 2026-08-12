@@ -19,7 +19,15 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
-### v12 — Tambah Variasi dari Daftar Belanja (produk anak + parent_id)
+### v13 — Fix bug keyboard global (keyboard tidak muncul di form/modal)
+- Root cause: `useHideScanKeyboard` memasang listener keyboard GLOBAL via useEffect di 3 layar tab (Transaksi/Produk/Cek Harga). Layar tab tetap ter-mount di balik modal (Tambah Produk, Item Manual, Checkout, Variasi, Edit Transaksi, Cari) & antar-tab, sehingga listener tersembunyi (kbdRef=false) ikut memanggil Keyboard.dismiss() di layar lain → keyboard tidak pernah muncul saat kolom disentuh.
+- Fix di `src/scanKeyboard.ts` (TANPA ubah fungsi lain):
+  1. Gating `useIsFocused()` (@react-navigation/native) → listener HANYA aktif saat layar itu benar-benar tampil. Layar tersembunyi tidak lagi mengganggu keyboard di layar lain.
+  2. Guard `inputRef.current?.isFocused()` → hanya menekan keyboard bila input SCAN yang fokus. Bila input LAIN fokus (kolom bottom sheet Edit Harga, form, dll) → keyboard dibiarkan tampil.
+- Hasil: kolom disentuh → keyboard muncul normal (Cari Produk, Nama/Barcode/Harga Beli/Harga Jual/Stok Produk, Jumlah, Uang Bayar). Scanner Bluetooth pada layar scan aktif TETAP tanpa keyboard; koneksi scanner tidak memunculkan keyboard. Tidak ada aturan "keyboard selalu sembunyi" global.
+- Verified: app render + navigasi (Transaksi/Produk/form) OK, lint clean. Perilaku keyboard bersifat native → uji final di Expo Go/build.
+
+
 - Backend: Product menambah field `parent_id` (Optional). Variasi = produk baru yang menyimpan parent_id ke induk ASLI.
 - Frontend: ikon kecil "Tambah Variasi" pada tiap baris keranjang (hanya bila punya product_id) → modal /variasi-cepat.
 - Form: Nama, Barcode, Harga Jual, Harga Beli (harga prefilled dari induk, tetap bisa diedit). Stok variasi baru = 999. Barcode boleh berbeda/kosong.
