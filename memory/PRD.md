@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v18 — FIX KRITIS: input scanner barcode Bluetooth (terpotong/hilang/tidak ditemukan)
+- Akar masalah: TextInput terkontrol (`value` + `onChangeText`) — scanner HID mengetik sangat cepat; tiap karakter memicu setState+re-render yang mereset teks native ke nilai lama di tengah pengiriman → barcode terpotong/karakter hilang → dianggap tidak ditemukan / diproses sebelum lengkap.
+- Solusi: hook baru `src/useBarcodeScan.ts`. Karakter ditampung di REF (bukan state) → tak ada re-render yang memotong. Input jadi UNCONTROLLED (`defaultValue=""`, tanpa `value`) → teks native tak pernah di-reset saat scan berlangsung. Diproses HANYA saat scan selesai: ENTER (onSubmitEditing) ATAU jeda 140ms (fallback scanner tanpa Enter). Jeda hanya aktif di mode scan (isScanMode=!kbd) sehingga ketik manual tidak pernah diproses otomatis (fitur pencarian manual tetap jalan via onChar). Setelah proses → buffer & native input dikosongkan (inputRef.clear()) → siap scan berikutnya.
+- Diterapkan di: Transaksi (`index.tsx`), Produk (`produk.tsx`), Cek Harga (`cek-harga.tsx`), Pencarian (`cari.tsx`). Di Cari ditambah resolusi barcode-persis → auto-pilih/masuk keranjang; jika tidak persis → jadi filter pencarian (barcode tidak dipotong).
+- Tidak mengubah logika harga/stok/transaksi/variasi. Penindasan keyboard scanner (useHideScanKeyboard) tetap.
+- Verified (web, simulasi HID ketik cepat): Transaksi 3 scan beruntun barcode 13 digit (2 via Enter, 1 via jeda) → semua utuh, 3 item; Produk → kartu hasil scan benar; Cek Harga (tanpa Enter) → harga tampil; Cari (barcode persis) → auto masuk keranjang & kembali ke Transaksi. Tidak ada karakter hilang/terpotong.
+- CATATAN: perilaku final di perangkat harus diuji via BUILD APK BARU (scanner fisik).
+
 ### v17 — Variasi: satukan variasi lama (nested) + baru (produk anak) dalam satu bagian
 - Konteks: user uji di APK lama; kode terbaru sudah benar (diverifikasi ulang end-to-end: A→B lalu C dari B → C tetih induk A; berlaku juga saat B adalah variasi NESTED lama, mis. Mie Instan/Ayam Bawang → variasi baru tetap tertaut ke Mie Instan; data nested lama utuh).
 - Masalah nyata yang ditemukan di build terbaru: saat induk dibuka, variasi BARU (produk anak/datar) tampil di bagian "Variasi (N)" ATAS, tapi variasi LAMA (nested di `variations[]`) tampil di bagian editor terpisah JAUH di bawah → hitungan "(N)" hanya menghitung yang datar, terasa seperti variasi tidak tergrup.

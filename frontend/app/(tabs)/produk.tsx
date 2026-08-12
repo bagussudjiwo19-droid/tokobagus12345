@@ -19,6 +19,7 @@ import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
@@ -81,6 +82,7 @@ export default function ProdukScreen() {
     async (code: string) => {
       const c = code.trim();
       setQuery("");
+      inputRef.current?.clear();
       if (!c) { inputRef.current?.focus(); return; }
       try {
         const product = await api.getByBarcode(c);
@@ -95,6 +97,8 @@ export default function ProdukScreen() {
     },
     [toast],
   );
+  // Penerimaan input scanner Bluetooth yang andal; onChar menjaga pencarian manual tetap jalan.
+  const scan = useBarcodeScan(handleScan, { onChar: setQuery, isScanMode: () => !kbdRef.current });
 
   const toggleKeyboard = () => {
     const next = !manualMode;
@@ -198,10 +202,10 @@ export default function ProdukScreen() {
           <TextInput
             ref={inputRef}
             testID="produk-search-input"
-            value={query}
-            onChangeText={setQuery}
+            defaultValue=""
+            onChangeText={scan.onChangeText}
             onPressIn={openKeyboard}
-            onSubmitEditing={(e) => { setManualMode(false); handleScan(e.nativeEvent.text); }}
+            onSubmitEditing={() => { setManualMode(false); scan.onSubmitEditing(); }}
             onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setManualMode(false); }}
             blurOnSubmit={false}
             showSoftInputOnFocus={manualMode}
@@ -211,7 +215,7 @@ export default function ProdukScreen() {
             style={styles.searchInput}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery("")} testID="produk-search-clear"><Ionicons name="close-circle" size={18} color={colors.muted} /></Pressable>
+            <Pressable onPress={() => { setQuery(""); inputRef.current?.clear(); }} testID="produk-search-clear"><Ionicons name="close-circle" size={18} color={colors.muted} /></Pressable>
           )}
           <Pressable onPress={toggleKeyboard} style={styles.kbdBtn} testID="produk-keyboard-toggle">
             <Ionicons name={manualMode ? "barcode-outline" : "keypad-outline"} size={18} color={colors.onSurfaceSecondary} />

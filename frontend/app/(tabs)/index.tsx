@@ -18,6 +18,7 @@ import { useCart } from "@/src/cart";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
@@ -28,7 +29,6 @@ export default function TransaksiScreen() {
   const cart = useCart();
   const { products, reload } = useData();
   const toast = useToast();
-  const [scanBuffer, setScanBuffer] = useState("");
   const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const skipBlur = useRef(false);
@@ -75,8 +75,8 @@ export default function TransaksiScreen() {
   const submitBarcode = useCallback(
     async (code: string) => {
       const c = code.trim();
-      if (!c) return;
-      setScanBuffer("");
+      inputRef.current?.clear();
+      if (!c) { inputRef.current?.focus(); return; }
       try {
         const product = await api.getByBarcode(c);
         const variation = product.variations?.find((v) => v.barcode === c) || null;
@@ -90,6 +90,8 @@ export default function TransaksiScreen() {
     },
     [cart, toast],
   );
+  // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
+  const scan = useBarcodeScan(submitBarcode, { isScanMode: () => !kbdRef.current });
 
   // Keyboard HP hanya muncul saat kolom disentuh; saat scan (autofocus/HID) tetap tanpa keyboard.
   const openKeyboard = useCallback(() => {
@@ -147,10 +149,10 @@ export default function TransaksiScreen() {
           <TextInput
             ref={inputRef}
             testID="scan-mode-input"
-            value={scanBuffer}
-            onChangeText={setScanBuffer}
+            defaultValue=""
+            onChangeText={scan.onChangeText}
             onPressIn={openKeyboard}
-            onSubmitEditing={(e) => { setKbd(false); submitBarcode(e.nativeEvent.text); }}
+            onSubmitEditing={() => { setKbd(false); scan.onSubmitEditing(); }}
             onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
             blurOnSubmit={false}
             showSoftInputOnFocus={kbd}

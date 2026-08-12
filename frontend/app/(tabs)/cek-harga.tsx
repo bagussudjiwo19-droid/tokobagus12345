@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import { api } from "@/src/api";
 import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
@@ -20,7 +21,6 @@ export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { products, pricePick, setPricePick } = useData();
-  const [query, setQuery] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [kbd, setKbd] = useState(false);
@@ -96,7 +96,7 @@ export default function CekHargaScreen() {
 
   const handleScan = useCallback(async (code: string) => {
     const c = code.trim();
-    setQuery("");
+    inputRef.current?.clear();
     if (!c) { inputRef.current?.focus(); return; }
     clearTimers();
     try {
@@ -109,6 +109,8 @@ export default function CekHargaScreen() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [showResult]);
+  // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
+  const scan = useBarcodeScan(handleScan, { isScanMode: () => !kbdRef.current });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
@@ -123,10 +125,10 @@ export default function CekHargaScreen() {
         <TextInput
           ref={inputRef}
           testID="cekharga-scan-input"
-          value={query}
-          onChangeText={setQuery}
+          defaultValue=""
+          onChangeText={scan.onChangeText}
           onPressIn={openKeyboard}
-          onSubmitEditing={(e) => { setKbd(false); handleScan(e.nativeEvent.text); }}
+          onSubmitEditing={() => { setKbd(false); scan.onSubmitEditing(); }}
           onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
           blurOnSubmit={false}
           showSoftInputOnFocus={kbd}

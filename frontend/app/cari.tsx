@@ -11,6 +11,7 @@ import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
@@ -91,6 +92,32 @@ export default function CariScreen() {
     router.back(); // 1) langsung kembali ke Transaksi
   };
 
+  // Scanner Bluetooth: setelah seluruh barcode diterima, resolusi persis → langsung pilih.
+  const onScanComplete = (code: string) => {
+    const c = code.trim();
+    inputRef.current?.clear();
+    if (!c) { inputRef.current?.focus(); return; }
+    const exact = products.find((p) => p.barcode === c);
+    if (exact) { setQuery(""); onTap(exact); return; }
+    const parent = products.find((p) => p.variations?.some((v) => v.barcode === c));
+    if (parent) {
+      const v = parent.variations.find((vv) => vv.barcode === c)!;
+      setQuery("");
+      if (isPrice) { pickForPrice(parent, v); }
+      else {
+        cart.addProduct(parent, v);
+        Haptics.selectionAsync();
+        toast.show(`${parent.name} — ${v.name} ditambahkan`, "success");
+        router.back();
+      }
+      return;
+    }
+    // Tidak ada barcode persis → tampilkan sebagai filter pencarian (barcode tidak dipotong/diubah).
+    setQuery(c);
+    inputRef.current?.focus();
+  };
+  const scan = useBarcodeScan(onScanComplete, { onChar: setQuery, isScanMode: () => !kbdRef.current });
+
   const confirmDelete = async () => {
     if (!deleteProduct) return;
     const p = deleteProduct;
@@ -120,10 +147,12 @@ export default function CariScreen() {
         <TextInput
           ref={inputRef}
           testID="cari-input"
-          value={query}
-          onChangeText={setQuery}
+          defaultValue=""
+          onChangeText={scan.onChangeText}
           onPressIn={openKeyboard}
+          onSubmitEditing={() => scan.onSubmitEditing()}
           onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
+          blurOnSubmit={false}
           showSoftInputOnFocus={kbd}
           caretHidden={!kbd}
           placeholder={kbd ? "Ketik nama / barcode…" : "Mode scan aktif — atau ketuk untuk ketik"}
