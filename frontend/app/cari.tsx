@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useDeferredValue, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -27,8 +27,9 @@ export default function CariScreen() {
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const deleteSheet = useRef<BottomSheetModal>(null);
 
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     if (!q) return products.slice(0, 60);
     return products
       .filter(
@@ -38,7 +39,7 @@ export default function CariScreen() {
           p.variations.some((v) => v.barcode?.toLowerCase().includes(q)),
       )
       .slice(0, 100);
-  }, [products, query]);
+  }, [products, deferredQuery]);
 
   const pickForPrice = (p: Product, v: Variation | null) => {
     setPricePick({ productId: p.id, variationId: v?.id ?? null, ts: Date.now() });
@@ -137,6 +138,10 @@ export default function CariScreen() {
         data={filtered}
         keyExtractor={(p) => p.id}
         keyboardShouldPersistTaps="handled"
+        removeClippedSubviews
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
+        windowSize={7}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         renderItem={({ item }) => (

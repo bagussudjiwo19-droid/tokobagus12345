@@ -116,6 +116,10 @@ export default function RiwayatScreen() {
           data={txs}
           keyExtractor={(t) => t.id}
           renderItem={renderRow}
+          removeClippedSubviews
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 24 + insets.bottom }}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}

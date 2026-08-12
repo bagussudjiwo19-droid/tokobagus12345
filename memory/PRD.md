@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v9 — Optimasi performa (tanpa ubah fungsi)
+- produk.tsx & cari.tsx: `useDeferredValue` untuk filter (input tetap responsif saat ketik/scan cepat pada 2262 produk).
+- produk.tsx: baris di-`React.memo` (ProdukRow), `getItemLayout` (tinggi baris tetap 63), props virtualisasi FlatList (removeClippedSubviews, initialNumToRender=12, maxToRenderPerBatch=12, windowSize=9) → hanya ~50 baris di memori dari 2262.
+- produk.tsx: reload hanya bila `products` kosong (hindari refetch ~700KB tiap pindah tab); semua mutasi tetap reload eksplisit → data tetap segar.
+- cari.tsx & riwayat.tsx: props virtualisasi FlatList ditambahkan.
+- Data dimuat sekali saat start, tanpa polling background. Scan Bluetooth, pembayaran, printer, backup/restore, transaksi TIDAK diubah.
+- Verified: testing_agent iteration_7 → 24/24 assertion lolos, tanpa regresi.
+
 ### v8 — Suara Kembalian (TTS)
 - Setting baru `voiceChange` (default ON) di Settings model + types; get_settings di-merge dengan default agar field baru selalu ada & tersimpan lintas transaksi.
 - Toggle "Suara Kembalian" di Pengaturan Struk (bagian SUARA), diakses via header tab Riwayat → ikon struk.

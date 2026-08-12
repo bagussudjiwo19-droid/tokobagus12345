@@ -101,3 +101,58 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Optimalkan performa aplikasi POS Toko Bagus (ringan, cepat, responsif di HP RAM 4GB) tanpa mengubah fungsi. Fokus: list produk 2262 item, pencarian, scan barcode, riwayat, transaksi. Perubahan hanya optimasi (tidak ubah logika)."
+
+frontend:
+  - task: "Produk: list virtualisasi + pencarian (perf optimization)"
+    implemented: true
+    working: "NA"
+    file: "app/(tabs)/produk.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Optimasi: useDeferredValue untuk filter, React.memo row (ProdukRow), getItemLayout, removeClippedSubviews/initialNumToRender/maxToRenderPerBatch/windowSize, dan reload hanya jika products kosong (mutasi tetap reload eksplisit). Perlu verifikasi: list tampil, search 'kopi' memfilter, tap row buka form, menu (...) buka bottom sheet, scan submit input barcode valid menampilkan kartu HASIL SCAN + clear."
+  - task: "Cari (Transaksi & Cek Harga price mode): filter + list perf"
+    implemented: true
+    working: "NA"
+    file: "app/cari.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Optimasi: useDeferredValue filter + FlatList perf props. Verifikasi: dari Transaksi > Cari Barang, ketik 'mitubaby', tap item → tertambah ke keranjang & kembali ke Transaksi; tombol Hapus Permanen + konfirmasi tetap berfungsi; dari Cek Harga > Cari Produk Manual, pilih item → kembali ke Cek Harga menampilkan nama+harga."
+  - task: "Riwayat: list perf props (no logic change)"
+    implemented: true
+    working: "NA"
+    file: "app/(tabs)/riwayat.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Tambah removeClippedSubviews/initialNumToRender/maxToRenderPerBatch/windowSize. Verifikasi: list transaksi tampil, tap row buka detail (struk), tombol Edit Transaksi buka modal edit."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+
+test_plan:
+  current_focus:
+    - "Produk: list virtualisasi + pencarian (perf optimization)"
+    - "Cari (Transaksi & Cek Harga price mode): filter + list perf"
+    - "Riwayat: list perf props (no logic change)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Perubahan HANYA optimasi performa (tidak ada perubahan logika). Tolong regression test FRONTEND ONLY pada alur inti: (1) Produk—list render, search 'kopi', tap row buka form, menu (...) sheet, scan barcode valid '8992745550396' via input produk-search-input tampilkan kartu HASIL SCAN + field ter-clear; (2) Transaksi—Cari Barang tambah item ke keranjang & auto-return, kolom jumlah bisa diketuk & +/-, checkout bayar berhasil; (3) Cek Harga—Cari Produk Manual pilih item kembali ke Cek Harga tampil nama+harga; (4) Riwayat—buka detail struk + tombol Edit Transaksi. Backend tidak berubah (skip backend). Base URL preview: https://app-audit-preview.preview.emergentagent.com. Data: 2262 produk, 100 transaksi."

@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 7 — Performance optimization regression test (frontend-only, mobile viewport 390x844). All 4 flows PASS with NO regressions detected after the perf changes (useDeferredValue, React.memo ProdukRow, FlatList perf props, conditional focus reload on produk tab). (1) PRODUK: search input + keyboard toggle render, typing 'kopi' returns 34 filtered rows (deferred filtering works), tapping a row navigates to /produk-form?id=..., ellipsis menu opens the bottom sheet with menu-edit/menu-stock/menu-duplicate/menu-delete, typing '8992745550396' + Enter shows 'HASIL SCAN' card (produk-scan-result) and the input clears immediately. (2) TRANSAKSI: 'Cari Barang' opens Cari, typing 'mitubaby' returns 3 rows, tapping cari-row-* adds the item to cart AND auto-returns to Transaksi (cart-line count went from 0→1 with toast '1 mitubaby tisu basah ditambahkan'). In cart: + (cart-inc-*) increments qty 1→2, − (cart-dec-*) decrements 2→1, cart-qty-* is editable via keyboard (typed '3' → committed to 3). Permanent delete flow in Cari opens the confirmation sheet with 'Hapus Permanen' + 'Batal' buttons (verified without actually deleting). (3) CEK HARGA: 'Cari Produk Manual' (cekharga-search) → picking a product returns to Cek Harga and shows cekharga-result with name='1 mitubaby tisu basah' + price='Rp 6.000'. Scanning barcode 8992745550396 into cekharga-scan-input + Enter also renders cekharga-result correctly. (4) RIWAYAT: FlatList renders 26 rows (out of 104 total transactions per Total Pendapatan header 'Rp 2.831.111 · 104 transaksi'), tapping riwayat-row-* opens the receipt detail bottom sheet, tapping 'Edit Transaksi' (riwayat-edit) opens /edit-transaksi with edit-save button present. Total assertions: 24/24 OK. Two harmless legacy warnings remain (props.pointerEvents deprecated, useNativeDriver not supported by web) — pre-existing, unrelated to this iteration. No red-screen errors. Backend was NOT retested (per request).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_7.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "produk.tsx: useFocusEffect uses `products.length` in dep array with 'reload only if empty' guard — correct behavior for perf. Mutations (delete/duplicate) explicitly call await reload() so data stays fresh even under the guard.",
+    "produk.tsx & cari.tsx: useDeferredValue on query is applied to useMemo filter — good pattern, keeps input responsive while filtering 2262 products.",
+    "produk.tsx FlatList: getItemLayout uses fixed PRODUK_ROW_H=63 which matches the row layout; removeClippedSubviews + initialNumToRender=12 + windowSize=9 are sensible for low-end devices.",
+    "React 19 warning: `Accessing element.ref was removed in React 19` is triggered inside @gorhom/bottom-sheet when opening BottomSheetModal (produk menu + riwayat detail). Not a regression from this iteration but worth pinning bottom-sheet upgrade for React 19 compatibility in a future task."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only request)", "frontend": "100% (24/24 assertions)"},
+  "seed_data_creation": "None. No transactions or products were created/deleted during this test. Cart adjustments were reverted by removing the added line before finishing.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mobile viewport 390x844. Tab bar labels: 'Transaksi', 'Produk', 'Cek Harga', 'Riwayat' — click via page.get_by_role('button', name='<label>').click(force=True) (page.get_by_text falls back but sometimes hits hidden ancestors). Known-good barcode: 8992745550396 → '1 mitubaby tisu basah' (Rp 6.000). To trigger produk search filtering: tap [data-testid=produk-keyboard-toggle] first to switch out of scan mode; typing WITHOUT Enter filters the list, typing + Enter runs handleScan (calls api.getByBarcode). Cari flow uses ?mode=cart from Transaksi (adds to cart + router.back) vs ?mode=price from Cek Harga (sets pricePick and router.back).",
+  "rca_of_issue": "N/A — no bugs found. Performance optimizations (memoization, deferred filtering, FlatList perf props, conditional focus reload) do not break any of the 4 flows listed in the review request."
+}

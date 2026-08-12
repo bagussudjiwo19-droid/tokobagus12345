@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,6 +22,29 @@ import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
 
+const PRODUK_ROW_H = 63; // tinggi baris tetap → getItemLayout untuk scroll cepat
+
+const ProdukRow = React.memo(function ProdukRow({
+  item, onEdit, onMenu,
+}: { item: Product; onEdit: (id: string) => void; onMenu: (p: Product) => void }) {
+  const hasVar = item.variations.length > 0;
+  const stock = hasVar ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
+  return (
+    <View style={styles.row} testID={`produk-row-${item.id}`}>
+      <Pressable style={{ flex: 1 }} onPress={() => onEdit(item.id)}>
+        <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>
+          {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${item.variations.length} varian` : ""}
+        </Text>
+      </Pressable>
+      <Text style={styles.rowPrice}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+      <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
+        <Ionicons name="ellipsis-vertical" size={20} color={colors.onSurfaceSecondary} />
+      </Pressable>
+    </View>
+  );
+});
+
 export default function ProdukScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -37,12 +60,14 @@ export default function ProdukScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      reload();
+      // Muat sekali; hindari refetch ~700KB tiap pindah tab. Mutasi (simpan/hapus/
+      // stok/transaksi) sudah memanggil reload() sendiri sehingga data tetap segar.
+      if (products.length === 0) reload();
       // Keep the search field focused so the Bluetooth scanner works
       // immediately without tapping the field.
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => clearTimeout(t);
-    }, [reload]),
+    }, [reload, products.length]),
   );
 
   // Handle a barcode scan submitted from the Bluetooth scanner.
@@ -72,8 +97,9 @@ export default function ProdukScreen() {
     setTimeout(() => inputRef.current?.focus(), 60);
   };
 
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     if (!q) return products;
     return products.filter(
       (p) =>
@@ -82,11 +108,9 @@ export default function ProdukScreen() {
         (p.category || "").toLowerCase().includes(q) ||
         p.variations.some((v) => v.barcode?.toLowerCase().includes(q)),
     );
-  }, [products, query]);
+  }, [products, deferredQuery]);
 
   const onRefresh = async () => { setRefreshing(true); await reload(); setRefreshing(false); };
-
-  const openMenu = (p: Product) => { setMenuProduct(p); sheetRef.current?.present(); };
 
   const doDelete = async () => {
     if (!menuProduct) return;
@@ -106,24 +130,13 @@ export default function ProdukScreen() {
     } catch (e: any) { toast.show(e?.message || "Gagal menduplikat", "error"); }
   };
 
-  const renderRow = ({ item }: { item: Product }) => {
-    const hasVar = item.variations.length > 0;
-    const stock = hasVar ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
-    return (
-      <View style={styles.row} testID={`produk-row-${item.id}`}>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push({ pathname: "/produk-form", params: { id: item.id } })}>
-          <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.rowMeta} numberOfLines={1}>
-            {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${item.variations.length} varian` : ""}
-          </Text>
-        </Pressable>
-        <Text style={styles.rowPrice}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
-        <Pressable onPress={() => openMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.onSurfaceSecondary} />
-        </Pressable>
-      </View>
-    );
-  };
+  const openMenu = useCallback((p: Product) => { setMenuProduct(p); sheetRef.current?.present(); }, []);
+  const openEdit = useCallback((id: string) => router.push({ pathname: "/produk-form", params: { id } }), [router]);
+
+  const renderRow = useCallback(
+    ({ item }: { item: Product }) => <ProdukRow item={item} onEdit={openEdit} onMenu={openMenu} />,
+    [openEdit, openMenu],
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
@@ -190,6 +203,12 @@ export default function ProdukScreen() {
           data={filtered}
           keyExtractor={(p) => p.id}
           renderItem={renderRow}
+          getItemLayout={(_, index) => ({ length: PRODUK_ROW_H, offset: PRODUK_ROW_H * index, index })}
+          removeClippedSubviews
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          updateCellsBatchingPeriod={40}
+          windowSize={9}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           keyboardShouldPersistTaps="handled"
