@@ -28,7 +28,9 @@ export default function TransaksiScreen() {
   const { products, reload } = useData();
   const toast = useToast();
   const [scanBuffer, setScanBuffer] = useState("");
+  const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const skipBlur = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const prevLen = useRef(0);
   const [lastKey, setLastKey] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export default function TransaksiScreen() {
   // Transaksi tab is focused, so scanning works immediately without tapping.
   useFocusEffect(
     useCallback(() => {
+      setKbd(false);
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => clearTimeout(t);
     }, []),
@@ -82,6 +85,14 @@ export default function TransaksiScreen() {
     },
     [cart, toast],
   );
+
+  // Keyboard HP hanya muncul saat kolom disentuh; saat scan (autofocus/HID) tetap tanpa keyboard.
+  const openKeyboard = useCallback(() => {
+    setKbd(true);
+    skipBlur.current = true;
+    inputRef.current?.blur();
+    setTimeout(() => inputRef.current?.focus(), 40);
+  }, []);
 
   const openEditPrice = (l: CartLine) => {
     setEditLine(l);
@@ -125,18 +136,19 @@ export default function TransaksiScreen() {
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.top}>
         {/* 1) Mode Scan Barcode aktif — paling atas (scanner Bluetooth) */}
-        <Pressable style={styles.scanModeBox} onPress={() => inputRef.current?.focus()}>
+        <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
           <Ionicons name="barcode-outline" size={20} color={colors.brand} />
           <TextInput
             ref={inputRef}
             testID="scan-mode-input"
             value={scanBuffer}
             onChangeText={setScanBuffer}
-            onSubmitEditing={(e) => submitBarcode(e.nativeEvent.text)}
+            onPressIn={openKeyboard}
+            onSubmitEditing={(e) => { setKbd(false); submitBarcode(e.nativeEvent.text); }}
+            onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
             blurOnSubmit={false}
-            showSoftInputOnFocus={false}
-            caretHidden
-            autoFocus
+            showSoftInputOnFocus={kbd}
+            caretHidden={!kbd}
             placeholder="Mode scan aktif — arahkan scanner ke barcode"
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}

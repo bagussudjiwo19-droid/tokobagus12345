@@ -22,7 +22,9 @@ export default function CekHargaScreen() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [countdown, setCountdown] = useState(0);
+  const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const skipBlur = useRef(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -58,10 +60,19 @@ export default function CekHargaScreen() {
   // Auto scan mode: focus the hidden scanner input whenever this tab is focused.
   useFocusEffect(
     useCallback(() => {
+      setKbd(false);
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => { clearTimeout(t); clearTimers(); };
     }, []),
   );
+
+  // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
+  const openKeyboard = useCallback(() => {
+    setKbd(true);
+    skipBlur.current = true;
+    inputRef.current?.blur();
+    setTimeout(() => inputRef.current?.focus(), 40);
+  }, []);
 
   // Manual search: when a product is picked on the Cari screen (price mode),
   // it lands here via pricePick — show name + price, then ready to scan again.
@@ -101,18 +112,19 @@ export default function CekHargaScreen() {
       </View>
 
       {/* Mode scan aktif — input tersembunyi untuk scanner Bluetooth (tanpa keyboard HP) */}
-      <Pressable style={styles.scanModeBox} onPress={() => inputRef.current?.focus()}>
+      <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
         <Ionicons name="barcode-outline" size={20} color={colors.brand} />
         <TextInput
           ref={inputRef}
           testID="cekharga-scan-input"
           value={query}
           onChangeText={setQuery}
-          onSubmitEditing={(e) => handleScan(e.nativeEvent.text)}
+          onPressIn={openKeyboard}
+          onSubmitEditing={(e) => { setKbd(false); handleScan(e.nativeEvent.text); }}
+          onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
           blurOnSubmit={false}
-          showSoftInputOnFocus={false}
-          caretHidden
-          autoFocus
+          showSoftInputOnFocus={kbd}
+          caretHidden={!kbd}
           placeholder="Mode scan aktif — arahkan scanner ke barcode"
           placeholderTextColor={colors.muted}
           style={styles.scanModeInput}

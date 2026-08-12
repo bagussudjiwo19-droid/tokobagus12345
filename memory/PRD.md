@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v10 — Keyboard scan: tampil hanya saat kolom disentuh
+- Transaksi (index.tsx), Produk (produk.tsx), Cek Harga (cek-harga.tsx): input scan Bluetooth kini `showSoftInputOnFocus` mengikuti state (default false).
+- Saat scan / autofocus (pindah tab / setelah scan) → keyboard HP TIDAK muncul. autoFocus dihapus, fokus dilakukan programatik dengan state false.
+- Saat user MENYENTUH/klik kolom (onPressIn + wrapper onPress → openKeyboard) → keyboard HP muncul (blur+refocus dengan state true). Guard ref `skipBlur` mencegah blur programatik mereset state.
+- Kembali ke mode scan (tanpa keyboard) saat: submit (Enter scanner), blur asli (tap keluar), atau tab difokuskan ulang.
+- Verified (web): ketiga alur scan tetap resolve barcode. Perilaku suppress keyboard bersifat native → uji di Expo Go/build.
+
 ### v9 — Optimasi performa (tanpa ubah fungsi)
 - produk.tsx & cari.tsx: `useDeferredValue` untuk filter (input tetap responsif saat ketik/scan cepat pada 2262 produk).
 - produk.tsx: baris di-`React.memo` (ProdukRow), `getItemLayout` (tinggi baris tetap 63), props virtualisasi FlatList (removeClippedSubviews, initialNumToRender=12, maxToRenderPerBatch=12, windowSize=9) → hanya ~50 baris di memori dari 2262.

@@ -57,12 +57,14 @@ export default function ProdukScreen() {
   const [manualMode, setManualMode] = useState(false);
   const sheetRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
+  const skipBlur = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
       // Muat sekali; hindari refetch ~700KB tiap pindah tab. Mutasi (simpan/hapus/
       // stok/transaksi) sudah memanggil reload() sendiri sehingga data tetap segar.
       if (products.length === 0) reload();
+      setManualMode(false);
       // Keep the search field focused so the Bluetooth scanner works
       // immediately without tapping the field.
       const t = setTimeout(() => inputRef.current?.focus(), 350);
@@ -93,8 +95,17 @@ export default function ProdukScreen() {
   const toggleKeyboard = () => {
     const next = !manualMode;
     setManualMode(next);
+    skipBlur.current = true;
     inputRef.current?.blur();
     setTimeout(() => inputRef.current?.focus(), 60);
+  };
+
+  // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
+  const openKeyboard = () => {
+    setManualMode(true);
+    skipBlur.current = true;
+    inputRef.current?.blur();
+    setTimeout(() => inputRef.current?.focus(), 40);
   };
 
   const deferredQuery = useDeferredValue(query);
@@ -158,11 +169,12 @@ export default function ProdukScreen() {
             testID="produk-search-input"
             value={query}
             onChangeText={setQuery}
-            onSubmitEditing={(e) => handleScan(e.nativeEvent.text)}
+            onPressIn={openKeyboard}
+            onSubmitEditing={(e) => { setManualMode(false); handleScan(e.nativeEvent.text); }}
+            onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setManualMode(false); }}
             blurOnSubmit={false}
             showSoftInputOnFocus={manualMode}
             caretHidden={!manualMode}
-            autoFocus
             placeholder={manualMode ? "Ketik nama / kategori / barcode" : "Mode scan aktif — arahkan scanner ke barcode"}
             placeholderTextColor={colors.muted}
             style={styles.searchInput}
