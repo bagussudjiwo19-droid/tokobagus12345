@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v11 — Penjaga keyboard Mode Scan (anti keyboard saat scan)
+- Hook baru `src/scanKeyboard.ts` (useHideScanKeyboard): listener `keyboardDidShow` → bila sedang mode scan (kbdRef=false), `Keyboard.dismiss()` lalu fokus ulang input. Karena mode scan pakai `showSoftInputOnFocus={false}`, fokus ulang TIDAK memunculkan keyboard lagi → scanner tetap aktif & siap barcode berikutnya (tanpa loop, tanpa menghentikan input).
+- Diterapkan di 4 kolom scan: Transaksi (scan-mode-input), Cek Harga (cekharga-scan-input), Produk (produk-search-input), dan Cari Barang (cari-input).
+- Cari Barang kini default mode scan (siap scan langsung tanpa menyentuh; autoFocus dihapus, fokus programatik). Keyboard hanya muncul saat kolom disentuh (onPressIn → openKeyboard), balik ke mode scan saat blur asli.
+- kbdRef disinkronkan dgn state via useEffect; guard `skipBlur` cegah blur programatik mereset mode.
+- Verified (web): scan Transaksi/Produk/Cek Harga tetap resolve; Cari Barang filter + tap add tetap jalan. Penindasan keyboard bersifat native → uji di Expo Go/build.
+
 ### v10 — Keyboard scan: tampil hanya saat kolom disentuh
 - Transaksi (index.tsx), Produk (produk.tsx), Cek Harga (cek-harga.tsx): input scan Bluetooth kini `showSoftInputOnFocus` mengikuti state (default false).
 - Saat scan / autofocus (pindah tab / setelah scan) → keyboard HP TIDAK muncul. autoFocus dihapus, fokus dilakukan programatik dengan state false.

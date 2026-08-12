@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 
 import { api } from "@/src/api";
 import { useData } from "@/src/data";
+import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
@@ -25,6 +26,7 @@ export default function CekHargaScreen() {
   const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const skipBlur = useRef(false);
+  const kbdRef = useRef(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -69,10 +71,14 @@ export default function CekHargaScreen() {
   // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
   const openKeyboard = useCallback(() => {
     setKbd(true);
+    kbdRef.current = true;
     skipBlur.current = true;
     inputRef.current?.blur();
     setTimeout(() => inputRef.current?.focus(), 40);
   }, []);
+
+  useEffect(() => { kbdRef.current = kbd; }, [kbd]);
+  useHideScanKeyboard(inputRef, kbdRef);
 
   // Manual search: when a product is picked on the Cari screen (price mode),
   // it lands here via pricePick — show name + price, then ready to scan again.

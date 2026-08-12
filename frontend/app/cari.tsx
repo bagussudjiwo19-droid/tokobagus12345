@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useMemo, useRef, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -10,6 +10,7 @@ import { useData } from "@/src/data";
 import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
+import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
@@ -25,7 +26,28 @@ export default function CariScreen() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [kbd, setKbd] = useState(false);
   const deleteSheet = useRef<BottomSheetModal>(null);
+  const inputRef = useRef<TextInput>(null);
+  const skipBlur = useRef(false);
+  const kbdRef = useRef(false);
+
+  // Siap scan langsung tanpa menyentuh kolom; keyboard tidak muncul saat scan.
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => { kbdRef.current = kbd; }, [kbd]);
+  useHideScanKeyboard(inputRef, kbdRef);
+
+  // Keyboard HP hanya muncul saat kolom disentuh.
+  const openKeyboard = () => {
+    setKbd(true);
+    kbdRef.current = true;
+    skipBlur.current = true;
+    inputRef.current?.blur();
+    setTimeout(() => inputRef.current?.focus(), 40);
+  };
 
   const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
@@ -93,18 +115,22 @@ export default function CariScreen() {
         <View style={styles.closeBtn} />
       </View>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color={colors.muted} />
+      <Pressable style={styles.searchBox} onPress={openKeyboard}>
+        <Ionicons name={kbd ? "search" : "barcode-outline"} size={18} color={kbd ? colors.muted : colors.brand} />
         <TextInput
+          ref={inputRef}
           testID="cari-input"
           value={query}
           onChangeText={setQuery}
-          autoFocus
-          placeholder="Ketik nama / barcode…"
+          onPressIn={openKeyboard}
+          onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
+          showSoftInputOnFocus={kbd}
+          caretHidden={!kbd}
+          placeholder={kbd ? "Ketik nama / barcode…" : "Mode scan aktif — atau ketuk untuk ketik"}
           placeholderTextColor={colors.muted}
           style={styles.searchInput}
         />
-      </View>
+      </Pressable>
 
       {selected && (
         <View style={styles.detail} testID="cari-detail">

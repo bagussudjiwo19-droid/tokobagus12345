@@ -1,4 +1,4 @@
-import React, { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,6 +18,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
+import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
@@ -58,6 +59,7 @@ export default function ProdukScreen() {
   const sheetRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
   const skipBlur = useRef(false);
+  const kbdRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -103,10 +105,14 @@ export default function ProdukScreen() {
   // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
   const openKeyboard = () => {
     setManualMode(true);
+    kbdRef.current = true;
     skipBlur.current = true;
     inputRef.current?.blur();
     setTimeout(() => inputRef.current?.focus(), 40);
   };
+
+  useEffect(() => { kbdRef.current = manualMode; }, [manualMode]);
+  useHideScanKeyboard(inputRef, kbdRef);
 
   const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {

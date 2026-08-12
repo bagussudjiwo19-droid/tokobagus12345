@@ -17,6 +17,7 @@ import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
+import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
@@ -31,6 +32,7 @@ export default function TransaksiScreen() {
   const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const skipBlur = useRef(false);
+  const kbdRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const prevLen = useRef(0);
   const [lastKey, setLastKey] = useState<string | null>(null);
@@ -53,6 +55,9 @@ export default function TransaksiScreen() {
       return () => clearTimeout(t);
     }, []),
   );
+
+  useEffect(() => { kbdRef.current = kbd; }, [kbd]);
+  useHideScanKeyboard(inputRef, kbdRef);
 
   // 2. Auto-scroll to the newest scanned item.
   useEffect(() => {
@@ -89,6 +94,7 @@ export default function TransaksiScreen() {
   // Keyboard HP hanya muncul saat kolom disentuh; saat scan (autofocus/HID) tetap tanpa keyboard.
   const openKeyboard = useCallback(() => {
     setKbd(true);
+    kbdRef.current = true;
     skipBlur.current = true;
     inputRef.current?.blur();
     setTimeout(() => inputRef.current?.focus(), 40);
