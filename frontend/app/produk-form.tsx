@@ -164,7 +164,7 @@ export default function ProdukFormScreen() {
             onPress={() =>
               setVariations((v) => [
                 ...v,
-                { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 0, tiers: [], inherit_tiers: true },
+                { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: true },
               ])
             }
             style={styles.addSmall}
