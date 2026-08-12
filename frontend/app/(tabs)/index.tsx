@@ -177,6 +177,14 @@ export default function TransaksiScreen() {
         >
           {cart.lines.map((l) => (
             <View key={l.key} style={[styles.line, lastKey === l.key && styles.lineNew]} testID={`cart-line-${l.key}`}>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
+                <Text style={styles.lineName} numberOfLines={1}>{l.name}</Text>
+                <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
+                  <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
+                  <Ionicons name="create-outline" size={13} color={colors.brand} />
+                </Pressable>
+              </View>
+
               <View style={styles.qtyBox}>
                 <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
                   <Ionicons name="remove" size={16} color={colors.onSurface} />
@@ -187,18 +195,12 @@ export default function TransaksiScreen() {
                 </Pressable>
               </View>
 
-              <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                <Text style={styles.lineName} numberOfLines={1}>{l.name}</Text>
-                <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
-                  <Text style={styles.linePrice}>{rupiah(l.price)}/{l.unit}</Text>
-                  <Ionicons name="create-outline" size={13} color={colors.brand} />
+              <View style={styles.lineRight}>
+                <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
+                <Pressable onPress={() => { setDeleteLine(l); deleteSheet.current?.present(); }} style={styles.delBtn} testID={`cart-remove-${l.key}`}>
+                  <Ionicons name="trash-outline" size={17} color={colors.error} />
                 </Pressable>
               </View>
-
-              <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
-              <Pressable onPress={() => { setDeleteLine(l); deleteSheet.current?.present(); }} style={styles.delBtn} testID={`cart-remove-${l.key}`}>
-                <Ionicons name="close" size={18} color={colors.muted} />
-              </Pressable>
             </View>
           ))}
         </ScrollView>
@@ -338,8 +340,9 @@ const styles = StyleSheet.create({
   lineName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
   linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
-  lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 78, textAlign: "right" },
-  delBtn: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: 2 },
+  lineRight: { alignItems: "flex-end", marginLeft: spacing.sm, minWidth: 74 },
+  lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, textAlign: "right" },
+  delBtn: { width: 28, height: 28, alignItems: "center", justifyContent: "center", marginTop: 2 },
   payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.surfaceSecondary, borderTopWidth: 1, borderTopColor: colors.border },
   payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
   payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
