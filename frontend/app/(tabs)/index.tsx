@@ -178,7 +178,7 @@ export default function TransaksiScreen() {
           {cart.lines.map((l) => (
             <View key={l.key} style={[styles.line, lastKey === l.key && styles.lineNew]} testID={`cart-line-${l.key}`}>
               <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <Text style={styles.lineName} numberOfLines={1}>{l.name}</Text>
+                <Text style={[styles.lineName, (l.tiers?.length ?? 0) > 0 && styles.lineNameGrosir]} numberOfLines={1}>{l.name}</Text>
                 <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
                   <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
                   <Ionicons name="create-outline" size={13} color={colors.brand} />
@@ -331,13 +331,14 @@ const styles = StyleSheet.create({
   emptyTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
   // compact line
-  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
+  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   lineNew: { borderColor: colors.brand, backgroundColor: colors.brandTertiary },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
   qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
   qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
   qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, width: 30, height: 32, paddingVertical: 0, paddingHorizontal: 2, textAlign: "center" },
-  lineName: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  lineName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  lineNameGrosir: { color: colors.success },
   priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
   linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   lineRight: { alignItems: "flex-end", marginLeft: spacing.sm, minWidth: 78 },
