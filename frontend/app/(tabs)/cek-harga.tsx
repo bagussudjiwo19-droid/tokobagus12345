@@ -11,17 +11,18 @@ import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
-import type { Product, Variation } from "@/src/types";
+import type { Product, Variation, Tier, Settings } from "@/src/types";
 
 const RESET_MS = 15000;
 
-type ScanResult = { name: string; price: number };
+type ScanResult = { name: string; price: number; unit: string; tiers: Tier[] };
 
 export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { products, pricePick, setPricePick } = useData();
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -45,11 +46,13 @@ export default function CekHargaScreen() {
   // Show a product + sell price, keep it for 15s, then reset to scan mode.
   const showResult = useCallback((product: Product, variation: Variation | null) => {
     clearTimers();
-    const price = variation
-      ? (variation.inherit_tiers ? product.sell_price : variation.sell_price)
-      : product.sell_price;
+    const useVarOwn = variation && !variation.inherit_tiers;
+    const price = useVarOwn ? variation!.sell_price : product.sell_price;
+    // Ambil harga grosir LANGSUNG dari data produk/variasi (tidak dihitung sendiri).
+    const rawTiers = useVarOwn ? variation!.tiers : product.tiers;
+    const tiers = (rawTiers || []).filter((t) => t && t.price > 0).sort((a, b) => a.min_qty - b.min_qty);
     const name = variation ? `${product.name} — ${variation.name}` : product.name;
-    setResult({ name, price });
+    setResult({ name, price, unit: product.unit, tiers });
     Haptics.selectionAsync();
     setCountdown(RESET_MS / 1000);
     tickTimer.current = setInterval(() => {
@@ -78,6 +81,7 @@ export default function CekHargaScreen() {
   }, []);
 
   useEffect(() => { kbdRef.current = kbd; }, [kbd]);
+  useEffect(() => { api.getSettings().then(setSettings).catch(() => {}); }, []);
   useHideScanKeyboard(inputRef, kbdRef);
 
   // Manual search: when a product is picked on the Cari screen (price mode),
@@ -143,9 +147,25 @@ export default function CekHargaScreen() {
       <View style={styles.body}>
         {result ? (
           <View style={styles.resultCard} testID="cekharga-result">
-            <Text style={styles.resultLabel}>HARGA JUAL</Text>
+            <Text style={styles.shopName}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
+            <Text style={styles.resultLabel}>CEK HARGA</Text>
             <Text style={styles.resultName} numberOfLines={3}>{result.name}</Text>
+
+            <Text style={styles.ecerLabel}>HARGA ECER</Text>
             <Text style={styles.resultPrice}>{rupiah(result.price)}</Text>
+
+            {result.tiers.length > 0 && (
+              <View style={styles.grosirBox} testID="cekharga-grosir">
+                <Text style={styles.grosirHead}>HARGA GROSIR</Text>
+                {result.tiers.map((t, i) => (
+                  <View key={i} style={styles.grosirRow}>
+                    <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
+                    <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             <View style={styles.countdownRow}>
               <Ionicons name="time-outline" size={16} color={colors.muted} />
               <Text style={styles.countdownTxt}>Reset otomatis dalam {countdown}s · siap scan berikutnya</Text>
@@ -187,9 +207,16 @@ const styles = StyleSheet.create({
   searchCard: { width: "100%", height: 64, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
   searchTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   resultCard: { backgroundColor: colors.brandTertiary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.xl, alignItems: "center" },
-  resultLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5 },
+  shopName: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.xl, letterSpacing: 1.5 },
+  resultLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, marginTop: 2 },
   resultName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize["2xl"], textAlign: "center", marginTop: spacing.sm },
-  resultPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["4xl"], marginTop: spacing.sm },
+  ecerLabel: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, marginTop: spacing.md },
+  resultPrice: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["4xl"], marginTop: 2 },
+  grosirBox: { alignSelf: "stretch", marginTop: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
+  grosirHead: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5, textAlign: "center", marginBottom: spacing.sm },
+  grosirRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 5 },
+  grosirQty: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base },
+  grosirPrice: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.xl },
   countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.lg },
   countdownTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
   againBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand, alignSelf: "stretch", marginTop: spacing.lg },

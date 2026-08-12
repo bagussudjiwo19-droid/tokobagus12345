@@ -19,6 +19,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-11)
+### v19 — Cek Harga: identitas toko + harga ecer & grosir
+- `cek-harga.tsx` (UI only, tanpa ubah scanner/pencarian/harga/stok/transaksi/variasi/reset): kartu hasil kini urut: NAMA TOKO (hijau, tebal, sedang; dari settings.shopName, fallback "TOKO BAGUS") → "CEK HARGA" → nama produk → "HARGA ECER" + harga (merah) → "HARGA GROSIR" + semua tingkat grosir (hijau).
+- Harga grosir diambil LANGSUNG dari data (`variation.inherit_tiers ? product.tiers : variation.tiers`, atau `product.tiers`), difilter price>0, diurutkan min_qty. Tiap baris: "Mulai {min_qty} {unit}" ↔ "Rp harga". Jika tidak ada tier → bagian grosir tidak ditampilkan (tidak ada Rp 0 kosong). Tidak menghitung grosir sendiri.
+- shopName di-fetch via `api.getSettings()` (seperti checkout). Reset otomatis 15s & tombol Scan Barang Lain tetap. Konsisten untuk scan Bluetooth & pencarian manual (keduanya lewat showResult).
+- Verified: dove → ecer Rp 1.000 + grosir 5→900 & 10→833 (dua tier tampil); mitubaby (tanpa tier) → hanya HARGA ECER; TOKO BAGUS/CEK HARGA/label tampil; reset & Scan Barang Lain jalan.
+
 ### v18 — FIX KRITIS: input scanner barcode Bluetooth (terpotong/hilang/tidak ditemukan)
 - Akar masalah: TextInput terkontrol (`value` + `onChangeText`) — scanner HID mengetik sangat cepat; tiap karakter memicu setState+re-render yang mereset teks native ke nilai lama di tengah pengiriman → barcode terpotong/karakter hilang → dianggap tidak ditemukan / diproses sebelum lengkap.
 - Solusi: hook baru `src/useBarcodeScan.ts`. Karakter ditampung di REF (bukan state) → tak ada re-render yang memotong. Input jadi UNCONTROLLED (`defaultValue=""`, tanpa `value`) → teks native tak pernah di-reset saat scan berlangsung. Diproses HANYA saat scan selesai: ENTER (onSubmitEditing) ATAU jeda 140ms (fallback scanner tanpa Enter). Jeda hanya aktif di mode scan (isScanMode=!kbd) sehingga ketik manual tidak pernah diproses otomatis (fitur pencarian manual tetap jalan via onChar). Setelah proses → buffer & native input dikosongkan (inputRef.clear()) → siap scan berikutnya.
