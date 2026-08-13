@@ -18,6 +18,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v43 — AUTO BACKUP (offline, harian, simpan 5 terakhir, selalu nyala)
+- Baru `src/autobackup.ts`: simpan cadangan `.json` ke `documentDirectory/auto-backups/` SEKALI SEHARI (dipicu saat app dibuka, senyap). Rotasi simpan 5 terbaru (hapus sisanya). `runAutoBackup()`, `listAutoBackups()`, `getLastAutoBackup()`, `maybeDailyAutoBackup()`. Native-only (expo-file-system/legacy + AsyncStorage utk timestamp). Web = no-op.
+- `app/_layout.tsx`: panggil `maybeDailyAutoBackup()` 2.5s setelah ready.
+- `app/backup.tsx`: bagian "BACKUP OTOMATIS [AKTIF]" — tampil waktu cadangan terakhir, tombol "Cadangkan Sekarang" (`backup-now`), daftar 5 cadangan dgn Bagikan (`auto-share-*`) & Pulihkan (`auto-restore-*`, pakai dialog konfirmasi restoreWithConfirm). Import file & pulihkan auto-backup memakai helper konfirmasi yang sama.
+- UI diverifikasi via screenshot (web). CATATAN: pembuatan/rotasi file backup hanya berjalan di HP/BUILD APK (di web file I/O native tidak tersedia — wajar).
+
 ### v42 — Backup/Restore diperkuat (anti hilang & anti-ganda) + konfirmasi
 - `src/localdb.ts` `importBackup`: RESTORE = ganti TOTAL (bukan tambah) → tak mungkin menggandakan. Dedupe by id (Map, id kembar ditimpa). Normalisasi field (tiers/variations array, angka) agar tak crash. ATOMIK: tulis ke DB dulu; bila gagal → kembalikan data lama sepenuhnya (tidak hilang sebagian). Validasi ketat (produk kosong/rusak → batal, data lama aman).
 - `app/backup.tsx` `importBackup`: tambah dialog KONFIRMASI (`Alert`) "Pulihkan Data? … akan DIGANTI" sebelum menimpa. Export tetap: exportBackup → tulis file → Sharing (simpan ke Drive/WA).

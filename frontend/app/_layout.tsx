@@ -14,6 +14,7 @@ import { CartProvider } from "@/src/cart";
 import { DataProvider } from "@/src/data";
 import { ToastProvider } from "@/src/toast";
 import { colors } from "@/src/theme";
+import { maybeDailyAutoBackup } from "@/src/autobackup";
 import Miko from "@/components/Miko";
 
 // Disable logbox errors etc so that users can see the app
@@ -47,6 +48,9 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) {
       SplashScreen.hideAsync();
+      // Auto backup harian (senyap, offline, hanya di HP).
+      const t = setTimeout(() => { maybeDailyAutoBackup(); }, 2500);
+      return () => clearTimeout(t);
     }
   }, [ready]);
 

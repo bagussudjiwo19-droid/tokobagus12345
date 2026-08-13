@@ -12,12 +12,53 @@ import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import { mikoBus } from "@/src/mikoBus";
+import { listAutoBackups, getLastAutoBackup, runAutoBackup, type AutoBackupFile } from "@/src/autobackup";
 
 export default function BackupScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const toast = useToast();
   const { reload } = useData();
+  const [autoList, setAutoList] = React.useState<AutoBackupFile[]>([]);
+  const [lastAuto, setLastAuto] = React.useState<string | null>(null);
+
+  const refreshAuto = React.useCallback(async () => {
+    setAutoList(await listAutoBackups());
+    setLastAuto(await getLastAutoBackup());
+  }, []);
+
+  React.useEffect(() => { refreshAuto(); }, [refreshAuto]);
+
+  const fmtTime = (iso: string | null) => {
+    if (!iso) return "Belum ada";
+    try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+    catch { return iso; }
+  };
+
+  // Pemulihan dengan konfirmasi (dipakai oleh import file & pulihkan auto-backup).
+  const restoreWithConfirm = (data: any) => {
+    if (!data || !Array.isArray(data.products)) { toast.show("File backup tidak valid.", "error"); return; }
+    const jumlah = data.products.length;
+    Alert.alert(
+      "Pulihkan Data?",
+      `File ini berisi ${jumlah} produk. Semua data di aplikasi saat ini akan DIGANTI dengan isi file. Lanjutkan?`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Ya, Pulihkan",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const result = await api.importBackup(data);
+              await reload();
+              toast.show(`Data dipulihkan: ${result.products} produk, ${result.transactions} transaksi`, "success");
+              mikoBus.emit({ type: "restore_ok" });
+            } catch (e: any) { toast.show(e?.message || "Gagal memulihkan data", "error"); }
+          },
+        },
+      ],
+    );
+  };
 
   const exportBackup = async () => {
     try {
@@ -38,30 +79,30 @@ export default function BackupScreen() {
       const res = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true });
       if (res.canceled || !res.assets?.[0]) return;
       const content = await FileSystem.readAsStringAsync(res.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
-      const data = JSON.parse(content);
-      if (!data.products || !Array.isArray(data.products)) { toast.show("File backup tidak valid.", "error"); return; }
-      const jumlah = data.products.length;
-      // Konfirmasi dulu — restore MENGGANTI semua data saat ini.
-      Alert.alert(
-        "Pulihkan Data?",
-        `File ini berisi ${jumlah} produk. Semua data di aplikasi saat ini akan DIGANTI dengan isi file. Lanjutkan?`,
-        [
-          { text: "Batal", style: "cancel" },
-          {
-            text: "Ya, Pulihkan",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const result = await api.importBackup(data);
-                await reload();
-                toast.show(`Data dipulihkan: ${result.products} produk, ${result.transactions} transaksi`, "success");
-                mikoBus.emit({ type: "restore_ok" });
-              } catch (e: any) { toast.show(e?.message || "Gagal memulihkan data", "error"); }
-            },
-          },
-        ],
-      );
+      restoreWithConfirm(JSON.parse(content));
     } catch (e: any) { toast.show(e?.message || "Gagal membaca file backup", "error"); }
+  };
+
+  const backupNow = async () => {
+    try {
+      const uri = await runAutoBackup();
+      if (!uri) { toast.show("Backup otomatis hanya berjalan di HP.", "error"); return; }
+      await refreshAuto();
+      toast.show("Cadangan otomatis dibuat", "success");
+      mikoBus.emit({ type: "backup_ok" });
+    } catch (e: any) { toast.show(e?.message || "Gagal membuat cadangan", "error"); }
+  };
+
+  const shareAuto = async (uri: string) => {
+    try { if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Bagikan Backup" }); }
+    catch (e: any) { toast.show(e?.message || "Gagal membagikan", "error"); }
+  };
+
+  const restoreAuto = async (uri: string) => {
+    try {
+      const content = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
+      restoreWithConfirm(JSON.parse(content));
+    } catch (e: any) { toast.show(e?.message || "Gagal membaca cadangan", "error"); }
   };
 
   return (
@@ -98,6 +139,45 @@ export default function BackupScreen() {
           <Ionicons name="folder-open-outline" size={22} color={colors.onSurfaceInverse} />
           <Text style={styles.darkBtnTxt}>Pilih File Backup</Text>
         </Pressable>
+
+        <View style={{ height: spacing.xl }} />
+
+        {/* AUTO BACKUP — otomatis sekali sehari, simpan 5 terakhir, selalu nyala */}
+        <View style={styles.autoHeaderRow}>
+          <Text style={styles.sectionLabel}>BACKUP OTOMATIS</Text>
+          <View style={styles.onBadge}><Text style={styles.onBadgeTxt}>AKTIF</Text></View>
+        </View>
+        <Text style={styles.sectionDesc}>
+          Aplikasi otomatis menyimpan cadangan ke penyimpanan HP sekali sehari, dan menyimpan 5 cadangan terakhir.
+        </Text>
+        <View style={styles.autoInfoRow}>
+          <Ionicons name="time-outline" size={18} color={colors.brand} />
+          <Text style={styles.autoInfoTxt}>Cadangan otomatis terakhir: {fmtTime(lastAuto)}</Text>
+        </View>
+        <Pressable style={styles.outlineBtn} onPress={backupNow} testID="backup-now">
+          <Ionicons name="save-outline" size={20} color={colors.brand} />
+          <Text style={styles.outlineBtnTxt}>Cadangkan Sekarang</Text>
+        </Pressable>
+
+        {autoList.length > 0 && (
+          <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+            {autoList.map((f) => (
+              <View key={f.uri} style={styles.autoItem}>
+                <Ionicons name="document-text-outline" size={20} color={colors.onSurfaceSecondary} />
+                <Text style={styles.autoItemName} numberOfLines={1}>{f.name}</Text>
+                <Pressable style={styles.iconBtn} onPress={() => shareAuto(f.uri)} testID={`auto-share-${f.name}`}>
+                  <Ionicons name="share-outline" size={20} color={colors.brand} />
+                </Pressable>
+                <Pressable style={styles.iconBtn} onPress={() => restoreAuto(f.uri)} testID={`auto-restore-${f.name}`}>
+                  <Ionicons name="refresh-outline" size={20} color={colors.onSurfaceInverse} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
+        {autoList.length === 0 && (
+          <Text style={styles.emptyAuto}>Belum ada cadangan otomatis. Cadangan pertama dibuat otomatis saat aplikasi dibuka di HP.</Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -116,4 +196,15 @@ const styles = StyleSheet.create({
   redBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   darkBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
   darkBtnTxt: { color: colors.onSurfaceInverse, fontFamily: font.bold, fontSize: fontSize.lg },
+  autoHeaderRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
+  onBadge: { backgroundColor: "#E7F6EC", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 2 },
+  onBadgeTxt: { color: colors.success, fontFamily: font.bold, fontSize: 11, letterSpacing: 0.5 },
+  autoInfoRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.brandTertiary, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
+  autoInfoTxt: { color: colors.onBrandTertiary, fontFamily: font.medium, fontSize: fontSize.base, flex: 1 },
+  outlineBtn: { height: 52, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  outlineBtnTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  autoItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border },
+  autoItemName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.sm },
+  iconBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  emptyAuto: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: spacing.md, lineHeight: 18 },
 });
