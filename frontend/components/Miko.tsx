@@ -412,7 +412,6 @@ export default function Miko() {
   const jump = useRef(new Animated.Value(0)).current; // lompatan (kios)
   const rot = useRef(new Animated.Value(0)).current;  // geleng/goyang (kios)
   const walkX = useRef(new Animated.Value(0)).current; // jalan-jalan (kios)
-  const kioskTick = useRef(0);
   const kioskI = useRef(-1);
   const bubbleA = useRef(new Animated.Value(0)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -475,7 +474,7 @@ export default function Miko() {
 
   useEffect(() => {
     pathRef.current = pathname;
-    say(greet(pathname || ""), (pathname || "").includes("cek-harga") ? 5000 : 3000);
+    say(greet(pathname || ""), (pathname || "").includes("cek-harga") ? 7000 : 3000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -499,10 +498,10 @@ export default function Miko() {
       else if (e.type === "backup_ok") say(pickRot("backup", BACKUP), 2600);
       else if (e.type === "restore_ok") say(pickRot("restore", RESTORE), 2600);
       else if (e.type === "low_stock") say(pickRot("low", LOW), 3000);
-      else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 5000);
+      else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 7000);
       else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
       else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
-      else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 5000);
+      else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 7000);
       else if (e.type === "error") say(pickRot("err", ERR), 2800);
     });
     return off;
@@ -578,23 +577,24 @@ export default function Miko() {
     let i = Math.floor(Math.random() * KIOSK_SAY.length);
     if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
     kioskI.current = i;
-    say({ t: KIOSK_SAY[i], p: rndCute() }, 5000);
+    say({ t: KIOSK_SAY[i], p: rndCute() }, 7000);
   };
 
-  // Kios Cek Harga: Miko hidup & menghibur — ganti pose lucu + animasi tiap
-  // ~3.5 dtk, dan menyapa pelanggan (acak) tiap ~3 tick (~10 dtk).
+  // Kios Cek Harga: Miko hidup & menghibur.
+  // - Animasi lucu + ganti pose tiap ~3.5 dtk.
+  // - Balon teks tampil 7 dtk, lalu JEDA 7 dtk (kosong) sebelum balon berikutnya
+  //   muncul (siklus 14 dtk).
   useEffect(() => {
-    const id = setInterval(() => {
+    const animId = setInterval(() => {
       if (!(pathRef.current || "").includes("cek-harga")) return;
-      kioskTick.current++;
       playAnim();
-      if (kioskTick.current % 3 === 0) {
-        sayKiosk();
-      } else if (!show) {
-        setPose(rndCute()); // ganti ekspresi saat tidak sedang menampilkan balon
-      }
+      if (!show) setPose(rndCute()); // ganti ekspresi saat tidak sedang menampilkan balon
     }, 3500);
-    return () => clearInterval(id);
+    const sayId = setInterval(() => {
+      if (!(pathRef.current || "").includes("cek-harga")) return;
+      sayKiosk();
+    }, 14000);
+    return () => { clearInterval(animId); clearInterval(sayId); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
 
