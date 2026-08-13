@@ -19,7 +19,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
-### v32 — Kartu keranjang compact (2 baris)
+### v33 — Transaksi dikecilkan & dirapikan (lebih lega)
+- `app/(tabs)/index.tsx`: judul "Transaksi" (30→xl), sapaan (xs), scan box (56→44, ikon 34, border 1.5), tombol Tambah Item & Cari Barang (52→40, teks base, ikon 18), listHead (xs), pay bar dikecilkan (paddingHorizontal lg, radius 20, Rp total→xl, tombol Bayar 58→46 paddingH 26, ikon 18), kartu barang lebih ramping (marginTop 6, paddingV 6, nama & subtotal base, qtyBtn 30). Fungsi tidak berubah. Verified via screenshot: 4 barang tampil lega, elemen atas & bar bawah mungil.
+
+
 - `app/(tabs)/index.tsx`: kartu tiap barang dibuat pendek & padat. Baris 1 = Nama (tebal) + ikon variasi + hapus (mini). Baris 2 = "Rp harga x qty" (kiri, kecil) · stepper − [qty] + (tengah) · subtotal (kanan, tebal). Thumbnail & shadow besar dihapus, padding dikurangi, border tipis. Stepper tetap 32px (mudah disentuh). Tidak ada perubahan fungsi/logika. Verified via screenshot: 3 barang muat lega dalam 1 layar.
 
 

@@ -157,7 +157,7 @@ export default function TransaksiScreen() {
         {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) */}
         <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
           <View style={styles.scanIcon}>
-            <Ionicons name="barcode-outline" size={22} color={colors.brand} />
+            <Ionicons name="barcode-outline" size={18} color={colors.brand} />
           </View>
           <TextInput
             ref={inputRef}
@@ -180,11 +180,11 @@ export default function TransaksiScreen() {
         {/* 2) Aksi: Tambah Item + Cari Barang */}
         <View style={styles.actions}>
           <Pressable style={[styles.actBtn, styles.actBtnFilled]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
-            <Ionicons name="add-circle-outline" size={20} color={colors.onSurface} />
+            <Ionicons name="add-circle-outline" size={18} color={colors.onSurface} />
             <Text style={[styles.actTxt, { color: colors.onSurface }]}>Tambah Item</Text>
           </Pressable>
           <Pressable style={[styles.actBtn, styles.actBtnOutline]} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
-            <Ionicons name="search" size={20} color={colors.brand} />
+            <Ionicons name="search" size={18} color={colors.brand} />
             <Text style={[styles.actTxt, { color: colors.brand }]}>Cari Barang</Text>
           </Pressable>
         </View>
@@ -261,7 +261,7 @@ export default function TransaksiScreen() {
           onPress={() => router.push("/checkout?step=pay")}
           style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
         >
-          <Ionicons name="wallet-outline" size={22} color={colors.onBrandPrimary} />
+          <Ionicons name="wallet-outline" size={18} color={colors.onBrandPrimary} />
           <Text style={styles.payBtnTxt}>Bayar</Text>
         </Pressable>
       </View>
@@ -362,27 +362,27 @@ function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: nu
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  top: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.xs },
-  hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
-  pageTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: 30, marginTop: 2 },
-  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 56, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.borderStrong, paddingLeft: 6, paddingRight: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
-  scanIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
-  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  top: { paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.xs },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 0 },
+  hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.xs },
+  pageTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl, marginTop: 0 },
+  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 44, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, paddingLeft: 5, paddingRight: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  scanIcon: { width: 34, height: 34, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
-  actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
-  actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.lg },
+  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
+  actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 40, borderRadius: radius.md },
   actBtnFilled: { backgroundColor: colors.brandSecondary },
   actBtnOutline: { backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.borderStrong },
-  actTxt: { fontFamily: font.bold, fontSize: fontSize.lg },
-  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
-  listHeadTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5 },
+  actTxt: { fontFamily: font.bold, fontSize: fontSize.base },
+  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm },
+  listHeadTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xs, letterSpacing: 1.2 },
   listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },
   emptyTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
   // kartu belanja compact (2 baris)
-  card: { marginHorizontal: spacing.lg, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
+  card: { marginHorizontal: spacing.lg, marginTop: 6, paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
   cardNew: { borderColor: colors.brand, backgroundColor: colors.surfaceTertiary },
   line1: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   line2: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 6 },
@@ -390,17 +390,17 @@ const styles = StyleSheet.create({
   unitWrap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 3 },
   unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },
-  qtyBtn: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
-  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, width: 30, height: 32, paddingVertical: 0, textAlign: "center" },
-  lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  qtyBtn: { width: 30, height: 30, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 24, width: 28, height: 30, paddingVertical: 0, textAlign: "center" },
+  lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   lineNameGrosir: { color: colors.success },
-  lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.lg, minWidth: 68, textAlign: "right" },
-  payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.xl, paddingTop: spacing.lg, backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 26, borderTopRightRadius: 26, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -6 }, elevation: 12 },
-  payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
-  payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: 26 },
-  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 58, borderRadius: radius.lg, paddingHorizontal: 40 },
+  lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.base, minWidth: 64, textAlign: "right" },
+  payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: -4 }, elevation: 10 },
+  payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
+  payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl },
+  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: colors.brand, height: 46, borderRadius: radius.md, paddingHorizontal: 26 },
   payBtnDisabled: { backgroundColor: "#F2B8C2" },
-  payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.xl },
+  payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.lg },
   sheetTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   sheetLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   priceInputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 54 },
