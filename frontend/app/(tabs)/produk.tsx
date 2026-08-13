@@ -18,6 +18,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
+import { mikoBus } from "@/src/mikoBus";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
@@ -173,7 +174,7 @@ export default function ProdukScreen() {
   const doDelete = async () => {
     if (!menuProduct) return;
     sheetRef.current?.dismiss();
-    try { await api.deleteProduct(menuProduct.id); await reload(); toast.show("Produk dihapus", "success"); }
+    try { await api.deleteProduct(menuProduct.id); await reload(); toast.show("Produk dihapus", "success"); mikoBus.emit({ type: "product_deleted" }); }
     catch (e: any) { toast.show(e?.message || "Gagal menghapus", "error"); }
   };
 

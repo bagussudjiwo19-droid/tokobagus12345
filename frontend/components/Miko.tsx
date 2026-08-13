@@ -32,26 +32,84 @@ type Line = { t: string; p: string };
 const rnd = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
 const OPEN: Line[] = [
-  { t: "Siap bantu, Kak! 😊", p: "wave" }, { t: "Selamat datang kembali, Kak!", p: "happy" },
-  { t: "Miko siap menemani hari ini!", p: "thumbsup" }, { t: "Yuk, mulai transaksi!", p: "wave" },
-  { t: "Semoga jualannya lancar hari ini! 🍀", p: "pray" },
+  { t: "Halo, Kak! Miko siap kerja. 👋", p: "wave" }, { t: "Selamat datang! Yuk mulai.", p: "happy" },
+  { t: "Siap bantu, Kak! 😊", p: "wave" }, { t: "Miko siap menemani hari ini!", p: "thumbsup" },
+  { t: "Yuk, mulai transaksi!", p: "wave" }, { t: "Semangat jualannya hari ini!", p: "star" },
+  { t: "Semoga jualannya lancar hari ini! 🍀", p: "pray" }, { t: "Jangan lupa senyum, Kak. 😊", p: "wink" },
 ];
 const ITEM: Line[] = [
-  { t: "Sip, barang masuk! 🎉", p: "wave" }, { t: "Barcode terbaca 😺", p: "thumbsup" },
-  { t: "Satu lagi masuk keranjang! 🛍️", p: "happy" }, { t: "Barang berhasil ditambahkan.", p: "ok" },
+  { t: "Masuk keranjang! 🛒", p: "wave" }, { t: "Sip, barangnya masuk!", p: "thumbsup" },
+  { t: "Satu lagi, Kak!", p: "happy" }, { t: "Barang sudah ditambahkan.", p: "ok" },
+  { t: "Keranjang bertambah nih!", p: "happy" }, { t: "Dapat! Barcode terbaca.", p: "wink" },
+  { t: "Scan berhasil! 😺", p: "thumbsup" }, { t: "Tambah satu lagi!", p: "wave" },
 ];
-const BIG: Line[] = [{ t: "Wah, belanjaannya banyak! 🤑", p: "money" }, { t: "Cuan besar hari ini! 💰", p: "money" }];
-const EMPTY: Line[] = [{ t: "Keranjang kosong, siap lagi! ✨", p: "wave" }];
+const BIG: Line[] = [
+  { t: "Wah, belanjaannya banyak! 🤑", p: "money" }, { t: "Wih, totalnya lumayan nih!", p: "money" },
+  { t: "Hari ini ramai rezeki! 😄", p: "star" }, { t: "Keranjang penuh, Kak!", p: "happy" },
+  { t: "Mantap, banyak belanja!", p: "thumbsup" },
+];
+const EMPTY: Line[] = [
+  { t: "Keranjangnya masih kosong. ✨", p: "wave" }, { t: "Yuk mulai belanja!", p: "happy" },
+  { t: "Miko siap menerima barang pertama.", p: "wave" }, { t: "Belum ada barang nih, Kak.", p: "thinking" },
+  { t: "Ayo isi keranjang!", p: "wave" },
+];
 const NF: Line[] = [
-  { t: "Hmm, barangnya belum ketemu 🤔", p: "surprised" }, { t: "Coba cek lagi barcode-nya, Kak.", p: "thinking" },
-  { t: "Barangnya belum terdaftar.", p: "surprised" },
+  { t: "Hmm, barangnya belum ketemu. 🤔", p: "surprised" }, { t: "Barcode ini belum terdaftar.", p: "thinking" },
+  { t: "Coba cek barcode-nya lagi.", p: "thinking" }, { t: "Miko belum menemukan barangnya.", p: "surprised" },
+  { t: "Mungkin produknya belum ditambahkan.", p: "thinking" }, { t: "Coba scan lagi ya, Kak.", p: "surprised" },
 ];
-const PAY: Line[] = [{ t: "Transaksi berhasil! 🎉", p: "love" }, { t: "Selesai! Terima kasih 😊", p: "hearts" }, { t: "Pembayaran beres, Kak!", p: "thumbsup" }];
-const POK: Line[] = [{ t: "Struk sudah dicetak ✅", p: "receipt" }];
-const PF: Line[] = [{ t: "Printer belum siap, cek koneksinya ya Kak.", p: "surprised" }];
+const PAY: Line[] = [
+  { t: "Yeay! Pembayaran berhasil! 🎉", p: "love" }, { t: "Transaksi selesai, Kak!", p: "hearts" },
+  { t: "Mantap! Berhasil dibayar!", p: "thumbsup" }, { t: "Selesai! Pelanggan siap pergi.", p: "happy" },
+  { t: "Transaksi sukses! 👍", p: "thumbsup" }, { t: "Uangnya sudah masuk, Kak.", p: "money" },
+];
+const POK: Line[] = [
+  { t: "Struk sudah tercetak! 🧾", p: "receipt" }, { t: "Struknya siap, Kak.", p: "receipt" },
+  { t: "Printer bekerja dengan baik.", p: "thumbsup" },
+];
+const PF: Line[] = [
+  { t: "Hmm, printer belum siap.", p: "surprised" }, { t: "Coba cek koneksi printer ya, Kak.", p: "thinking" },
+  { t: "Printer sepertinya terputus.", p: "surprised" }, { t: "Coba sambungkan printer lagi ya.", p: "thinking" },
+];
+const PRICE: Line[] = [
+  { t: "Harga berhasil diperbarui! 💰", p: "calc" }, { t: "Sip, harga sudah disimpan.", p: "thumbsup" },
+  { t: "Harga barunya sudah aktif.", p: "ok" }, { t: "Data harga sudah diperbarui.", p: "calc" },
+  { t: "Berhasil, Kak!", p: "thumbsup" },
+];
+const BACKUP: Line[] = [
+  { t: "Data berhasil dicadangkan. 💾", p: "thumbsup" }, { t: "Backup aman, Kak.", p: "ok" },
+  { t: "Backup selesai! Data aman. 💾", p: "star" }, { t: "Berhasil dicadangkan!", p: "thumbsup" },
+];
+const RESTORE: Line[] = [
+  { t: "Data berhasil dipulihkan! 🎉", p: "love" }, { t: "Tenang, data sudah aman.", p: "happy" },
+  { t: "Aman, datanya sudah tersimpan.", p: "ok" },
+];
+const LOW: Line[] = [
+  { t: "Stoknya mulai menipis. 📦", p: "surprised" }, { t: "Kak, barang ini hampir habis.", p: "surprised" },
+  { t: "Sepertinya waktunya restock.", p: "idea" }, { t: "Stok tinggal sedikit nih.", p: "thinking" },
+  { t: "Jangan lupa pesan stok lagi.", p: "idea" },
+];
+const ERR: Line[] = [
+  { t: "Koneksi sedang bermasalah.", p: "surprised" }, { t: "Coba lagi sebentar ya, Kak.", p: "thinking" },
+  { t: "Ada kendala sedikit, coba lagi ya Kak.", p: "surprised" },
+];
+const SAVED: Line[] = [
+  { t: "Produk berhasil disimpan!", p: "thumbsup" }, { t: "Sip, produk sudah masuk katalog.", p: "star" },
+  { t: "Perubahannya sudah disimpan.", p: "ok" }, { t: "Produk sudah diperbarui.", p: "happy" },
+];
+const DELETED: Line[] = [
+  { t: "Produk sudah dihapus.", p: "ok" }, { t: "Oke, datanya sudah dibersihkan.", p: "thumbsup" },
+];
 const CHEER: Line[] = [
-  { t: "Nyaa~ 💕", p: "hearts" }, { t: "Kamu hebat, Kak! 🎉", p: "thumbsup" }, { t: "Semangaaat! 🐾", p: "wave" },
-  { t: "Aku sayang kamu~ 😽", p: "love" }, { t: "Cie rajin banget 😸", p: "wink" }, { t: "Peluk dulu 🤗", p: "hearts" },
+  { t: "Eh, Miko dipencet! 💕", p: "hearts" }, { t: "Iya, Kak? Miko di sini. 😄", p: "happy" },
+  { t: "Ada yang mau dibicarakan?", p: "thinking" }, { t: "Miko siap menemani!", p: "wave" },
+  { t: "Nyaa~ 💕", p: "hearts" }, { t: "Semangaaat! 🐾", p: "wave" },
+  { t: "Kamu hebat, Kak! 🎉", p: "thumbsup" }, { t: "Aku sayang kamu~ 😽", p: "love" },
+];
+// Bila di-tap berkali-kali dalam waktu dekat — respons jenaka.
+const CHEER_MULTI: Line[] = [
+  { t: "Hehe, jangan pencet terus, Kak. 😆", p: "wink" }, { t: "Hehe, Miko dipanggil lagi. 😆", p: "shy" },
+  { t: "Iya iya, Miko dengar kok!", p: "happy" }, { t: "Cie kangen Miko ya? 😸", p: "wink" },
 ];
 const SEPI: Line[] = [
   { t: "Santai dulu, Kak. Miko tetap siap 😊", p: "tea" }, { t: "Sepi ya... tapi semangat jangan ikut sepi 😊", p: "happy" },
@@ -95,16 +153,24 @@ const WARM: Line[] = [
   { t: "Semoga hari ini rezekinya deras, Kak! ❤️", p: "pray" },
 ];
 
-// Humor ringan — porsi kecil (sesekali saja), biar tidak berlebihan.
+// Humor ringan & situasional — porsi kecil, TIDAK muncul saat error serius,
+// tidak mengganggu transaksi, dan tidak menyinggung.
 const HUMOR: Line[] = [
-  { t: "Miko dari tadi siap kerja, lho. 😆", p: "wink" },
-  { t: "Kok sepi? Miko jadi malu sendiri.", p: "shy" },
-  { t: "Miko kira tadi ada pelanggan, ternyata cuma angin. 😂", p: "surprised" },
-  { t: "Kalau Miko punya dompet, mungkin Miko sudah ikut belanja.", p: "money" },
-  { t: "Miko tetap standby, walaupun pelanggan sedang sembunyi.", p: "thinking" },
-  { t: "Kayaknya Miko perlu kopi nih... eh, Kakak juga. ☕", p: "tea" },
-  { t: "Miko jangan ditinggal ya, Kak. 😄", p: "cry" },
-  { t: "Satu transaksi lagi, Miko traktir... eh, Miko kan nggak punya uang. 😂", p: "money" },
+  { t: "Kak, santai... barcode-nya nggak akan kabur kok. 😆", p: "wink" },
+  { t: "Wah, pelanggan datang! Miko langsung melek. 👀", p: "surprised" },
+  { t: "Kak, jangan lupa senyum, nanti Miko ikut senyum sendiri. 😄", p: "happy" },
+  { t: "Barangnya sudah masuk. Dompet pelanggan mulai waspada. 😂", p: "money" },
+  { t: "Wih, keranjangnya makin berat... tapi hati tetap ringan. 😆", p: "star" },
+  { t: "Miko lihat totalnya... pura-pura nggak lihat deh. 😂", p: "shy" },
+  { t: "Kak, kalau toko makin ramai, Miko minta bonus ya. 😜", p: "wink" },
+  { t: "Scan lagi, Kak! Miko belum sempat kedip. 😆", p: "wink" },
+  { t: "Barcode-nya malu-malu nih, scan sekali lagi. 😂", p: "shy" },
+  { t: "Waduh, belanjaannya banyak. Troli aja mungkin perlu istirahat. 😄", p: "tea" },
+  { t: "Kak, Miko siap kerja. Ngantuknya nanti dulu. 😴😂", p: "sleepy" },
+  { t: "Kalau pelanggan terus datang begini, Miko bisa jadi karyawan teladan. 😎", p: "thumbsup" },
+  { t: "Harga sudah ketemu. Miko nggak ikut nawar ya, Kak. 😂", p: "calc" },
+  { t: "Transaksi sukses! Miko kasih jempol dulu. 👍😆", p: "thumbsup" },
+  { t: "Sudah selesai, Kak. Sekarang tinggal tunggu pelanggan berikutnya... atau traktir Miko. 😜", p: "money" },
 ];
 
 // Sapaan khusus layar Cek Harga (kios dinding — ditujukan ke PELANGGAN).
@@ -170,6 +236,7 @@ export default function Miko() {
   const prevCount = useRef(cart.count);
   const lastActive = useRef(Date.now());
   const idleGap = useRef(60000);
+  const tapTimes = useRef<number[]>([]);
   const pathRef = useRef(pathname);
   const lastIdx = useRef<Record<string, number>>({});
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -244,11 +311,13 @@ export default function Miko() {
       else if (e.type === "change") say({ t: `Kembaliannya ${terbilang(e.amount).trim()} rupiah ya, Kak 💰`, p: "money" }, 3400);
       else if (e.type === "print_ok") say(pickRot("pok", POK), 2400);
       else if (e.type === "print_fail") say(pickRot("pf", PF), 3000);
-      else if (e.type === "price_changed") say({ t: "Harga berhasil diperbarui ✅", p: "calc" }, 2400);
-      else if (e.type === "backup_ok") say({ t: "Data berhasil dicadangkan 💾", p: "thumbsup" }, 2600);
-      else if (e.type === "restore_ok") say({ t: "Data berhasil dipulihkan! 🎉", p: "love" }, 2600);
-      else if (e.type === "low_stock") say({ t: "Stok barang ini menipis, jangan lupa restok ya 📦", p: "surprised" }, 3000);
-      else if (e.type === "error") say({ t: "Ada kendala sedikit, coba lagi ya Kak.", p: "surprised" }, 2800);
+      else if (e.type === "price_changed") say(pickRot("price", PRICE), 2400);
+      else if (e.type === "backup_ok") say(pickRot("backup", BACKUP), 2600);
+      else if (e.type === "restore_ok") say(pickRot("restore", RESTORE), 2600);
+      else if (e.type === "low_stock") say(pickRot("low", LOW), 3000);
+      else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
+      else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
+      else if (e.type === "error") say(pickRot("err", ERR), 2800);
     });
     return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -282,6 +351,14 @@ export default function Miko() {
 
   const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
 
+  // Tap Miko: bila dipencet berkali-kali dalam 3 dtk → respons jenaka.
+  const onTap = () => {
+    const now = Date.now();
+    tapTimes.current = tapTimes.current.filter((t) => now - t < 3000);
+    tapTimes.current.push(now);
+    say(tapTimes.current.length >= 3 ? pickRot("cheerm", CHEER_MULTI) : pickRot("cheer", CHEER), 2200);
+  };
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View
@@ -295,7 +372,7 @@ export default function Miko() {
             <View style={styles.tail} />
           </Animated.View>
         )}
-        <Pressable onPress={() => say(pickRot("cheer", CHEER), 2200)} hitSlop={8}>
+        <Pressable onPress={onTap} hitSlop={8}>
           <Animated.View style={{ transform: [{ translateY: bobY }, { scale: pop }] }}>
             <Image source={POSES[pose] || POSES.happy} style={styles.img} resizeMode="contain" />
           </Animated.View>

@@ -19,6 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
+### v34 — Balon teks Miko diperkaya (kontekstual, banyak variasi) + Cek Harga dirapikan (kios)
+- `components/Miko.tsx`: seluruh koleksi balon teks diperbanyak sesuai spek user (teks SAJA, bukan suara). Dipilih per-kondisi (tidak semua sekaligus):
+  - ITEM(8), BIG(5), EMPTY(5), NF(6), PAY(6), POK(3), PF(4), PRICE(5), BACKUP(4), RESTORE(3), LOW(5), ERR(3), SAVED(4), DELETED(2), CHEER(8) + CHEER_MULTI(4, saat di-tap ≥3x dalam 3 dtk), OPEN(8), WARM(30), SEPI(10), HUMOR(15 baru & lebih lucu).
+  - Idle: layar kerja → jeda panjang & acak 60–105 dtk, humor ~18%, TIDAK muncul saat checkout/cari/produk-form/variasi/edit-transaksi (prioritas kerja kasir). Kios Cek Harga → CEK_HARGA_IDLE tiap ±22 dtk (mengajak pelanggan). Humor tidak dipakai pada handler error serius.
+- Event bus (`src/mikoBus.ts`): tambah `product_saved` & `product_deleted`. Di-emit di `produk-form.tsx` (simpan/hapus) & `(tabs)/produk.tsx` (hapus dari menu). Handler `price_changed/backup_ok/restore_ok/low_stock` kini pakai array (pickRot), bukan string tunggal.
+- `(tabs)/cek-harga.tsx`: font kartu hasil dikecilkan agar tidak berantakan/kepotong (nama toko 38→24, nama produk 44→26, harga ecer 66→52, grosir 32→26), padding kartu dilonggarkan. Miko tetap mungil di sudut & menyapa pelanggan (kios dinding self-service).
+- CATATAN: suara/TTS Miko hanya bunyi di HP (APK build), bukan preview web.
+
 ### v33 — Transaksi dikecilkan & dirapikan (lebih lega)
 - `app/(tabs)/index.tsx`: judul "Transaksi" (30→xl), sapaan (xs), scan box (56→44, ikon 34, border 1.5), tombol Tambah Item & Cari Barang (52→40, teks base, ikon 18), listHead (xs), pay bar dikecilkan (paddingHorizontal lg, radius 20, Rp total→xl, tombol Bayar 58→46 paddingH 26, ikon 18), kartu barang lebih ramping (marginTop 6, paddingV 6, nama & subtotal base, qtyBtn 30). Fungsi tidak berubah. Verified via screenshot: 4 barang tampil lega, elemen atas & bar bawah mungil.
 

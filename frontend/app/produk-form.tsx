@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
+import { mikoBus } from "@/src/mikoBus";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Tier, Variation } from "@/src/types";
@@ -80,6 +81,7 @@ export default function ProdukFormScreen() {
         toast.show("Produk ditambahkan", "success");
       }
       await reload();
+      mikoBus.emit({ type: "product_saved" });
       router.back();
     } catch (e: any) {
       toast.show(e?.message || "Gagal menyimpan", "error");
@@ -95,6 +97,7 @@ export default function ProdukFormScreen() {
       await api.deleteProduct(editing.id);
       toast.show("Produk dihapus", "success");
       await reload();
+      mikoBus.emit({ type: "product_deleted" });
       router.back();
     } catch (e: any) {
       toast.show(e?.message || "Gagal menghapus", "error");

@@ -11,6 +11,8 @@ export type MikoEvent =
   | { type: "backup_ok" }
   | { type: "restore_ok" }
   | { type: "low_stock" }
+  | { type: "product_saved" }
+  | { type: "product_deleted" }
   | { type: "scan_ready" };
 
 type Listener = (e: MikoEvent) => void;
