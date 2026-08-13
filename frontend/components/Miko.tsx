@@ -61,12 +61,23 @@ const SEPI: Line[] = [
   { t: "Semoga sebentar lagi ramai lagi ✨", p: "idea" }, { t: "Senyum dulu, biar rezeki lancar 😊", p: "wink" },
 ];
 
+function timeGreet(): Line {
+  const h = new Date().getHours();
+  const t =
+    h < 11 ? "Selamat pagi, Kak! ☀️"
+    : h < 15 ? "Selamat siang, Kak! 🌞"
+    : h < 18 ? "Selamat sore, Kak! 🌤️"
+    : "Selamat malam, Kak! 🌙";
+  return { t, p: "wave" };
+}
+
 function greet(path: string): Line {
   if (path.includes("checkout")) return { t: "Yuk lanjut pembayaran, Kak 💗", p: "money" };
   if (path.includes("produk")) return { t: "Yuk rapikan produkmu~ 🐾", p: "happy" };
   if (path.includes("cek-harga")) return { t: "Mau cek harga? Scan aja 🔍", p: "wink" };
   if (path.includes("riwayat")) return { t: "Lihat cuan hari ini yuk! 💰", p: "money" };
-  return rnd(OPEN);
+  // Layar utama (Transaksi/lainnya): sapaan sesuai waktu, sesekali sapaan lain.
+  return Math.random() < 0.7 ? timeGreet() : rnd(OPEN);
 }
 
 export default function Miko() {

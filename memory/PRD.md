@@ -19,7 +19,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
-### v30 — Rombak Cek Harga, Riwayat, & Pengaturan (Soft Rose selesai)
+### v31 — Miko sapa sesuai waktu
+- `components/Miko.tsx`: `timeGreet()` → "Selamat pagi/siang/sore/malam, Kak!" berdasar jam; dipakai di sapaan layar utama (±70%, sisanya sapaan OPEN lain). Pose wave.
+
+
 - `cek-harga.tsx`: header tanpa garis, scan input jadi pill + ikon bulat, tombol "Cari Produk Manual" pill, kartu hasil putih bershadow lembut, nama toko warna brand (bukan hijau). Fungsi scan/cari/countdown tetap.
 - `riwayat.tsx`: kartu omzet HERO (background brand, teks putih), chip filter jadi pill, ikon aksi header jadi bulat tinted, baris transaksi jadi kartu mengambang + ikon struk bulat. Filter tanggal & lunasi tetap.
 - Pengaturan: `pengaturan-struk.tsx` (input radius lg, tombol simpan bershadow, tombol close bulat, header tanpa garis), `backup.tsx` & `pengaturan-printer.tsx` (tombol utama radius lg + shadow, close bulat, header lembut, alamat BT tampil di bawah nama perangkat).
