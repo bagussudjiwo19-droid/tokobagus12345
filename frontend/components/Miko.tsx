@@ -331,6 +331,7 @@ export default function Miko() {
       else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 3000);
       else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
       else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
+      else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 3400);
       else if (e.type === "error") say(pickRot("err", ERR), 2800);
     });
     return off;

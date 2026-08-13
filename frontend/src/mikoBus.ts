@@ -14,6 +14,7 @@ export type MikoEvent =
   | { type: "price_found" }
   | { type: "product_saved" }
   | { type: "product_deleted" }
+  | { type: "say"; text: string; pose?: string }
   | { type: "scan_ready" };
 
 type Listener = (e: MikoEvent) => void;

@@ -18,6 +18,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v40 — Suara + balon "barang tidak ditemukan" di Cek Harga (arahkan ke kasir Vita/Sasa)
+- `(tabs)/cek-harga.tsx`: pada catch not-found, pilih 1 dari 20 kalimat `NOT_FOUND` (bergantian, anti-ulang) → emit `mikoBus.say` (balon Miko tampil PERSIS kalimat itu) + `speak()` (TTS, emoji dibuang). Toast tetap.
+- `src/mikoBus.ts`: event generik baru `{ type: "say"; text; pose? }`. `components/Miko.tsx`: handler `say` menampilkan teks apa adanya (pose default surprised, hold 3.4s) → balon = suara (sinkron). Selalu aktif (kios). CATATAN: TTS hanya bunyi di HP/BUILD APK. Verified via screenshot.
+
 ### v39 — Suara Cek Harga (TTS) — bacakan nama + harga ecer + grosir + penutup
 - `(tabs)/cek-harga.tsx`: saat hasil tampil (scan Bluetooth / pilih manual), otomatis dibacakan via TTS (`speak()` di `src/voice.ts`, suara feminin id-ID). Format: "[Nama]. Harga ecer [terbilang] rupiah. Beli {min_qty} harganya [terbilang] rupiah." per tingkat grosir + 1 kalimat PENUTUP dari 50 kalimat (bergantian, anti-ulang, emoji dibuang). Tanpa grosir → nama + ecer + penutup saja. SELALU aktif (permintaan user, kios). Angka dibacakan via `terbilang()`. CATATAN: TTS hanya bunyi di HP/BUILD APK, bukan preview web. Verified via screenshot: hasil tampil tanpa error/regresi.
 

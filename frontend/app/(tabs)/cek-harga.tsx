@@ -72,6 +72,30 @@ const CLOSINGS: string[] = [
   "Kalau sudah cocok, yuk masukkan ke keranjang. Miko siap menemani belanja berikutnya.",
 ];
 
+// Kalimat saat barcode TIDAK ditemukan (dibacakan + tampil balon, bergantian).
+const NOT_FOUND: string[] = [
+  "Hmm, barangnya belum ditemukan. Coba tanya Vita dulu ya, Kak.",
+  "Barangnya belum ada di data. Mungkin Sasa bisa membantu.",
+  "Miko belum menemukan barangnya. Coba tanyakan ke Vita ya.",
+  "Barcode-nya belum ditemukan. Mungkin Sasa tahu barangnya.",
+  "Sepertinya produk ini belum terdaftar. Coba tanya Vita atau Sasa ya.",
+  "Miko belum menemukan produk ini. Mungkin Vita bisa membantu mencarinya.",
+  "Barangnya belum muncul, Kak. Coba tanyakan ke Sasa dulu.",
+  "Barcode ini belum dikenal Miko. Mungkin Vita tahu produknya.",
+  "Hmm, sepertinya barang ini belum masuk data. Coba tanya Sasa ya, Kak.",
+  "Miko sudah mencari, tapi barangnya belum ketemu. Mungkin Vita bisa membantu.",
+  "Produk ini belum ditemukan, Kak. Coba tanyakan ke Vita atau Sasa.",
+  "Barcode-nya belum ada di daftar. Mungkin Sasa bisa cek dulu.",
+  "Wah, Miko belum menemukan barangnya. Coba tanya Vita ya.",
+  "Barang ini sepertinya belum terdaftar. Mungkin Sasa tahu informasinya.",
+  "Miko sudah coba cari, Kak, tapi belum ketemu. Coba tanya Vita atau Sasa.",
+  "Produknya belum muncul di sistem. Mungkin Vita bisa membantu mengeceknya.",
+  "Hmm, barang ini belum Miko kenali. Coba tanyakan ke Sasa ya.",
+  "Barcode sudah discan, tapi produknya belum ditemukan. Mungkin Vita bisa membantu.",
+  "Sepertinya data barangnya belum tersedia. Coba tanya Sasa atau Vita ya, Kak.",
+  "Miko belum berhasil menemukan produk ini. Jangan khawatir, coba tanya Vita atau Sasa ya.",
+];
+
 type ScanResult = { name: string; price: number; unit: string; tiers: Tier[] };
 
 export default function CekHargaScreen() {
@@ -87,6 +111,7 @@ export default function CekHargaScreen() {
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastClosing = useRef(-1);
+  const lastNF = useRef(-1);
 
   // Bacakan hasil cek harga (suara HP / TTS). Nama + harga ecer + tiap tingkat
   // grosir + kalimat penutup ramah (bergantian). Hanya terdengar di HP/APK build.
@@ -178,6 +203,13 @@ export default function CekHargaScreen() {
     } catch {
       setResult(null);
       toast.show(`Barcode ${c} tidak ditemukan`, "error");
+      // Balon + suara "belum ditemukan" (arahkan ke kasir Vita/Sasa), bergantian.
+      let i = Math.floor(Math.random() * NOT_FOUND.length);
+      if (i === lastNF.current) i = (i + 1) % NOT_FOUND.length;
+      lastNF.current = i;
+      const msg = NOT_FOUND[i];
+      mikoBus.emit({ type: "say", text: msg, pose: "surprised" });
+      speak(msg.replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim(), 0.9);
       // Stay in scan mode, ready for the next barcode.
       setTimeout(() => inputRef.current?.focus(), 100);
     }
