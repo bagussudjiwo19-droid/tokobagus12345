@@ -67,7 +67,8 @@
           "peripheralUsageDescription": "Cetak struk ke printer Bluetooth",
           "alwaysUsageDescription": "Hubungkan printer struk Bluetooth"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true

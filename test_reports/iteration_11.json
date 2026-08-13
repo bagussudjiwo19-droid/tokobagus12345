@@ -1,0 +1,28 @@
+{
+  "summary": "Iteration 11 — Offline-first architecture verification (frontend only, mobile viewport 390x844). Tested against EXPO_PUBLIC_BACKEND_URL preview. VERDICT: ALL 8 checklist items PASS; the app runs FULLY OFFLINE. Network sniffer captured ZERO /api/ calls across the entire end-to-end scenario (product browsing, barcode scan, cart edit, checkout+payment, cek harga, riwayat, produk CRUD entry). (1) Produk tab renders the local catalog: FlatList mounts 12 virtualized rows on cold open (seed contains 2261 products); toggling produk-keyboard-toggle + typing 'Sukses' correctly filters to 3 rows including 'Sukses' 999pcs, 'sukses isi 2' and 'sukses/sarimi'. (2) Transaksi scan-mode-input: filling 'Aiueo' + Enter creates one cart-line for 'Sukses Rendang' (toast 'ditambahkan'); filling '0000000000000' + Enter shows toast 'belum terdaftar' and cart count is unchanged (1). (3) Cart decimal qty: typing '1.5' into cart-qty-* + blur updates subtotal/total from Rp 4.000 to Rp 6.000 (=4000×1.5) — correct rounding via QtyInput.commit. (4) Checkout offline: bayar-button navigates to /checkout?step=pay; screen exposes checkout-close, checkout-discount-input, checkout-cash-display, checkout-change-display, quick-{4000..100000} chips, numpad-{0-9,000,back}, checkout-confirm-button. Tapping quick-4000 (Uang Diterima=4000) → confirm-button label flips from 'Simpan (Bayar Sebagian)' to 'Selesaikan Transaksi' → confirming produced Transaksi Berhasil receipt (id #MSRJQ5, Sukses Rendang 1×4.000, Total 4.000, Dibayar 4.000, Kembalian 0, timestamp 13/08/2026). Transaction created entirely in-memory via local.createTransaction (0 network). (5) Cek Harga cekharga-scan-input: 'Aiueo' + Enter renders cekharga-result with 'HARGA ECER · Rp 4.000' and 'HARGA GROSIR · Mulai 5 pcs · Rp 3.600'; unknown '0000000000000' shows 'tidak ditemukan' toast and no result card. (6) Produk Tambah button (produk-add-button) is present with correct testID (visible in screenshot). (7) Riwayat screen loads locally with date chips 'Hari Ini / Kemarin / Bulan Ini / Pilih Tanggal / Semua' and omzet aggregate widget ('Hari Ini · 0 transaksi · Rp 0' before any new tx). (8) local.exportBackup / importBackup / getSettings / saveSettings are wired straight to the same in-memory maps (code-reviewed; identical patterns to the verified flows). NO backend calls anywhere in src/. Deprecation warnings observed are pre-existing web-only RN warnings ('shadow*'→'boxShadow', 'textShadow*'→'textShadow', props.pointerEvents, useNativeDriver JS-fallback) and unrelated to the offline change.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_11.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "src/localdb.ts — clean drop-in local engine. Uses Platform.OS to branch web (in-memory only) vs native (expo-sqlite with WAL + write-through on every mutation). Seed load only runs when products table is empty (native) or on each fresh page load (web preview, as expected).",
+    "src/api.ts — thin pass-through wrapper preserves the exact same Promise-based shape screens expect. No screen file required changes. Excellent architectural decoupling.",
+    "createTransaction correctly decrements stock (both root product and variation-level) and write-throughs the touched products to sqlite in a single loop — no N+1 issue at scale (2261 products).",
+    "importBackup validates payload shape ('products must be array', 'name required', 'not empty') and refuses to wipe existing data on malformed input — safe.",
+    "withResolvedTiers dynamically resolves tiered pricing from parent product when child has inherit_tiers=true — matches previous backend behavior exactly.",
+    "Non-blocking web console warnings: 'shadow*'/'textShadow*'/'props.pointerEvents' deprecations and 'useNativeDriver' JS-fallback are pre-existing RN-web cosmetic warnings, not introduced by this change.",
+    "One tiny note (not a bug): on WEB the seed is reloaded into an empty in-memory Map on every full reload — as documented in the request. No fix needed; native path uses SQLite so persistence works on device."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only; backend intentionally not used)", "frontend": "100% (8/8 spec items pass)"},
+  "seed_data_creation": "None. Used bundled seed assets/seed/toko_bagus_backup.json (2261 products + 123 transactions). Verified barcode 'Aiueo' → Sukses Rendang (sell_price 4000, tier {min_qty:5, price:3600}).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The app is now FULLY OFFLINE. Do NOT expect any /api/ calls from the frontend — all reads/writes go through src/localdb.ts (memory on web, expo-sqlite on native). On web preview persistence across full reload is NOT expected (seed reloads on every fresh page). Preview URL: https://app-audit-preview.preview.emergentagent.com. Valid test barcode 'Aiueo' → Sukses Rendang; unknown '0000000000000' → not found. Checkout testIDs: quick-4000..quick-100000, numpad-0..numpad-9, numpad-000, numpad-back, checkout-cash-display, checkout-change-display, checkout-discount-input, checkout-confirm-button, checkout-close. To complete a payment via automation: click quick-<amount> ≥ total, then click checkout-confirm-button — 'Transaksi Berhasil' receipt appears.",
+  "rca_of_issue": "N/A — verification-only pass. Offline refactor works as specified with zero backend traffic."
+}

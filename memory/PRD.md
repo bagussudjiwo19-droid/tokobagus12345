@@ -18,6 +18,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v41 — APLIKASI OFFLINE PENUH (data di HP, tanpa server/internet)
+- Data terbaru diekspor dari backend → dibundel: `assets/seed/toko_bagus_backup.json` (2261 produk, 123 transaksi, settings, printer) sebagai BEKAL awal offline.
+- Baru: `src/localdb.ts` — mesin data lokal. Native (Android/iOS) pakai **expo-sqlite** (tabel products/transactions/kv, seed sekali di awal, write-through per mutasi) + salinan memori utk scan cepat. Web preview pakai memori (seed dari JSON, non-persisten — hanya utk uji tampilan). Meniru persis logika backend: resolusi induk utama (`resolveRootParent`), warisan tier variasi (`withResolvedTiers`), pengurangan/rekonsiliasi stok saat create/update transaksi, omzet, export/import backup (validasi + anti-produk-kosong).
+- `src/api.ts` DITULIS ULANG: tetap nama/bentuk sama, tapi delegasi ke `local.*` (bukan fetch). TIDAK ada layar yang diubah. Printer & scanner Bluetooth tetap offline seperti biasa.
+- expo-sqlite@16 dipasang (config plugin otomatis — efektif setelah BUILD APK/native, bukan Expo Go web).
+- Verified: testing_agent iteration_11 — 8/8 alur PASS, **0 panggilan /api/** (benar-benar offline): Produk (2261) + search, scan tambah/tak-dikenal, qty desimal 1.5, Bayar→struk (transaksi dibuat lokal + stok turun), Cek Harga ecer+grosir, Riwayat + filter tanggal + omzet, CRUD produk, backup export/import. Tanpa crash/network error.
+- CATATAN: persistensi permanen (SQLite) hanya di HP/BUILD APK. Data hanya di perangkat → andalkan fitur Backup ke file.
+
 ### v40 — Suara + balon "barang tidak ditemukan" di Cek Harga (arahkan ke kasir Vita/Sasa)
 - `(tabs)/cek-harga.tsx`: pada catch not-found, pilih 1 dari 20 kalimat `NOT_FOUND` (bergantian, anti-ulang) → emit `mikoBus.say` (balon Miko tampil PERSIS kalimat itu) + `speak()` (TTS, emoji dibuang). Toast tetap.
 - `src/mikoBus.ts`: event generik baru `{ type: "say"; text; pose? }`. `components/Miko.tsx`: handler `say` menampilkan teks apa adanya (pose default surprised, hold 3.4s) → balon = suara (sinkron). Selalu aktif (kios). CATATAN: TTS hanya bunyi di HP/BUILD APK. Verified via screenshot.
