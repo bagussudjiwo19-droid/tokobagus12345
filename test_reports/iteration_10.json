@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 10 — Scanner-only keyboard behavior on Transaksi / Cek Harga / Produk / Cari (frontend only, mobile viewport 390x844, EXPO_PUBLIC_BACKEND_URL). Backend untouched, but /api/products/barcode/Aiueo → 200 (Sukses Rendang, sell 4000, tier 5 @ 3600) and /api/products/barcode/0000000000000 → 404, confirming the flows resolve as designed. FUNCTIONAL VERDICT: ALL 5 checklist items PASS. Note: actual native soft-keyboard suppression (showSoftInputOnFocus={false} + caretHidden + useHideScanKeyboard) cannot be exercised in web preview and was validated statically only. (1) Transaksi scan-mode-input: filling 'Aiueo' + Enter creates one cart-line-* (Sukses Rendang) and shows toast 'ditambahkan'; filling '0000000000000' + Enter shows toast 'belum terdaftar' and cart count is unchanged; scan-mode-input remains mounted and usable for the next scan. Bayar navigates to /checkout?step=pay. (2) Cek Harga cekharga-scan-input: 'Aiueo' + Enter renders cekharga-result containing 'HARGA ECER · Rp 4.000' and 'HARGA GROSIR · Mulai 5 pcs · Rp 3.600'; unknown barcode shows 'tidak ditemukan' toast and no result card. cekharga-search Pressable navigates to /cari?mode=price where cari-input accepts manual typing and filters the product list (rows found for 'Sukses' = 3). (3) Produk: default placeholder 'Mode scan aktif — arahkan scanner ke barcode' (scan mode); tapping produk-keyboard-toggle switches placeholder to 'Ketik nama / kategori / barcode' and typing 'Sukses' filters produk-row-* to 3 items (all containing 'Sukses'); toggling back restores scan-mode placeholder. (4) Cari screen (via cekharga-search): cari-input accepts manual typing and filters — validated in the Cek Harga leg. (5) Regression: tab navigation Transaksi ↔ Produk ↔ Cek Harga ↔ Riwayat works without red-screen; adding item via scan → Bayar → /checkout?step=pay works. Only non-blocking noise seen: two RN web deprecation warnings ('shadow*' → 'boxShadow', 'textShadow*' → 'textShadow', 'props.pointerEvents') and a benign 'useNativeDriver' fallback warning — these are pre-existing web-only cosmetic warnings, not caused by this change. No red screen, no crash, no white screen.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_10.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "index.tsx & cek-harga.tsx: scan inputs correctly use uncontrolled TextInput (defaultValue='', no `value`), showSoftInputOnFocus={false}, caretHidden, blurOnSubmit={false} and rely on useBarcodeScan buffer + ENTER/pause finish — matches the documented scanner-only pattern and prevents mid-scan character loss.",
+    "produk.tsx: search input dynamically flips showSoftInputOnFocus/caretHidden with manualMode; useBarcodeScan is invoked with isScanMode: () => !kbdRef.current so pause-triggered barcode processing is disabled while typing manually (correct). Placeholder text also flips per the spec.",
+    "cari.tsx: retains the dual-mode UX (default scan, tap to open keyboard) — unchanged and still functional; useBarcodeScan onScanComplete resolves exact barcode → tap flow → back to Transaksi/CekHarga.",
+    "scanKeyboard.useHideScanKeyboard: correctly gated on useIsFocused so the global Keyboard listeners on hidden tabs don't dismiss other screens' keyboards; only refocuses when input has lost focus, preventing loops.",
+    "All four scan/search TextInputs expose the required testIDs: scan-mode-input, cekharga-scan-input, produk-search-input (+ produk-keyboard-toggle), cari-input — good for regression coverage."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not re-tested (unchanged)", "frontend": "100% (5/5 spec items pass on functional verification)"},
+  "seed_data_creation": "None. Used existing product 'Sukses Rendang' (barcode 'Aiueo', sell 4000, grosir tier {min_qty:5, price:3600}).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Native soft-keyboard suppression CANNOT be verified in web preview — the props showSoftInputOnFocus={false} and caretHidden and the Keyboard.dismiss() listener in useHideScanKeyboard are only observable on a physical Android/iOS device or EAS build. On web/desktop the DOM keyboard concept doesn't apply; only functional behavior (barcode add/lookup, manual filter, toggle, navigation) can be black-box tested. Preview URL: https://app-audit-preview.preview.emergentagent.com. Valid test barcode: 'Aiueo' → Sukses Rendang; unknown: '0000000000000' → 404. Backend API endpoint used by frontend for barcode lookup: GET /api/products/barcode/{code} (NOT /api/products/by-barcode/).",
+  "rca_of_issue": "N/A — verification-only pass. Feature works as specified."
+}

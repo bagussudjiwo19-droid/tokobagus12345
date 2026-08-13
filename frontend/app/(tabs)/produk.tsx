@@ -123,15 +123,6 @@ export default function ProdukScreen() {
     setTimeout(() => inputRef.current?.focus(), 60);
   };
 
-  // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
-  const openKeyboard = () => {
-    setManualMode(true);
-    kbdRef.current = true;
-    skipBlur.current = true;
-    inputRef.current?.blur();
-    setTimeout(() => inputRef.current?.focus(), 40);
-  };
-
   useEffect(() => { kbdRef.current = manualMode; }, [manualMode]);
   useHideScanKeyboard(inputRef, kbdRef);
 
@@ -219,7 +210,6 @@ export default function ProdukScreen() {
             testID="produk-search-input"
             defaultValue=""
             onChangeText={scan.onChangeText}
-            onPressIn={openKeyboard}
             onSubmitEditing={() => { setManualMode(false); scan.onSubmitEditing(); }}
             onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setManualMode(false); }}
             blurOnSubmit={false}

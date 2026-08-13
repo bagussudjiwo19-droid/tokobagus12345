@@ -19,6 +19,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
+### v35 — Keyboard Mode Scan dipisah tegas dari Mode Manual (scanner-only = keyboard OFF)
+- Kolom scanner MURNI (Transaksi `index.tsx`, Cek Harga `cek-harga.tsx`) kini `showSoftInputOnFocus={false}` + `caretHidden` PERMANEN, dan tap/onPressIn tidak lagi membuka keyboard (openKeyboard/kbd state dihapus). Scanner tetap fokus & menerima barcode (isScanMode selalu true). Input manual lewat tombol "Item Manual"/"Cari Barang" (Transaksi) & "Cari Produk Manual" (Cek Harga).
+- Produk `produk.tsx`: field pencarian tetap dwi-mode TAPI tap kolom tidak lagi buka keyboard; keyboard hanya via tombol toggle keypad eksplisit (manualMode). Scan mode = keyboard OFF, Manual mode = keyboard ON.
+- Cari `cari.tsx`: dibiarkan (dwi-mode: default scan keyboard OFF, tap untuk ketik manual → keyboard ON) sesuai aturan.
+- `useHideScanKeyboard` (defensif) tetap: bila keyboard sempat muncul dari sistem/koneksi BT saat input scan fokus → langsung Keyboard.dismiss() lalu refokus senyap (tanpa loop, tanpa memotong input scanner). Di-gating `useIsFocused` agar tidak ganggu layar lain.
+- Verified: testing_agent iteration_10 — 5/5 flow PASS (scan Transaksi tambah/belum-terdaftar, Cek Harga hasil+manual, Produk toggle scan↔manual filter, Cari filter, navigasi tab & checkout tanpa regresi). CATATAN: penindasan keyboard native hanya bisa dipastikan di HP/BUILD APK, bukan preview web.
+
 ### v34 — Balon teks Miko diperkaya (kontekstual, banyak variasi) + Cek Harga dirapikan (kios)
 - `components/Miko.tsx`: seluruh koleksi balon teks diperbanyak sesuai spek user (teks SAJA, bukan suara). Dipilih per-kondisi (tidak semua sekaligus):
   - ITEM(8), BIG(5), EMPTY(5), NF(6), PAY(6), POK(3), PF(4), PRICE(5), BACKUP(4), RESTORE(3), LOW(5), ERR(3), SAVED(4), DELETED(2), CHEER(8) + CHEER_MULTI(4, saat di-tap ≥3x dalam 3 dtk), OPEN(8), WARM(30), SEPI(10), HUMOR(15 baru & lebih lucu).

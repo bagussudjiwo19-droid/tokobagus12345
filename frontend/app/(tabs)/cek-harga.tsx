@@ -26,9 +26,7 @@ export default function CekHargaScreen() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [countdown, setCountdown] = useState(0);
-  const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const skipBlur = useRef(false);
   const kbdRef = useRef(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -65,24 +63,15 @@ export default function CekHargaScreen() {
   }, [backToScan]);
 
   // Auto scan mode: focus the hidden scanner input whenever this tab is focused.
+  // Kolom KHUSUS scanner: keyboard HP tidak pernah muncul (manual lewat tombol
+  // "Cari Produk Manual").
   useFocusEffect(
     useCallback(() => {
-      setKbd(false);
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => { clearTimeout(t); clearTimers(); };
     }, []),
   );
 
-  // Keyboard HP hanya muncul saat kolom disentuh; saat scan tetap tanpa keyboard.
-  const openKeyboard = useCallback(() => {
-    setKbd(true);
-    kbdRef.current = true;
-    skipBlur.current = true;
-    inputRef.current?.blur();
-    setTimeout(() => inputRef.current?.focus(), 40);
-  }, []);
-
-  useEffect(() => { kbdRef.current = kbd; }, [kbd]);
   useEffect(() => { api.getSettings().then(setSettings).catch(() => {}); }, []);
   useHideScanKeyboard(inputRef, kbdRef);
 
@@ -117,7 +106,7 @@ export default function CekHargaScreen() {
     }
   }, [showResult, toast]);
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
-  const scan = useBarcodeScan(handleScan, { isScanMode: () => !kbdRef.current });
+  const scan = useBarcodeScan(handleScan, { isScanMode: () => true });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
@@ -126,26 +115,24 @@ export default function CekHargaScreen() {
         <Text style={styles.subtitle}>Arahkan scanner ke barcode untuk lihat harga</Text>
       </View>
 
-      {/* Mode scan aktif — input tersembunyi untuk scanner Bluetooth (tanpa keyboard HP) */}
-      <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
+      {/* Mode scan aktif — input tersembunyi untuk scanner Bluetooth (keyboard HP TIDAK tampil) */}
+      <View style={styles.scanModeBox}>
         <View style={styles.scanIcon}><Ionicons name="barcode-outline" size={22} color={colors.brand} /></View>
         <TextInput
           ref={inputRef}
           testID="cekharga-scan-input"
           defaultValue=""
           onChangeText={scan.onChangeText}
-          onPressIn={openKeyboard}
-          onSubmitEditing={() => { setKbd(false); scan.onSubmitEditing(); }}
-          onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
+          onSubmitEditing={scan.onSubmitEditing}
           blurOnSubmit={false}
-          showSoftInputOnFocus={kbd}
-          caretHidden={!kbd}
+          showSoftInputOnFocus={false}
+          caretHidden
           placeholder="Scan barcode di sini…"
           placeholderTextColor={colors.muted}
           style={styles.scanModeInput}
         />
         <View style={styles.readyDot} />
-      </Pressable>
+      </View>
 
       <View style={styles.body}>
         {result ? (

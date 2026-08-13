@@ -30,9 +30,7 @@ export default function TransaksiScreen() {
   const cart = useCart();
   const { products, reload } = useData();
   const toast = useToast();
-  const [kbd, setKbd] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const skipBlur = useRef(false);
   const kbdRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const prevLen = useRef(0);
@@ -49,15 +47,15 @@ export default function TransaksiScreen() {
 
   // 1. Auto scan mode: keep the hardware-scanner input focused whenever the
   // Transaksi tab is focused, so scanning works immediately without tapping.
+  // Kolom ini KHUSUS scanner: keyboard HP tidak pernah muncul (pakai tombol
+  // "Cari Barang"/"Item Manual" untuk input manual).
   useFocusEffect(
     useCallback(() => {
-      setKbd(false);
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => clearTimeout(t);
     }, []),
   );
 
-  useEffect(() => { kbdRef.current = kbd; }, [kbd]);
   useHideScanKeyboard(inputRef, kbdRef);
 
   // 2. Auto-scroll to the newest scanned item.
@@ -93,16 +91,7 @@ export default function TransaksiScreen() {
     [cart, toast],
   );
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
-  const scan = useBarcodeScan(submitBarcode, { isScanMode: () => !kbdRef.current });
-
-  // Keyboard HP hanya muncul saat kolom disentuh; saat scan (autofocus/HID) tetap tanpa keyboard.
-  const openKeyboard = useCallback(() => {
-    setKbd(true);
-    kbdRef.current = true;
-    skipBlur.current = true;
-    inputRef.current?.blur();
-    setTimeout(() => inputRef.current?.focus(), 40);
-  }, []);
+  const scan = useBarcodeScan(submitBarcode, { isScanMode: () => true });
 
   const openEditPrice = (l: CartLine) => {
     setEditLine(l);
@@ -154,8 +143,8 @@ export default function TransaksiScreen() {
           </View>
         </View>
 
-        {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) */}
-        <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
+        {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) — keyboard HP TIDAK pernah tampil */}
+        <View style={styles.scanModeBox}>
           <View style={styles.scanIcon}>
             <Ionicons name="barcode-outline" size={18} color={colors.brand} />
           </View>
@@ -164,18 +153,16 @@ export default function TransaksiScreen() {
             testID="scan-mode-input"
             defaultValue=""
             onChangeText={scan.onChangeText}
-            onPressIn={openKeyboard}
-            onSubmitEditing={() => { setKbd(false); scan.onSubmitEditing(); }}
-            onBlur={() => { if (skipBlur.current) { skipBlur.current = false; return; } setKbd(false); }}
+            onSubmitEditing={scan.onSubmitEditing}
             blurOnSubmit={false}
-            showSoftInputOnFocus={kbd}
-            caretHidden={!kbd}
+            showSoftInputOnFocus={false}
+            caretHidden
             placeholder="Scan barcode di sini…"
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}
           />
           <View style={styles.readyDot} />
-        </Pressable>
+        </View>
 
         {/* 2) Aksi: Tambah Item + Cari Barang */}
         <View style={styles.actions}>
