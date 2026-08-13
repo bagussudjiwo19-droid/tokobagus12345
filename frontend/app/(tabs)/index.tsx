@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,11 @@ import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
 import { mikoBus } from "@/src/mikoBus";
+
+// Di HP pakai BottomSheetTextInput (agar sheet naik di atas keyboard). Di WEB
+// pakai TextInput biasa — BottomSheetTextInput memanggil API yang tidak ada di
+// react-native-web (TextInput.State.currentlyFocusedInput) sehingga crash.
+const EditPriceInput: any = Platform.OS === "web" ? TextInput : BottomSheetTextInput;
 
 export default function TransaksiScreen() {
   const insets = useSafeAreaInsets();
@@ -269,7 +275,7 @@ export default function TransaksiScreen() {
           <Text style={styles.sheetLabel}>Harga Satuan (Rp)</Text>
           <View style={styles.priceInputBox}>
             <Text style={styles.rpPrefix}>Rp</Text>
-            <BottomSheetTextInput
+            <EditPriceInput
               value={priceInput}
               onChangeText={setPriceInput}
               keyboardType="numeric"
