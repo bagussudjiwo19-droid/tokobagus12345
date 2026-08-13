@@ -582,8 +582,8 @@ export default function Miko() {
 
   // Kios Cek Harga: Miko hidup & menghibur.
   // - Animasi lucu + ganti pose tiap ~3.5 dtk.
-  // - Balon teks tampil 7 dtk, lalu JEDA 7 dtk (kosong) sebelum balon berikutnya
-  //   muncul (siklus 14 dtk).
+  // - Balon teks tampil 7 dtk, lalu JEDA 5 dtk (kosong) sebelum balon berikutnya
+  //   muncul (siklus 12 dtk).
   useEffect(() => {
     const animId = setInterval(() => {
       if (!(pathRef.current || "").includes("cek-harga")) return;
@@ -593,7 +593,7 @@ export default function Miko() {
     const sayId = setInterval(() => {
       if (!(pathRef.current || "").includes("cek-harga")) return;
       sayKiosk();
-    }, 14000);
+    }, 12000);
     return () => { clearInterval(animId); clearInterval(sayId); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
