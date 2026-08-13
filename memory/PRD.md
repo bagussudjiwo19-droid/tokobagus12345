@@ -19,7 +19,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
-### v31 — Miko sapa sesuai waktu
+### v32 — Kartu keranjang compact (2 baris)
+- `app/(tabs)/index.tsx`: kartu tiap barang dibuat pendek & padat. Baris 1 = Nama (tebal) + ikon variasi + hapus (mini). Baris 2 = "Rp harga x qty" (kiri, kecil) · stepper − [qty] + (tengah) · subtotal (kanan, tebal). Thumbnail & shadow besar dihapus, padding dikurangi, border tipis. Stepper tetap 32px (mudah disentuh). Tidak ada perubahan fungsi/logika. Verified via screenshot: 3 barang muat lega dalam 1 layar.
+
+
 - `components/Miko.tsx`: `timeGreet()` → "Selamat pagi/siang/sore/malam, Kak!" berdasar jam; dipakai di sapaan layar utama (±70%, sisanya sapaan OPEN lain). Pose wave.
 
 

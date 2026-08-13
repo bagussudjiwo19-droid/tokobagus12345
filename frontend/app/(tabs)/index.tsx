@@ -210,43 +210,40 @@ export default function TransaksiScreen() {
         >
           {cart.lines.map((l) => (
             <View key={l.key} style={[styles.card, lastKey === l.key && styles.cardNew]} testID={`cart-line-${l.key}`}>
-              <View style={styles.cardTop}>
-                <View style={styles.thumb}>
-                  <Ionicons name="cube-outline" size={22} color={colors.brand} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.lineName, (l.tiers?.length ?? 0) > 0 && styles.lineNameGrosir]} numberOfLines={1}>{l.name}</Text>
-                  <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
-                    <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
-                    <Ionicons name="create-outline" size={13} color={colors.brand} />
+              {/* Baris 1: Nama + variasi + hapus */}
+              <View style={styles.line1}>
+                <Text style={[styles.lineName, (l.tiers?.length ?? 0) > 0 && styles.lineNameGrosir]} numberOfLines={1}>{l.name}</Text>
+                {l.product_id ? (
+                  <Pressable
+                    style={styles.iconMini}
+                    testID={`cart-variasi-${l.key}`}
+                    hitSlop={6}
+                    onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
+                  >
+                    <Ionicons name="git-branch-outline" size={16} color={colors.brand} />
                   </Pressable>
-                  {l.product_id ? (
-                    <Pressable
-                      style={styles.variasiBtn}
-                      testID={`cart-variasi-${l.key}`}
-                      onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
-                    >
-                      <Ionicons name="git-branch-outline" size={13} color={colors.brand} />
-                      <Text style={styles.variasiTxt}>Tambah Variasi</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-                <Pressable onPress={() => { setDeleteLine(l); deleteSheet.current?.present(); }} style={styles.delBtn} testID={`cart-remove-${l.key}`}>
-                  <Ionicons name="trash-outline" size={20} color={colors.error} />
+                ) : null}
+                <Pressable onPress={() => { setDeleteLine(l); deleteSheet.current?.present(); }} style={styles.iconMini} testID={`cart-remove-${l.key}`} hitSlop={6}>
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
                 </Pressable>
               </View>
 
-              <View style={styles.cardBottom}>
+              {/* Baris 2: harga×qty · stepper · subtotal */}
+              <View style={styles.line2}>
+                <Pressable style={styles.unitWrap} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
+                  <Text style={styles.unitTxt} numberOfLines={1}>{rupiah(l.price)} x {l.quantity}</Text>
+                  <Ionicons name="create-outline" size={12} color={colors.brand} />
+                </Pressable>
                 <View style={styles.qtyBox}>
                   <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
-                    <Ionicons name="remove" size={20} color={colors.brand} />
+                    <Ionicons name="remove" size={18} color={colors.brand} />
                   </Pressable>
                   <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} testID={`cart-qty-${l.key}`} />
                   <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
-                    <Ionicons name="add" size={20} color={colors.brand} />
+                    <Ionicons name="add" size={18} color={colors.brand} />
                   </Pressable>
                 </View>
-                <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
+                <Text style={styles.lineSub} numberOfLines={1}>{rupiah(l.price * l.quantity)}</Text>
               </View>
             </View>
           ))}
@@ -384,23 +381,20 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },
   emptyTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
-  // kartu belanja mengambang
-  card: { marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.md, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  // kartu belanja compact (2 baris)
+  card: { marginHorizontal: spacing.lg, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
   cardNew: { borderColor: colors.brand, backgroundColor: colors.surfaceTertiary },
-  cardTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
-  thumb: { width: 48, height: 48, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
-  qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 4, gap: 4 },
-  qtyBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
-  qtyInput: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.lg, minWidth: 34, width: 40, height: 40, paddingVertical: 0, textAlign: "center" },
-  lineName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  line1: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  line2: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 6 },
+  iconMini: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+  unitWrap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 3 },
+  unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
+  qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },
+  qtyBtn: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, width: 30, height: 32, paddingVertical: 0, textAlign: "center" },
+  lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   lineNameGrosir: { color: colors.success },
-  priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 },
-  variasiBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4, alignSelf: "flex-start" },
-  variasiTxt: { color: colors.brand, fontFamily: font.medium, fontSize: fontSize.sm },
-  linePrice: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
-  lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl, textAlign: "right" },
-  delBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.lg, minWidth: 68, textAlign: "right" },
   payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.xl, paddingTop: spacing.lg, backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 26, borderTopRightRadius: 26, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -6 }, elevation: 12 },
   payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
   payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: 26 },
