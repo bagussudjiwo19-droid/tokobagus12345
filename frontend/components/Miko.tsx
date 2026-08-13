@@ -61,6 +61,33 @@ const SEPI: Line[] = [
   { t: "Semoga sebentar lagi ramai lagi ✨", p: "idea" }, { t: "Senyum dulu, biar rezeki lancar 😊", p: "wink" },
 ];
 
+// Sapaan khusus layar Cek Harga (kios dinding — ditujukan ke PELANGGAN).
+const CEK_HARGA_GREET: Line[] = [
+  { t: "Halo, Kak! Scan barcode-nya di sini ya 🔍", p: "wave" },
+  { t: "Mau cek harga? Tempelkan barcode-nya 😊", p: "happy" },
+  { t: "Selamat datang! Yuk cek harga barang 🛍️", p: "wave" },
+  { t: "Arahkan barcode ke kotak scan ya, Kak ✨", p: "wink" },
+  { t: "Hai! Aku Miko, siap bantu cek harga 😺", p: "love" },
+  { t: "Penasaran harganya? Scan aja, Kak! 🔍", p: "wink" },
+  { t: "Yuk, dekatkan barcode-nya ke sini 📷", p: "happy" },
+  { t: "Cek harga sendiri di sini, gratis kok! 😊", p: "thumbsup" },
+  { t: "Ada yang mau ditanya harganya? Scan ya 💕", p: "hearts" },
+  { t: "Halo Kakak cantik/ganteng! Scan dulu yuk 😸", p: "wink" },
+];
+// Ajakan saat kios menganggur — memanggil pelanggan yang lewat.
+const CEK_HARGA_IDLE: Line[] = [
+  { t: "Ada yang mau cek harga? Scan di sini ya 🔍", p: "wave" },
+  { t: "Tempelkan barcode barang untuk lihat harga 😊", p: "happy" },
+  { t: "Hai, Kak! Yuk cek harga sendiri di sini ✨", p: "wave" },
+  { t: "Scan barcode-nya, harganya langsung muncul! 🐾", p: "wink" },
+  { t: "Miko siap bantu cek harga, mendekat aja 💕", p: "love" },
+  { t: "Mau tahu harganya? Scan aja ya, Kak! 😺", p: "happy" },
+  { t: "Jangan malu, cek harganya di sini gratis 😊", p: "thumbsup" },
+  { t: "Barcode-nya didekatkan ke kotak scan ya ✨", p: "idea" },
+  { t: "Psst… harga barang bisa dicek sendiri lho 🔍", p: "wink" },
+  { t: "Yuk mampir, cek harga dulu sama Miko 🐾", p: "wave" },
+];
+
 function timeGreet(): Line {
   const h = new Date().getHours();
   const t =
@@ -74,7 +101,7 @@ function timeGreet(): Line {
 function greet(path: string): Line {
   if (path.includes("checkout")) return { t: "Yuk lanjut pembayaran, Kak 💗", p: "money" };
   if (path.includes("produk")) return { t: "Yuk rapikan produkmu~ 🐾", p: "happy" };
-  if (path.includes("cek-harga")) return { t: "Mau cek harga? Scan aja 🔍", p: "wink" };
+  if (path.includes("cek-harga")) return rnd(CEK_HARGA_GREET);
   if (path.includes("riwayat")) return { t: "Lihat cuan hari ini yuk! 💰", p: "money" };
   // Layar utama (Transaksi/lainnya): sapaan sesuai waktu, sesekali sapaan lain.
   return Math.random() < 0.7 ? timeGreet() : rnd(OPEN);
@@ -96,6 +123,7 @@ export default function Miko() {
   const posRef = useRef({ x: 0, y: 0 });
   const prevCount = useRef(cart.count);
   const lastActive = useRef(Date.now());
+  const pathRef = useRef(pathname);
   const lastIdx = useRef<Record<string, number>>({});
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -148,6 +176,7 @@ export default function Miko() {
   ).current;
 
   useEffect(() => {
+    pathRef.current = pathname;
     say(greet(pathname || ""), 3000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
@@ -178,11 +207,16 @@ export default function Miko() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // kalem: hanya bila idle > 45 detik
+  // kalem: sapaan menganggur. Di layar Cek Harga (kios) lebih sering & mengajak
+  // pelanggan; layar lain seperti biasa (setelah idle panjang).
   useEffect(() => {
     const id = setInterval(() => {
-      if (Date.now() - lastActive.current > 45000) say(pickRot("sepi", SEPI), 3400);
-    }, 20000);
+      const onKiosk = (pathRef.current || "").includes("cek-harga");
+      const threshold = onKiosk ? 22000 : 45000;
+      if (Date.now() - lastActive.current > threshold) {
+        say(onKiosk ? pickRot("ckidle", CEK_HARGA_IDLE) : pickRot("sepi", SEPI), 3400);
+      }
+    }, 15000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

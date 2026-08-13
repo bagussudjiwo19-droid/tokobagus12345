@@ -229,19 +229,19 @@ const styles = StyleSheet.create({
   idleDesc: { fontFamily: font.regular, fontSize: fontSize.lg, color: colors.muted, textAlign: "center", marginBottom: spacing.lg, paddingHorizontal: spacing.md },
   searchCard: { width: "100%", height: 60, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
   searchTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl },
-  resultCard: { backgroundColor: colors.surfaceSecondary, borderRadius: 28, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.xl, alignItems: "center", shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  shopName: { color: colors.brand, fontFamily: font.display, fontSize: 38, letterSpacing: 1 },
+  resultCard: { backgroundColor: colors.surfaceSecondary, borderRadius: 28, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.lg, alignItems: "center", shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
+  shopName: { color: colors.brand, fontFamily: font.display, fontSize: 24, letterSpacing: 1, textAlign: "center" },
   labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: 2 },
   dashRed: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.brand },
   dashGreen: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.success },
   cekLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, letterSpacing: 3, textShadowColor: "rgba(176,42,32,0.3)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 1 },
-  resultName: { color: colors.onSurface, fontFamily: font.display, fontSize: 44, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.sm },
+  resultName: { color: colors.onSurface, fontFamily: font.display, fontSize: 26, lineHeight: 30, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.xs },
 
   // HARGA ECER — pil 3D merah
-  ecerPill: { alignSelf: "stretch", backgroundColor: colors.brand, borderRadius: 24, paddingTop: spacing.md, paddingBottom: spacing.lg, paddingHorizontal: spacing.md, alignItems: "center", borderBottomWidth: 8, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8, marginTop: spacing.sm },
-  ecerChip: { backgroundColor: "#FFFFFF", borderRadius: 14, paddingVertical: 8, paddingHorizontal: 26, borderBottomWidth: 3, borderBottomColor: "#E8D2CE", marginBottom: 6 },
-  ecerChipTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg, letterSpacing: 3 },
-  ecerPrice: { color: "#FFFFFF", fontFamily: font.display, fontSize: 66, lineHeight: 72, letterSpacing: 1, textShadowColor: "rgba(0,0,0,0.28)", textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 2 },
+  ecerPill: { alignSelf: "stretch", backgroundColor: colors.brand, borderRadius: 24, paddingTop: spacing.md, paddingBottom: spacing.md, paddingHorizontal: spacing.md, alignItems: "center", borderBottomWidth: 8, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8, marginTop: spacing.sm },
+  ecerChip: { backgroundColor: "#FFFFFF", borderRadius: 14, paddingVertical: 6, paddingHorizontal: 22, borderBottomWidth: 3, borderBottomColor: "#E8D2CE", marginBottom: 4 },
+  ecerChipTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, letterSpacing: 3 },
+  ecerPrice: { color: "#FFFFFF", fontFamily: font.display, fontSize: 52, lineHeight: 58, letterSpacing: 1, textShadowColor: "rgba(0,0,0,0.28)", textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 2 },
 
   // HARGA GROSIR — pil 3D hijau dua nada
   grosirBox: { alignSelf: "stretch", marginTop: spacing.lg },
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
   grosirPill: { flexDirection: "row", alignSelf: "stretch", borderRadius: 20, marginTop: spacing.md, borderBottomWidth: 6, borderBottomColor: "#0B5C33", overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
   grosirLeft: { flex: 1, backgroundColor: colors.success, paddingVertical: 16, paddingHorizontal: 18, justifyContent: "center" },
   grosirRight: { minWidth: 128, backgroundColor: "#FFFFFF", paddingVertical: 16, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
-  grosirQty: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.xl },
-  grosirPrice: { color: colors.success, fontFamily: font.display, fontSize: 32, letterSpacing: 0.5 },
+  grosirQty: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.base },
+  grosirPrice: { color: colors.success, fontFamily: font.display, fontSize: 26, letterSpacing: 0.5 },
 
   countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.xl },
   countdownTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
