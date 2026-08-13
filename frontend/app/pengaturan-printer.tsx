@@ -121,12 +121,12 @@ export default function PengaturanPrinterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   hTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
-  closeBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  infoBox: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.brandTertiary, borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.lg },
+  closeBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  infoBox: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.brandTertiary, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.lg },
   infoTxt: { flex: 1, color: colors.onBrandTertiary, fontFamily: font.bold, fontSize: fontSize.base, lineHeight: 20 },
-  outlineBtn: { height: 56, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  outlineBtn: { height: 56, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.borderStrong, backgroundColor: colors.surfaceSecondary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
   outlineTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   subtext: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base, marginTop: spacing.sm },
   rescanBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: spacing.sm, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.surfaceSecondary },
@@ -139,6 +139,6 @@ const styles = StyleSheet.create({
   connectedTxt: { color: colors.success, fontFamily: font.bold, fontSize: fontSize.lg },
   darkBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: spacing.lg },
   darkBtnTxt: { color: colors.onSurfaceInverse, fontFamily: font.bold, fontSize: fontSize.lg },
-  redBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", marginTop: spacing.md },
+  redBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", marginTop: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
   redBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
 });

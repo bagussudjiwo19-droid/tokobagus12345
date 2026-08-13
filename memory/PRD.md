@@ -19,7 +19,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
-### v29 — Momo dihapus, Miko solo mungil & tidak menghalangi
+### v30 — Rombak Cek Harga, Riwayat, & Pengaturan (Soft Rose selesai)
+- `cek-harga.tsx`: header tanpa garis, scan input jadi pill + ikon bulat, tombol "Cari Produk Manual" pill, kartu hasil putih bershadow lembut, nama toko warna brand (bukan hijau). Fungsi scan/cari/countdown tetap.
+- `riwayat.tsx`: kartu omzet HERO (background brand, teks putih), chip filter jadi pill, ikon aksi header jadi bulat tinted, baris transaksi jadi kartu mengambang + ikon struk bulat. Filter tanggal & lunasi tetap.
+- Pengaturan: `pengaturan-struk.tsx` (input radius lg, tombol simpan bershadow, tombol close bulat, header tanpa garis), `backup.tsx` & `pengaturan-printer.tsx` (tombol utama radius lg + shadow, close bulat, header lembut, alamat BT tampil di bawah nama perangkat).
+- Verified via screenshot: Cek Harga, Riwayat, Pengaturan Struk — semua senada Soft Rose.
+- SELESAI: seluruh layar utama (Transaksi, Produk, Cek Harga, Riwayat) + layar pengaturan sudah bergaya Soft Rose feminin. Maskot Miko tunggal global aktif.
+
+
 - Atas permintaan user (Momo mengganggu): `components/Miko.tsx` dikembalikan ke SATU maskot (Miko), SIZE 74→60, tetap bisa diseret (POS_KEY v2, AsyncStorage) & posisi diingat, di sudut kanan bawah (bottom insets+138) di ATAS pay bar. Momo tidak lagi di-require (aset momo_* tidak ikut bundle). Semua konteks tetap: greet per-layar, item/big/empty, not_found, pay, change (nominal), print ok/fail, price_changed, backup/restore, low_stock, sepi (idle>45s), tap cheer. Suara feminin pelan tetap.
 - Verified via screenshot: hanya 1 gambar (miko), mungil di sudut, tidak menutupi tombol Bayar.
 

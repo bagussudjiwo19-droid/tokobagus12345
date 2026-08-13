@@ -88,15 +88,15 @@ export default function BackupScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  closeBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  closeBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   infoBox: { backgroundColor: colors.brandTertiary, borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.xl },
   infoTxt: { color: colors.onBrandTertiary, fontFamily: font.regular, fontSize: fontSize.base, lineHeight: 20 },
   sectionLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, letterSpacing: 0.5, marginBottom: spacing.sm },
   sectionDesc: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, marginBottom: spacing.md, lineHeight: 20 },
-  redBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.brand, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  redBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.brand, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, shadowColor: colors.brand, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
   redBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
-  darkBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  darkBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
   darkBtnTxt: { color: colors.onSurfaceInverse, fontFamily: font.bold, fontSize: fontSize.lg },
 });

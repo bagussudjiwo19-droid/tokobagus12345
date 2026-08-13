@@ -124,16 +124,16 @@ function Toggle({ label, subtitle, value, onValueChange, disabled, tkey }: { lab
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   hTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
-  closeBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  closeBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   sectionLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, letterSpacing: 1, marginTop: spacing.lg, marginBottom: spacing.md },
   fieldLabel: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, marginBottom: spacing.sm },
-  input: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 52, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
+  input: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 52, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   toggleLabel: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   toggleSub: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   footer: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.surface },
-  saveBtn: { height: 56, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
-  saveTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  saveBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", shadowColor: colors.brand, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
+  saveTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.xl },
 });

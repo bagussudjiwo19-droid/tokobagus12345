@@ -143,6 +143,7 @@ export default function RiwayatScreen() {
     const shortfall = Math.max(0, (item.total || 0) - (item.cash_paid || 0));
     return (
       <Pressable style={[styles.row, shortfall > 0 && styles.rowUnpaid]} onPress={() => openDetail(item)} testID={`riwayat-row-${item.id}`}>
+        <View style={styles.rowThumb}><Ionicons name="receipt-outline" size={20} color={colors.brand} /></View>
         <View style={{ flex: 1 }}>
           <View style={styles.rowTopLine}>
             <Text style={styles.rowDate}>{formatDateID(item.created_at)}</Text>
@@ -176,13 +177,13 @@ export default function RiwayatScreen() {
         </View>
         <View style={styles.actions}>
           <Pressable style={styles.actionIcon} testID="riwayat-backup" onPress={() => router.push("/backup")}>
-            <Ionicons name="save-outline" size={20} color={colors.onSurface} />
+            <Ionicons name="save-outline" size={20} color={colors.brand} />
           </Pressable>
           <Pressable style={styles.actionIcon} testID="riwayat-struk-settings" onPress={() => router.push("/pengaturan-struk")}>
-            <Ionicons name="reader-outline" size={20} color={colors.onSurface} />
+            <Ionicons name="reader-outline" size={20} color={colors.brand} />
           </Pressable>
           <Pressable style={styles.actionIcon} testID="riwayat-printer-settings" onPress={() => router.push("/pengaturan-printer")}>
-            <Ionicons name="print-outline" size={20} color={colors.onSurface} />
+            <Ionicons name="print-outline" size={20} color={colors.brand} />
           </Pressable>
         </View>
       </View>
@@ -310,20 +311,21 @@ const styles = StyleSheet.create({
   title: { fontFamily: font.display, fontSize: fontSize["3xl"], color: colors.onSurface },
   subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
   actions: { flexDirection: "row", gap: spacing.sm },
-  actionIcon: { width: 42, height: 42, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  summary: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.lg },
+  actionIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  summary: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.brand, borderRadius: radius.xl, padding: spacing.lg, shadowColor: colors.brand, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.md },
-  chip: { paddingHorizontal: spacing.md, height: 36, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  chip: { paddingHorizontal: spacing.md, height: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
   chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
   chipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   chipTxtActive: { color: colors.onBrandPrimary, fontFamily: font.bold },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: spacing.lg, marginBottom: spacing.md, gap: spacing.sm },
-  stepBtn: { width: 44, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
-  stepDateBox: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
+  stepBtn: { width: 44, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  stepDateBox: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
   stepDateTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
-  sumLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm },
-  sumValue: { color: colors.brand, fontFamily: font.display, fontSize: fontSize["2xl"], marginTop: 2 },
-  row: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.lg },
+  sumLabel: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.base, opacity: 0.95 },
+  sumValue: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 34, marginTop: 2 },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  rowThumb: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   rowUnpaid: { borderColor: colors.error, borderWidth: 1.5 },
   rowTopLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   unpaidBadge: { backgroundColor: colors.error, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },

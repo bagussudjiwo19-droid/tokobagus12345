@@ -128,7 +128,7 @@ export default function CekHargaScreen() {
 
       {/* Mode scan aktif — input tersembunyi untuk scanner Bluetooth (tanpa keyboard HP) */}
       <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
-        <Ionicons name="barcode-outline" size={20} color={colors.brand} />
+        <View style={styles.scanIcon}><Ionicons name="barcode-outline" size={22} color={colors.brand} /></View>
         <TextInput
           ref={inputRef}
           testID="cekharga-scan-input"
@@ -140,7 +140,7 @@ export default function CekHargaScreen() {
           blurOnSubmit={false}
           showSoftInputOnFocus={kbd}
           caretHidden={!kbd}
-          placeholder="Mode scan aktif — arahkan scanner ke barcode"
+          placeholder="Scan barcode di sini…"
           placeholderTextColor={colors.muted}
           style={styles.scanModeInput}
         />
@@ -203,7 +203,7 @@ export default function CekHargaScreen() {
             <Text style={styles.idleTitle}>Siap Cek Harga</Text>
             <Text style={styles.idleDesc}>Scan barcode dengan scanner Bluetooth. Harga akan tampil otomatis.</Text>
             <Pressable style={styles.searchCard} testID="cekharga-search" onPress={() => router.push("/cari?mode=price")}>
-              <Ionicons name="search" size={22} color={colors.onSurface} />
+              <Ionicons name="search" size={22} color={colors.brand} />
               <Text style={styles.searchTxt}>Cari Produk Manual</Text>
             </Pressable>
           </View>
@@ -216,20 +216,21 @@ export default function CekHargaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  titleBlock: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  titleBlock: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   title: { fontFamily: font.display, fontSize: fontSize["3xl"], color: colors.onSurface },
   subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
-  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 48, borderRadius: radius.md, borderWidth: 2, borderColor: colors.brand, paddingHorizontal: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.md },
-  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
+  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 56, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.borderStrong, paddingLeft: 6, paddingRight: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.sm, shadowColor: colors.brand, shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  scanIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
   body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   idle: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
   idleTitle: { fontFamily: font.bold, fontSize: fontSize["2xl"], color: colors.onSurface, marginTop: spacing.sm },
   idleDesc: { fontFamily: font.regular, fontSize: fontSize.lg, color: colors.muted, textAlign: "center", marginBottom: spacing.lg, paddingHorizontal: spacing.md },
-  searchCard: { width: "100%", height: 64, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
-  searchTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  resultCard: { backgroundColor: colors.brandTertiary, borderRadius: 28, borderWidth: 1, borderColor: "#F3D3CD", padding: spacing.xl, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
-  shopName: { color: colors.success, fontFamily: font.display, fontSize: 40, letterSpacing: 1, textShadowColor: "rgba(11,92,51,0.35)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 1 },
+  searchCard: { width: "100%", height: 60, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
+  searchTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl },
+  resultCard: { backgroundColor: colors.surfaceSecondary, borderRadius: 28, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.xl, alignItems: "center", shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
+  shopName: { color: colors.brand, fontFamily: font.display, fontSize: 38, letterSpacing: 1 },
   labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: 2 },
   dashRed: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.brand },
   dashGreen: { width: 26, height: 3, borderRadius: 2, backgroundColor: colors.success },
