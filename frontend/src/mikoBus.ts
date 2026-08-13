@@ -11,6 +11,7 @@ export type MikoEvent =
   | { type: "backup_ok" }
   | { type: "restore_ok" }
   | { type: "low_stock" }
+  | { type: "price_found" }
   | { type: "product_saved" }
   | { type: "product_deleted" }
   | { type: "scan_ready" };

@@ -18,6 +18,9 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v36 — Balon Miko saat Cek Harga berhasil (20 variasi, bergantian)
+- `src/mikoBus.ts`: event baru `price_found`. `(tabs)/cek-harga.tsx` emit di `showResult()` (berlaku untuk scan Bluetooth & pilih manual). `components/Miko.tsx`: array `PRICE_FOUND` (20 kalimat) dipilih anti-ulang (pickRot), hold 3 dtk (rentang 2–4 dtk). Balon di sudut kanan-bawah → tidak menutupi nama/harga, tidak mengganggu reset 15 dtk maupun scan berikutnya. Verified via screenshot ("Ini dia barang yang dicari." + kartu harga tetap utuh).
+
 ## Implemented (2026-08-12)
 ### v35 — Keyboard Mode Scan dipisah tegas dari Mode Manual (scanner-only = keyboard OFF)
 - Kolom scanner MURNI (Transaksi `index.tsx`, Cek Harga `cek-harga.tsx`) kini `showSoftInputOnFocus={false}` + `caretHidden` PERMANEN, dan tap/onPressIn tidak lagi membuka keyboard (openKeyboard/kbd state dihapus). Scanner tetap fokus & menerima barcode (isScanMode selalu true). Input manual lewat tombol "Item Manual"/"Cari Barang" (Transaksi) & "Cari Produk Manual" (Cek Harga).

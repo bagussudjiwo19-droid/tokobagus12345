@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { api } from "@/src/api";
+import { mikoBus } from "@/src/mikoBus";
 import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
@@ -54,6 +55,7 @@ export default function CekHargaScreen() {
     const name = variation ? `${product.name} — ${variation.name}` : product.name;
     setResult({ name, price, unit: product.unit, tiers });
     Haptics.selectionAsync();
+    mikoBus.emit({ type: "price_found" });
     setCountdown(RESET_MS / 1000);
     tickTimer.current = setInterval(() => {
       setCountdown((n) => (n > 1 ? n - 1 : 0));

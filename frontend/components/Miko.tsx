@@ -100,6 +100,19 @@ const SAVED: Line[] = [
 const DELETED: Line[] = [
   { t: "Produk sudah dihapus.", p: "ok" }, { t: "Oke, datanya sudah dibersihkan.", p: "thumbsup" },
 ];
+// Cek Harga berhasil menemukan produk — 20 variasi, dipilih bergantian.
+const PRICE_FOUND: Line[] = [
+  { t: "Ketemu, Kak! 😊", p: "happy" }, { t: "Harga sudah Miko temukan!", p: "star" },
+  { t: "Ini dia harganya, Kak.", p: "calc" }, { t: "Sip, barangnya berhasil ditemukan!", p: "thumbsup" },
+  { t: "Harga sudah siap dilihat.", p: "ok" }, { t: "Dapat! Produk ini ada datanya.", p: "wink" },
+  { t: "Miko sudah menemukan produknya.", p: "happy" }, { t: "Nah, ini harga barangnya.", p: "idea" },
+  { t: "Berhasil, Kak! Harga tampil.", p: "thumbsup" }, { t: "Harganya sudah ketemu. 👍", p: "thumbsup" },
+  { t: "Scan berhasil! Ini informasinya.", p: "wink" }, { t: "Produk ditemukan dengan sukses!", p: "star" },
+  { t: "Miko cek dulu... nah, ketemu!", p: "idea" }, { t: "Ini dia barang yang dicari.", p: "love" },
+  { t: "Harga aman, Kak. 😄", p: "ok" }, { t: "Berhasil dicek! Silakan dilihat.", p: "happy" },
+  { t: "Miko sudah siapkan informasinya.", p: "calc" }, { t: "Ketemu! Tinggal lihat harganya.", p: "wink" },
+  { t: "Scan selesai, Kak! 😊", p: "happy" }, { t: "Sip! Harga produknya sudah muncul.", p: "thumbsup" },
+];
 const CHEER: Line[] = [
   { t: "Eh, Miko dipencet! 💕", p: "hearts" }, { t: "Iya, Kak? Miko di sini. 😄", p: "happy" },
   { t: "Ada yang mau dibicarakan?", p: "thinking" }, { t: "Miko siap menemani!", p: "wave" },
@@ -315,6 +328,7 @@ export default function Miko() {
       else if (e.type === "backup_ok") say(pickRot("backup", BACKUP), 2600);
       else if (e.type === "restore_ok") say(pickRot("restore", RESTORE), 2600);
       else if (e.type === "low_stock") say(pickRot("low", LOW), 3000);
+      else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 3000);
       else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
       else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
       else if (e.type === "error") say(pickRot("err", ERR), 2800);
