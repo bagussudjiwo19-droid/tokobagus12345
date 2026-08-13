@@ -18,6 +18,18 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v39 — Suara Cek Harga (TTS) — bacakan nama + harga ecer + grosir + penutup
+- `(tabs)/cek-harga.tsx`: saat hasil tampil (scan Bluetooth / pilih manual), otomatis dibacakan via TTS (`speak()` di `src/voice.ts`, suara feminin id-ID). Format: "[Nama]. Harga ecer [terbilang] rupiah. Beli {min_qty} harganya [terbilang] rupiah." per tingkat grosir + 1 kalimat PENUTUP dari 50 kalimat (bergantian, anti-ulang, emoji dibuang). Tanpa grosir → nama + ecer + penutup saja. SELALU aktif (permintaan user, kios). Angka dibacakan via `terbilang()`. CATATAN: TTS hanya bunyi di HP/BUILD APK, bukan preview web. Verified via screenshot: hasil tampil tanpa error/regresi.
+
+## Implemented (2026-08-12)
+### v38 — Jumlah desimal di keranjang (barang timbangan spt beras: 0.5 / 0.75 / 1.5)
+- `(tabs)/index.tsx` `QtyInput`: dulu paksa bilangan bulat (floor, min 1). Kini menerima DESIMAL — sanitasi hanya angka + 1 pemisah desimal (koma dinormalkan ke titik), `keyboardType="decimal-pad"`, commit parse float (maks 3 desimal), jumlah harus > 0 (kosong/0 → kembalikan nilai lama). Lebar kolom qty dilebarkan (28→44) agar muat "1.75". Subtotal & total otomatis = harga × jumlah (logika cart sudah float, tak diubah). Stok backend juga sudah float. Verified via screenshot: beras 1.5 → Rp 4.000 x1.5 = Rp 6.000, total Rp 6.000.
+
+## Implemented (2026-08-12)
+### v37 — FIX: keyboard menutupi kolom Edit Harga di Transaksi
+- `(tabs)/index.tsx`: kolom Edit Harga (bottom sheet) diganti dari `TextInput` biasa → `BottomSheetTextInput` (@gorhom/bottom-sheet) agar gorhom mendeteksi fokus input & mengangkat sheet ke atas keyboard. Ditambah `keyboardBlurBehavior="restore"` + `autoFocus`. `keyboardBehavior="interactive"` & `android_keyboardInputMode="adjustResize"` tetap. Verified via screenshot: sheet Edit Harga terbuka, input fokus. CATATAN: lift di atas keyboard bersifat native → uji final di HP/BUILD APK.
+
+## Implemented (2026-08-12)
 ### v36 — Balon Miko saat Cek Harga berhasil (20 variasi, bergantian)
 - `src/mikoBus.ts`: event baru `price_found`. `(tabs)/cek-harga.tsx` emit di `showResult()` (berlaku untuk scan Bluetooth & pilih manual). `components/Miko.tsx`: array `PRICE_FOUND` (20 kalimat) dipilih anti-ulang (pickRot), hold 3 dtk (rentang 2–4 dtk). Balon di sudut kanan-bawah → tidak menutupi nama/harga, tidak mengganggu reset 15 dtk maupun scan berikutnya. Verified via screenshot ("Ini dia barang yang dicari." + kartu harga tetap utuh).
 

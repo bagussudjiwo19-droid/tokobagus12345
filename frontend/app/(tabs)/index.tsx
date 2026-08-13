@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetTextInput } from "@gorhom/bottom-sheet";
 
 import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
@@ -258,6 +258,7 @@ export default function TransaksiScreen() {
         ref={priceSheet}
         enableDynamicSizing
         keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
         backgroundStyle={{ backgroundColor: colors.surfaceSecondary }}
         handleIndicatorStyle={{ backgroundColor: colors.borderStrong }}
@@ -268,10 +269,11 @@ export default function TransaksiScreen() {
           <Text style={styles.sheetLabel}>Harga Satuan (Rp)</Text>
           <View style={styles.priceInputBox}>
             <Text style={styles.rpPrefix}>Rp</Text>
-            <TextInput
+            <BottomSheetTextInput
               value={priceInput}
               onChangeText={setPriceInput}
               keyboardType="numeric"
+              autoFocus
               style={styles.priceInput}
               testID="edit-price-input"
             />
@@ -327,18 +329,28 @@ export default function TransaksiScreen() {
 function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: number) => void; testID?: string }) {
   const [txt, setTxt] = useState(String(value));
   useEffect(() => { setTxt(String(value)); }, [value]);
+  // Bersihkan input: hanya angka + satu pemisah desimal (titik/koma → titik).
+  const sanitize = (t: string) => {
+    let s = t.replace(",", ".").replace(/[^\d.]/g, "");
+    const i = s.indexOf(".");
+    if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, "");
+    return s;
+  };
   const commit = () => {
-    const n = Math.max(1, Math.floor(Number(txt.replace(/[^\d]/g, "")) || 0));
-    setTxt(String(n));
-    if (n !== value) onCommit(n);
+    const n = Number(txt.replace(",", "."));
+    // Jumlah harus > 0 (boleh desimal spt 0.5). Bila kosong/0 → kembalikan nilai lama.
+    if (!Number.isFinite(n) || n <= 0) { setTxt(String(value)); return; }
+    const rounded = Math.round(n * 1000) / 1000; // maksimal 3 desimal
+    setTxt(String(rounded));
+    if (rounded !== value) onCommit(rounded);
   };
   return (
     <TextInput
       value={txt}
-      onChangeText={(t) => setTxt(t.replace(/[^\d]/g, ""))}
+      onChangeText={(t) => setTxt(sanitize(t))}
       onEndEditing={commit}
       onBlur={commit}
-      keyboardType="number-pad"
+      keyboardType="decimal-pad"
       returnKeyType="done"
       selectTextOnFocus
       style={styles.qtyInput}
@@ -378,7 +390,7 @@ const styles = StyleSheet.create({
   unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },
   qtyBtn: { width: 30, height: 30, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
-  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 24, width: 28, height: 30, paddingVertical: 0, textAlign: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 36, width: 44, height: 30, paddingVertical: 0, textAlign: "center" },
   lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   lineNameGrosir: { color: colors.success },
   lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.base, minWidth: 64, textAlign: "right" },

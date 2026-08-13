@@ -11,11 +11,66 @@ import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
+import { speak, terbilang } from "@/src/voice";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
 
 const RESET_MS = 15000;
+
+// Kalimat penutup ramah (dibacakan bergantian) saat Cek Harga menampilkan hasil.
+const CLOSINGS: string[] = [
+  "Silakan masukkan ke keranjang ya, Kak, siapa tahu kebutuhan di rumah sudah mulai habis.",
+  "Kalau cocok, boleh dimasukkan ke keranjang ya, Kak.",
+  "Mau beli lebih banyak? Harga grosirnya juga sudah tersedia, Kak.",
+  "Silakan dipilih, Kak. Semoga cocok dengan kebutuhannya.",
+  "Kalau butuh untuk stok di rumah, bisa ambil lebih banyak ya, Kak.",
+  "Cocok untuk persediaan di rumah nih, Kak.",
+  "Silakan lanjut belanja, Kak. Miko siap menemani.",
+  "Kalau sudah cocok, boleh langsung masukkan ke keranjang ya, Kak.",
+  "Kalau memang sedang dibutuhkan, boleh langsung dimasukkan ke keranjang ya, Kak.",
+  "Buat persediaan di rumah juga cocok nih, Kak. Silakan dipilih.",
+  "Kalau mau sekalian stok, harga grosirnya bisa jadi pilihan, Kak.",
+  "Sudah cocok dengan harganya? Boleh langsung masuk keranjang, Kak.",
+  "Kalau barangnya memang sedang dicari, jangan lupa masukkan ke keranjang ya, Kak.",
+  "Boleh ambil sesuai kebutuhan, Kak. Miko siap bantu cek harga lainnya.",
+  "Kalau mau belanja lebih hemat, bisa pertimbangkan jumlah grosirnya ya, Kak.",
+  "Silakan lanjut belanjanya, Kak. Siapa tahu masih ada kebutuhan lain di rumah.",
+  "Kalau cocok dengan produknya, boleh langsung lanjut ke keranjang ya, Kak.",
+  "Mau tambah barang lain juga boleh, Kak. Miko siap menemani.",
+  "Semoga harganya cocok ya, Kak. Kalau sudah pas, silakan masukkan ke keranjang.",
+  "Nah, kalau sudah sesuai kebutuhan, boleh langsung dimasukkan ke keranjang ya, Kak.",
+  "Kalau harganya sudah sesuai, silakan dimasukkan ke keranjang ya, Kak.",
+  "Semoga produknya sesuai dengan kebutuhan Kakak.",
+  "Kalau ingin sekalian stok di rumah, boleh ambil beberapa ya, Kak.",
+  "Harga grosirnya bisa jadi pilihan kalau Kakak ingin membeli lebih banyak.",
+  "Silakan dipertimbangkan dulu, Kak. Miko siap membantu.",
+  "Kalau cocok dengan produknya, boleh langsung lanjut belanja ya, Kak.",
+  "Semoga harga hari ini cocok dengan budget Kakak.",
+  "Kalau sedang membutuhkan produk ini, boleh langsung dimasukkan ke keranjang.",
+  "Mau cari produk lainnya? Silakan, Miko siap menemani.",
+  "Kalau ingin lebih hemat, Kakak bisa melihat pilihan harga grosirnya.",
+  "Semoga belanjanya nyaman dan kebutuhan di rumah terpenuhi ya, Kak.",
+  "Kalau sudah sesuai, silakan lanjut ke keranjang ya, Kak.",
+  "Boleh disimpan untuk pilihan belanja berikutnya, Kak.",
+  "Kalau sedang mencari harga yang pas, semoga yang ini cocok ya, Kak.",
+  "Silakan pilih jumlah sesuai kebutuhan, Kak.",
+  "Kalau kebutuhan di rumah cukup banyak, harga grosirnya bisa dipertimbangkan.",
+  "Terima kasih sudah mengecek harga di Toko Bagus, Kak.",
+  "Semoga produknya cocok dan belanjanya menyenangkan, Kak.",
+  "Kalau sudah menemukan yang dicari, boleh langsung masukkan ke keranjang.",
+  "Miko siap membantu kalau Kakak ingin mengecek barang lainnya.",
+  "Silakan lanjut mencari kebutuhan lainnya, Kak.",
+  "Kalau ingin belanja lebih praktis, produk ini bisa langsung dimasukkan ke keranjang.",
+  "Semoga harga yang tampil sesuai dengan yang Kakak cari.",
+  "Kalau cocok, jangan ragu untuk memasukkannya ke keranjang ya, Kak.",
+  "Mau sekalian lihat barang lainnya? Miko siap menemani.",
+  "Semoga belanja hari ini lancar dan menyenangkan ya, Kak.",
+  "Kalau ingin persediaan lebih aman di rumah, boleh pertimbangkan membeli beberapa.",
+  "Harga sudah Miko tampilkan dengan lengkap, Kak. Silakan dipilih.",
+  "Terima kasih sudah berbelanja di Toko Bagus. Semoga harinya menyenangkan.",
+  "Kalau sudah cocok, yuk masukkan ke keranjang. Miko siap menemani belanja berikutnya.",
+];
 
 type ScanResult = { name: string; price: number; unit: string; tiers: Tier[] };
 
@@ -31,6 +86,25 @@ export default function CekHargaScreen() {
   const kbdRef = useRef(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastClosing = useRef(-1);
+
+  // Bacakan hasil cek harga (suara HP / TTS). Nama + harga ecer + tiap tingkat
+  // grosir + kalimat penutup ramah (bergantian). Hanya terdengar di HP/APK build.
+  const speakPrice = (name: string, price: number, unit: string, tiers: Tier[]) => {
+    const clean = (s: string) => s.replace(/—/g, " ").replace(/\s+/g, " ").trim();
+    const parts: string[] = [`${clean(name)}.`, `Harga ecer ${terbilang(price).trim()} rupiah.`];
+    const u = unit && unit !== "pcs" ? ` ${unit}` : "";
+    tiers.forEach((t) => {
+      parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
+    });
+    let i = Math.floor(Math.random() * CLOSINGS.length);
+    if (i === lastClosing.current) i = (i + 1) % CLOSINGS.length;
+    lastClosing.current = i;
+    // Buang emoji agar tidak ikut terbaca aneh oleh TTS.
+    const closing = CLOSINGS[i].replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim();
+    parts.push(closing);
+    speak(parts.join(" "), 0.9);
+  };
 
   const clearTimers = () => {
     if (resetTimer.current) { clearTimeout(resetTimer.current); resetTimer.current = null; }
@@ -56,6 +130,7 @@ export default function CekHargaScreen() {
     setResult({ name, price, unit: product.unit, tiers });
     Haptics.selectionAsync();
     mikoBus.emit({ type: "price_found" });
+    speakPrice(name, price, product.unit, tiers);
     setCountdown(RESET_MS / 1000);
     tickTimer.current = setInterval(() => {
       setCountdown((n) => (n > 1 ? n - 1 : 0));
