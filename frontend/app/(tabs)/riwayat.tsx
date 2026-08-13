@@ -25,6 +25,7 @@ import type { Settings, Transaction } from "@/src/types";
 import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
+import { mikoBus } from "@/src/mikoBus";
 
 type FilterKey = "today" | "yesterday" | "month" | "date" | "all";
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -110,11 +111,11 @@ export default function RiwayatScreen() {
   };
 
   const printReceipt = async () => {
-    if (!isBluetoothAvailable()) return toast.show(NATIVE_ONLY_MSG, "info");
-    if (!printer.address) return toast.show("Belum ada printer terpasang.", "info");
+    if (!isBluetoothAvailable()) { mikoBus.emit({ type: "print_fail" }); return toast.show(NATIVE_ONLY_MSG, "info"); }
+    if (!printer.address) { mikoBus.emit({ type: "print_fail" }); return toast.show("Belum ada printer terpasang.", "info"); }
     if (!selected || !settings) return;
-    try { await printText(printer.address, buildReceiptText(selected, settings)); toast.show("Struk dikirim ke printer", "success"); }
-    catch (e: any) { toast.show(e?.message || "Gagal mencetak", "error"); }
+    try { await printText(printer.address, buildReceiptText(selected, settings)); toast.show("Struk dikirim ke printer", "success"); mikoBus.emit({ type: "print_ok" }); }
+    catch (e: any) { toast.show(e?.message || "Gagal mencetak", "error"); mikoBus.emit({ type: "print_fail" }); }
   };
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };

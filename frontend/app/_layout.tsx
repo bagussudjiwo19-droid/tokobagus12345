@@ -14,6 +14,7 @@ import { CartProvider } from "@/src/cart";
 import { DataProvider } from "@/src/data";
 import { ToastProvider } from "@/src/toast";
 import { colors } from "@/src/theme";
+import Miko from "@/components/Miko";
 
 // Disable logbox errors etc so that users can see the app
 // and agent works as expected.
@@ -33,6 +34,12 @@ export default function RootLayout() {
     "DMSans-Bold": require("../assets/fonts/DMSans-Bold.ttf"),
     "BarlowCondensed-SemiBold": require("../assets/fonts/BarlowCondensed-SemiBold.ttf"),
     "BarlowCondensed-Bold": require("../assets/fonts/BarlowCondensed-Bold.ttf"),
+    "Nunito-Regular": require("../assets/fonts/Nunito_400Regular.ttf"),
+    "Nunito-Bold": require("../assets/fonts/Nunito_700Bold.ttf"),
+    "Nunito-ExtraBold": require("../assets/fonts/Nunito_800ExtraBold.ttf"),
+    "PlusJakartaSans-Regular": require("../assets/fonts/PlusJakartaSans_400Regular.ttf"),
+    "PlusJakartaSans-Medium": require("../assets/fonts/PlusJakartaSans_500Medium.ttf"),
+    "PlusJakartaSans-Bold": require("../assets/fonts/PlusJakartaSans_700Bold.ttf"),
   });
 
   const ready = (loaded || error) && (fontsLoaded || fontsError);
@@ -73,6 +80,7 @@ export default function RootLayout() {
                   <Stack.Screen name="pengaturan-printer" options={{ presentation: "modal" }} />
                   <Stack.Screen name="kelola-stok" options={{ presentation: "modal" }} />
                 </Stack>
+                <Miko />
               </DataProvider>
             </CartProvider>
           </ToastProvider>

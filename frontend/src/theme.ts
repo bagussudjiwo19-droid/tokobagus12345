@@ -1,32 +1,32 @@
-// Toko Bagus / Kasir Warung — LIGHT theme (cream + red) matching the original app.
+// Toko Bagus / Kasir Warung — LIGHT theme "Soft Rose & Lilac" (feminin & lembut).
 export const colors = {
-  surface: "#F5F0E6", // warm cream app background
-  onSurface: "#1A1A1A",
+  surface: "#FFF5F7", // warm blush app background
+  onSurface: "#2B2D42",
   surfaceSecondary: "#FFFFFF", // cards & inputs
-  onSurfaceSecondary: "#3F3F46",
-  surfaceTertiary: "#EFE8DA", // subtle pressed / chip bg
-  onSurfaceTertiary: "#52525B",
-  surfaceInverse: "#1F2430", // dark button (e.g. Pilih File Backup)
+  onSurfaceSecondary: "#2B2D42",
+  surfaceTertiary: "#FFEBF0", // subtle chip / tint bg
+  onSurfaceTertiary: "#C81D4A",
+  surfaceInverse: "#2B2D42", // dark button
   onSurfaceInverse: "#FFFFFF",
-  brand: "#D13A2C", // brick red
-  brandPrimary: "#D13A2C",
+  brand: "#FF758F", // coral pink (primary)
+  brandPrimary: "#FF758F",
   onBrandPrimary: "#FFFFFF",
-  brandSecondary: "#B02A20",
-  onBrandSecondary: "#FFFFFF",
-  brandTertiary: "#FBE7E3", // light red tint (badges / info box)
-  onBrandTertiary: "#B02A20",
-  success: "#12894A",
+  brandSecondary: "#CDB4DB", // lilac
+  onBrandSecondary: "#2B2D42",
+  brandTertiary: "#FFD6DF", // light pink tint (badges / info box)
+  onBrandTertiary: "#C81D4A",
+  success: "#2F9E44",
   onSuccess: "#FFFFFF",
-  warning: "#B7791F",
+  warning: "#FB8500",
   onWarning: "#FFFFFF",
-  error: "#D13A2C",
+  error: "#E63950",
   onError: "#FFFFFF",
-  info: "#8A8A8A",
-  muted: "#8A8A8A",
+  info: "#9A94A8",
+  muted: "#9A94A8",
   onInfo: "#FFFFFF",
-  border: "#E6DECE",
-  borderStrong: "#D8CEB9",
-  divider: "#ECE5D7",
+  border: "#FDE2E8",
+  borderStrong: "#FFB3C1",
+  divider: "#FDE2E8",
 };
 
 export const spacing = {
@@ -43,15 +43,16 @@ export const radius = {
   sm: 6,
   md: 12,
   lg: 16,
+  xl: 20,
   pill: 999,
 };
 
 export const font = {
-  display: "BarlowCondensed-Bold",
-  displaySemi: "BarlowCondensed-SemiBold",
-  regular: "DMSans-Regular",
-  medium: "DMSans-Medium",
-  bold: "DMSans-Bold",
+  display: "Nunito-ExtraBold", // headings, totals, Bayar
+  displaySemi: "Nunito-Bold",
+  regular: "PlusJakartaSans-Regular",
+  medium: "PlusJakartaSans-Medium",
+  bold: "PlusJakartaSans-Bold",
 };
 
 export const fontSize = {

@@ -1,5 +1,41 @@
 import * as Speech from "expo-speech";
 
+// Suara feminin: nada lebih tinggi + tempo santai. Pilih otomatis voice
+// Bahasa Indonesia bergender perempuan bila tersedia di HP.
+let PICKED: string | null = null;
+let INITED = false;
+async function initVoice(): Promise<void> {
+  if (INITED) return;
+  INITED = true;
+  try {
+    const voices = await Speech.getAvailableVoicesAsync();
+    const id = voices.filter((v) => (v.language || "").toLowerCase().startsWith("id"));
+    const female =
+      id.find((v) => /female|wanita|perempuan|woman/i.test(v.name || "")) ||
+      id.find((v) => /#female|_f_|-f-|fem/i.test(v.identifier || "")) ||
+      id[0];
+    PICKED = female?.identifier || null;
+  } catch { PICKED = null; }
+}
+initVoice();
+
+// Opsi suara feminin & ramah (nada tinggi, tempo santai).
+function femaleOpts(rate = 0.85) {
+  const o: Speech.SpeechOptions = { language: "id-ID", rate, pitch: 1.18 };
+  if (PICKED) o.voice = PICKED;
+  return o;
+}
+
+// Bacakan teks apa pun dengan suara feminin & kalem (fire-and-forget).
+export function speak(text: string, rate = 0.85): void {
+  try {
+    if (!text) return;
+    Speech.stop();
+    Speech.speak(text, femaleOpts(rate));
+  } catch { /* abaikan */ }
+}
+
+
 const SATUAN = [
   "", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan",
   "sepuluh", "sebelas",
@@ -38,21 +74,26 @@ export function terbilang(input: number): string {
   return `${terbilang(Math.floor(n / 1000000000))} miliar${sisa ? ` ${terbilang(sisa)}` : ""}`;
 }
 
-// Bacakan jumlah kembalian dengan TTS Bahasa Indonesia. Fire-and-forget,
-// tidak mengganggu proses pembayaran / cetak struk.
-// Suara santai & natural: kecepatan diperlambat + jeda nyaman (koma).
+// Bacakan hasil transaksi dgn suara feminin & ramah. Bila ada kembalian,
+// nominal ASLI dibacakan dalam kata (mis. "empat puluh delapan ribu").
+export function speakPaymentDone(change: number): void {
+  try {
+    if (change && change > 0) {
+      const words = terbilang(change).trim().replace(/\s+/g, " ");
+      speak(`Transaksi berhasil. Kembaliannya, ${words}, rupiah ya, Kak.`, 0.9);
+    } else {
+      speak("Transaksi berhasil, Kak.", 0.95);
+    }
+  } catch { /* abaikan */ }
+}
+
+// (Dipertahankan) Bacakan hanya jumlah kembalian.
 export function speakChange(amount: number): void {
   try {
     if (!amount || amount <= 0) return;
     const words = terbilang(amount).trim().replace(/\s+/g, " ");
     if (!words) return;
-    Speech.stop();
-    // Koma memberi jeda alami; nominal (words) tidak dipotong.
-    Speech.speak(`Total kembalian, ${words}, rupiah.`, {
-      language: "id-ID",
-      rate: 0.82,
-      pitch: 1.0,
-    });
+    speak(`Kembaliannya, ${words}, rupiah ya, Kak.`, 0.9);
   } catch {
     // abaikan error TTS agar tidak mengganggu transaksi
   }

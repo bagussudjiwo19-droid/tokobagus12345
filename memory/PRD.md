@@ -19,6 +19,41 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
+### v28 — Produk redesign Soft Rose + reaksi Miko-Momo diperluas
+- `app/(tabs)/produk.tsx`: kartu mengambang (radius 20, shadow) + thumbnail bulat, nama tebal, meta, HARGA sebagai pil pink, menu 3-titik; search jadi pill (tombol keypad bulat); tombol "Tambah" pill bershadow. Badge "Stok N" merah muncul bila stok ≤ 5 (stok menipis). PRODUK_ROW_H 76→96 (getItemLayout tetap cepat). Fungsi scan/cari/menu/CRUD tidak diubah.
+- Reaksi Miko-Momo diperluas (mikoBus + handler): price_changed (index applyPermanent), backup_ok & restore_ok (backup.tsx), low_stock (handler siap). Semua tampil sebagai dialog berdua.
+- Verified via screenshot: Produk baru rapi + duo maskot tampil.
+- SISA: Cek Harga, Riwayat, Pengaturan masih layout lama (sudah warna baru) — menunggu giliran.
+
+
+- Pose ditambah via Nano Banana (green-key + downscale 220px + optimize): Miko total 28 pose, Momo 8 pose (scripts/gen_more.py). Ukuran tiap file ~55-65KB.
+- `components/Miko.tsx` (export default Mascots): dua karakter berdampingan di dock kanan bawah. BISA DISERET (PanResponder) & posisi diingat (AsyncStorage POS_KEY). Mesin dialog `run(turns[])` menampilkan balon bergiliran (Miko↔Momo), termasuk sapaan, debat lucu, curhat, penyemangat, + komentar berdua saat aksi (barang masuk/big/empty/not_found/pay/print/change/error). KALEM: obrolan santai hanya bila idle >40s (cek tiap 20s). Tap karakter → cheer.
+- Suara `src/voice.ts` dibuat lebih pelan & lembut (rate 0.85, pitch 1.18).
+- Verified via screenshot: Miko+Momo tampil, dialog sapaan bergiliran jalan; not_found sebelumnya OK. (Suara & seret paling mantap di APK build.)
+
+
+- `src/mikoBus.ts`: event-bus global (not_found, pay_ok, change, print_ok, print_fail, error, scan_ready) agar layar mana pun memicu respons Miko.
+- `components/Miko.tsx`: kumpulan kalimat lengkap sesuai permintaan user (OPEN/sapaan, ITEM_MASUK gabungan scan+found+keranjang, BIG, EMPTY, NOT_FOUND, PAY, PRINT_OK/FAIL, ERROR, CHEERS, SEPI 23 kalimat). Dipilih bergantian (pickRot anti-ulang). Sapaan per-layar (usePathname). Reaksi keranjang (masuk/total besar/kosong). Kejadian via bus (kembalian sebut nominal ASLI via terbilang). Pesan "toko sepi" hanya bila idle >45s (jeda panjang, tidak saat aktif). Pose mengikuti kondisi.
+- `src/voice.ts`: suara feminin (auto-pilih voice id-ID perempuan bila ada, pitch 1.25, rate ~0.9) + `speak()` umum + `speakPaymentDone(change)` (bacakan hasil + kembalian dalam kata, persona "Kak"). `speakChange` diperbarui.
+- Wiring: checkout (pay_ok+change+printer emit, suara via speakPaymentDone gated voiceChange), index (not_found), riwayat (printer ok/fail). Suara hanya di HP/APK build.
+- Verified via screenshot: scan barcode tak dikenal → Miko pose kaget + "Hmm, barangnya belum ditemukan." Sapaan per-layar & sudut kanan bawah OK.
+
+
+- 4 pose baru di-generate (wink, money, sleepy, thumbsup) via Nano Banana + green-screen chroma key → transparan (scripts/gen_mascot2.py). Total 8 pose.
+- `components/Miko.tsx` ditulis ulang: DIAM di sudut kanan bawah (tidak wandering, tidak menutupi tombol), animasi napas+goyang di tempat, entrance pop. Kumpulan kata banyak: IDLE_TIPS(15), ON_ADD, ON_BIG, ON_EMPTY, CHEERS(8) + sapaan per-layar via usePathname (Transaksi/Produk/Cek Harga/Riwayat/Checkout/Cari/Variasi). Bereaksi ke keranjang (barang masuk/total besar/kosong). Tap = cheer acak.
+- Di-mount GLOBAL di `app/_layout.tsx` (sibling <Stack>) → tampil di SEMUA layar termasuk checkout. Dihapus dari index.tsx.
+- Verified via screenshot: Transaksi (sapaan+wave) & Riwayat (sapaan cuan+money) — Miko di sudut, tidak menutupi tombol.
+
+
+- Tema global diganti ke "Soft Rose & Lilac" (`src/theme.ts`): surface #FFF5F7, brand pink #FF758F, lilac #CDB4DB, tint #FFD6DF, dst. LIGHT ONLY.
+- Font baru dimuat via expo-font (`_layout.tsx`, unduh TTF dari jsdelivr ke assets/fonts): Nunito (400/700/800) untuk display/heading/total, Plus Jakarta Sans (400/500/700) untuk teks. Token `font` diarahkan ke font baru. DMSans & BarlowCondensed tetap dimuat (dipakai komponen lain).
+- Layar Transaksi (`app/(tabs)/index.tsx`) DIROMBAK total: header sapaan "Halo, Kasir 👋", scan input pill dgn ikon bulat, dua tombol aksi (Tambah Item lilac + Cari Barang outline), kartu belanja MENGAMBANG (radius 20, shadow) dgn thumbnail, stepper qty besar bulat, pay bar melengkung di bawah. Semua fungsi (scan buffer, edit harga, hapus, qty, variasi, cari, item manual, bayar) TIDAK diubah.
+- Maskot **Miko** 🐱 (`components/Miko.tsx`): kucing chibi (4 pose: happy/wave/surprised/love) di-generate via Gemini Nano Banana (EMERGENT_LLM_KEY), background dijadikan transparan + crop (scripts/transparent_mascot.py), disimpan di assets/mascot. Melayang bebas (onLayout container → posisi akurat semua layar), mengambang + goyang, ganti pose & balon kata sesuai aksi (sapaan, barang masuk, total besar, keranjang kosong, tips acak, tap = cheer). Pakai Animated API bawaan RN.
+- Pratinjau 3 palet dibuat di `app/design-preview.tsx` (?v=1|2|3) — user memilih Versi 1 (Soft Rose).
+- Verified via screenshot: Transaksi baru + Miko tampil & ngobrol; Produk/menu lain tetap jalan dgn warna baru (layout lama, belum dirombak).
+- CATATAN: menu lain (Produk, Cek Harga, Riwayat, Pengaturan) baru berganti WARNA; tata letaknya belum dirombak — menunggu konfirmasi user.
+
+
 ### v23 — Riwayat filter tanggal + struk: nama toko besar/tebal + alamat rapi
 - `riwayat.tsx`: chip filter periode (Hari Ini [default] / Kemarin / Bulan Ini / Pilih Tanggal / Semua). "Pilih Tanggal" menampilkan stepper ◀ tanggal ▶ (per hari). Omzet & jumlah transaksi IKUT periode terpilih. Data lama TIDAK dihapus (hanya disaring tampilan). Limit fetch dinaikkan 200→5000 agar data lama bisa dibuka. Verified via screenshot: Hari Ini 23 tx Rp 243.100; step ke Sel 11 Agu → 33 tx Rp 1.484.755.
 - `receipt.ts` (printer thermal): NAMA TOKO kini ESC/POS dobel-tinggi + tebal (ESC ! 0x18), rata tengah oleh printer (ESC a). Reset ukuran/rata (ESC ! 0x00 + ESC a 0) diselipkan sebelum baris berikutnya agar nama tercetak besar. ALAMAT dibungkus PER KATA (wrapWords) → tidak terpotong di tengah kata, tetap rata tengah. CATATAN: hasil cetak fisik hanya bisa diuji di BUILD APK (bukan Expo Go/preview).

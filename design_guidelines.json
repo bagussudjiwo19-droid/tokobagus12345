@@ -1,38 +1,38 @@
 {
-  "app_name": "Toko Bagus",
-  "personality": "7 Dark-First Utility DARK",
-  "personality_one_liner": "A high-speed, command-center operational surface optimizing for fast thumb-reach, strict numeric hierarchy, and low-light OLED visibility.",
+  "app_name": "Toko Bagus POS",
+  "personality": "4 Tactile / Playful LIGHT",
+  "personality_one_liner": "A warm, feminine, and softly playful cashier experience designed for high legibility, fast tapping, and delightful everyday use.",
   "color": {
-    "surface": "#000000",
-    "onSurface": "#F3F4F6",
-    "surfaceSecondary": "#18181B",
-    "onSurfaceSecondary": "#E5E7EB",
-    "surfaceTertiary": "#27272A",
-    "onSurfaceTertiary": "#D1D5DB",
-    "surfaceInverse": "#F9FAFB",
-    "onSurfaceInverse": "#030712",
-    "brand": "#10B981",
-    "brandPrimary": "#10B981",
-    "onBrandPrimary": "#022C22",
-    "brandSecondary": "#047857",
-    "onBrandSecondary": "#D1FAE5",
-    "brandTertiary": "#065F46",
-    "onBrandTertiary": "#A7F3D0",
-    "success": "#10B981",
-    "onSuccess": "#022C22",
-    "warning": "#EAB308",
-    "onWarning": "#422006",
-    "error": "#EF4444",
-    "onError": "#450A0A",
-    "info": "#6B7280",
-    "onInfo": "#F9FAFB",
-    "border": "#27272A",
-    "borderStrong": "#3F3F46",
-    "divider": "#27272A"
+    "surface": "#FFF5F7",
+    "onSurface": "#2B2D42",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#2B2D42",
+    "surfaceTertiary": "#FFEBF0",
+    "onSurfaceTertiary": "#2B2D42",
+    "surfaceInverse": "#2B2D42",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#FF8FA3",
+    "brandPrimary": "#FF758F",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#CDB4DB",
+    "onBrandSecondary": "#2B2D42",
+    "brandTertiary": "#FFD6DF",
+    "onBrandTertiary": "#D90429",
+    "success": "#38B000",
+    "onSuccess": "#FFFFFF",
+    "warning": "#FB8500",
+    "onWarning": "#FFFFFF",
+    "error": "#D90429",
+    "onError": "#FFFFFF",
+    "info": "#4CC9F0",
+    "onInfo": "#FFFFFF",
+    "border": "#FDE2E8",
+    "borderStrong": "#FFB3C1",
+    "divider": "#FDE2E8"
   },
   "typography": {
-    "displayFontFamily": "Barlow Condensed",
-    "textFontFamily": "DM Sans",
+    "displayFontFamily": "Nunito",
+    "textFontFamily": "Plus Jakarta Sans",
     "scale": {
       "sm": 12,
       "base": 14,
@@ -42,7 +42,7 @@
     }
   },
   "spacing": {
-    "rule": "Use tight md/lg spacing for dense transactional lists. Padding inside buttons and cards should be highly deliberate to maximize screen real estate.",
+    "rule": "Generous spacing. Touch targets must be strictly >= 48px for fast POS cashier tapping.",
     "xs": 4,
     "sm": 8,
     "md": 12,
@@ -57,19 +57,13 @@
     "lg": 20,
     "pill": 999
   },
-  "shadow_tier": "0",
-  "navigation": "bottom_tabs",
+  "shadow_tier": 2,
+  "navigation": "stack_only",
   "icon_set": "Phosphor",
   "glassmorphism": {
-    "enabled": "true",
-    "do's": [
-      "Use heavy translucent glass (e.g., rgba(0,0,0,0.85) + blur) for the bottom tab bar and the sticky 'Daftar Belanja' cart CTA.",
-      "Use glass for modal bottom-sheet headers to maintain context of the POS screen behind it."
-    ],
-    "dont's": [
-      "Never use glass for product cards or list rows; rely on solid surfaceSecondary.",
-      "Do not blur numeric keypads or form inputs."
-    ]
+    "enabled": false,
+    "do's": ["Use solid surfaceSecondary for the sticky bottom pay bar with an upward shadow to ensure perfect contrast."],
+    "dont's": ["Avoid glassmorphism on this specific POS screen to keep it highly performant and the text crisp for fast scanning."]
   },
   "platform_libraries": {
     "glass": {
@@ -85,74 +79,33 @@
   },
   "screens": [
     {
-      "name": "Kasir (POS)",
-      "purpose": "Main checkout interface for scanning, browsing, and adding products to the cart for high-speed transactions.",
+      "name": "Transaksi",
+      "purpose": "Primary POS checkout flow where cashiers scan items, manage the cart, and proceed to payment.",
       "states": {
-        "loading": "Skeleton grid representing product cards.",
-        "empty": "No products match the filter or search query.",
-        "error": "Failed to load product catalog."
+        "loading": "A soft pulsing brandPrimary cart icon in the center.",
+        "empty": "An illustration of an empty cart with a friendly message 'Belum ada barang' and a CTA to 'Cari Barang'.",
+        "error": "A red-tinted banner at the top 'Gagal memuat keranjang' with a Retry button."
       },
-      "layout": "Top: Horizontal scrolling category chips (Semua, Makanan, Minuman). Middle: 2-column grid of product cards showing Name, Price, and Stock. Cards use solid surfaceSecondary. Bottom: A sticky CTA bar 'Daftar Belanja' showing item count and running total, anchored above the tab bar. Tapping it opens the Cart bottom sheet with a Numpad and 'Nominal Cepat' (Quick Amount) chips for payment."
-    },
-    {
-      "name": "Produk",
-      "purpose": "Product catalog management including stock, barcode, and wholesale pricing tiers.",
-      "states": {
-        "loading": "Spinner centered.",
-        "empty": "Illustration of an empty box with text 'Belum ada produk'.",
-        "error": "Failed to fetch products."
-      },
-      "layout": "Top: Search bar and a primary 'Tambah Produk' button. Middle: Single-column list of products. Each row displays Name, SKU/Barcode, Stock, and Price. Tapping opens an edit form with sections for Basic Info, Variations (variasi), and Wholesale Pricing (harga bertingkat)."
-    },
-    {
-      "name": "Riwayat",
-      "purpose": "Log of completed transactions with total omzet summary and reprint capabilities.",
-      "states": {
-        "loading": "List of skeleton rows.",
-        "empty": "Empty register illustration with text 'Belum ada transaksi hari ini'.",
-        "error": "Failed to load transaction history."
-      },
-      "layout": "Top: A summary card showing 'Total Pendapatan' for the selected date. Middle: Chronological list of transactions (Time, Receipt No, Total Amount). Tapping a row opens a detailed receipt preview modal with a 'Cetak Struk' (Print Receipt) sticky action."
-    },
-    {
-      "name": "Pengaturan",
-      "purpose": "Store settings, Bluetooth thermal printer connection, and JSON Backup/Restore.",
-      "states": {
-        "loading": "Spinner.",
-        "empty": "N/A",
-        "error": "Failed to load settings."
-      },
-      "layout": "Single-column list of settings sections. 'Informasi Toko' (Name, Address). 'Printer Bluetooth' (Scan & Connect button, test print). 'Data & Backup' (Export to JSON, Import JSON). Use surfaceSecondary blocks for each section."
+      "layout": "1. Top Header: 'Transaksi' title (Nunito, 2xl) with a large, pill-shaped Bluetooth Scan Input (surfaceTertiary background, search/barcode icon, placeholder 'Scan barcode...').\n2. Actions Row: Two pill-shaped buttons side-by-side: 'Tambah Item/Biaya' (brandSecondary) and 'Cari Barang' (surfaceSecondary with borderStrong). Touch targets min 48px.\n3. List Title: 'DAFTAR BELANJA' (Plus Jakarta Sans, sm, uppercase, spaced).\n4. Scrollable Cart List: Each item is a surfaceSecondary card (radius lg, shadow 2). Layout: Left rounded product image (if any) or tinted icon; Right side details: Product Name (base, bold), Unit Price with a pencil icon to edit, 'Tambah Variasi' as a subtle text link (brandPrimary). Bottom row of card: Qty stepper on left (- / + large pill buttons), Subtotal on right, Trash icon on far right. Low stock badge (brandTertiary bg, onBrandTertiary text) positioned near the title.\n5. Bottom Sticky Pay Bar: Fixed to bottom. Contains Item Count ('3 Item'), Grand Total ('Rp 150.000' in 2xl Nunito), and a massive 'Bayar' pill button in brandPrimary covering 100% width of its column. The bar must have a top shadow/elevation to float above scrolling content."
     }
   ],
   "images": {
-    "empty_cart_illustration": {
-      "url": "https://images.unsplash.com/photo-1634114521044-a8c62098f958?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHxjYXNoJTIwcmVnaXN0ZXIlMjBlbXB0eSUyMGlsbHVzdHJhdGlvbnxlbnwwfHx8fDE3ODY0NjQ3Mzd8MA&ixlib=rb-4.1.0&q=85",
-      "alt": "Black and white photo of an old cash register"
+    "product_skincare_1": {
+      "url": "https://images.unsplash.com/photo-1667266543254-505cf5b16ec4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwyfHxza2luY2FyZSUyMHByb2R1Y3QlMjBtaW5pbWFsJTIwcGluayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzg2NTY1NTgxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "A pink skincare bottle on a minimal background"
     },
-    "groceries_placeholder": {
-      "url": "https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwxfHxncm9jZXJpZXMlMjBzbmFjayUyMHBhY2tldHN8ZW58MHx8fHwxNzg2NDY0NzQ0fDA&ixlib=rb-4.1.0&q=85",
-      "alt": "Groceries and snacks in a bag"
-    },
-    "thermal_printer_placeholder": {
-      "url": "https://images.unsplash.com/photo-1623123096729-26b481292919?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwxfHx0aGVybWFsJTIwcmVjZWlwdCUyMHByaW50ZXJ8ZW58MHx8fHwxNzg2NDY0NzQ0fDA&ixlib=rb-4.1.0&q=85",
-      "alt": "Thermal receipt printer being scanned"
+    "product_skincare_2": {
+      "url": "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwxfHxza2luY2FyZSUyMHByb2R1Y3QlMjBtaW5pbWFsJTIwcGluayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzg2NTY1NTgxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "An assortment of makeup products on a pink background"
     }
   },
-  "haptics": {
-    "add_to_cart": "selection",
-    "quick_amount_tap": "light",
-    "numpad_press": "light",
-    "transaction_success": "success",
-    "tab_change": "selection"
-  },
   "instructions_to_main_agent": [
-    "STRICT PURE BLACK (`#000000`) for the root background. This is a non-negotiable requirement to match the original Toko Bagus app experience.",
-    "ALL UI text must be in Bahasa Indonesia (Kasir, Produk, Riwayat, Pengaturan, Tambah Produk, Daftar Belanja, Bayar, Kembalian, Nominal Cepat).",
-    "Currency formatting MUST use Indonesian Rupiah format exactly as `Rp 15.000` (No decimals, dot as thousand separator).",
-    "Use Emerald Green (`#10B981`) as the primary brand/action color for primary buttons and success states, as blue colors are banned. This perfectly suits a POS / cashier context.",
-    "Kasir Screen Layout: The 'Daftar Belanja' (Cart) CTA must be sticky at the bottom, placed inside a heavily tinted glass container (rgba(0,0,0,0.85)) sitting above the safe area or tab bar.",
-    "Payment Flow: When 'Bayar' is pressed, present a numeric keypad alongside 'Nominal Cepat' chips (e.g. Rp 50.000, Uang Pas) to allow immediate payment entry.",
-    "Product Form: Must include fields for 'Variasi' (Variations) and 'Harga Bertingkat/Grosir' (Wholesale pricing tiers, e.g. Min Qty -> Price)."
+    "The user requested 2-3 DISTINCT visual directions because they want to 'see options to choose from'. I have provided the BEST option ('Soft Rose & Lilac') directly in the JSON above.",
+    "CRITICAL: When generating the UI, please present the implemented screen as 'Option 1: Soft Rose (Default)'. In your text response to the user, you MUST describe 2 alternative themes they can request next. Option 2: 'Peach & Mint' (surface: #FFFAED, brandPrimary: #FF9F1C, brandSecondary: #2EC4B6). Option 3: 'Dusty Mauve & Oat' (surface: #F8F7FA, brandPrimary: #B5838D, brandSecondary: #E5989B).",
+    "CRITICAL: The user explicitly requested 'Terang saja' (LIGHT MODE ONLY). Do not implement or mention a dark mode.",
+    "CRITICAL: Touch targets MUST be >= 48px. Cashiers (kasir) tap very fast; small buttons will ruin the UX.",
+    "Typography: Use 'Nunito' for headings, totals, and the 'Bayar' button. Use 'Plus Jakarta Sans' for the dense data (item names, prices, quantities) to ensure high readability.",
+    "Redesign the layout completely from a standard boring list. The cart items should feel like tactile, floating cards (shadow tier 2). The Qty stepper should use large, distinct pill-shaped minus/plus buttons, not tiny arrows.",
+    "Ensure the Bottom Sticky Pay Bar remains fixed at the bottom while the cart list scrolls behind it."
   ]
 }

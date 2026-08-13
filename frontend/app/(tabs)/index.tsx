@@ -22,6 +22,7 @@ import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
+import { mikoBus } from "@/src/mikoBus";
 
 export default function TransaksiScreen() {
   const insets = useSafeAreaInsets();
@@ -85,6 +86,7 @@ export default function TransaksiScreen() {
         toast.show(`${product.name}${variation ? " — " + variation.name : ""} ditambahkan`, "success");
       } catch {
         toast.show(`Barcode ${c} belum terdaftar`, "error");
+        mikoBus.emit({ type: "not_found" });
       }
       setTimeout(() => inputRef.current?.focus(), 100);
     },
@@ -135,6 +137,7 @@ export default function TransaksiScreen() {
       await reload();
       priceSheet.current?.dismiss();
       toast.show("Harga permanen disimpan", "success");
+      mikoBus.emit({ type: "price_changed" });
     } catch (e: any) {
       toast.show(e?.message || "Gagal menyimpan harga", "error");
     }
@@ -143,9 +146,19 @@ export default function TransaksiScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.top}>
-        {/* 1) Mode Scan Barcode aktif — paling atas (scanner Bluetooth) */}
+        {/* Header sapaan */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.hi}>Halo, Kasir 👋</Text>
+            <Text style={styles.pageTitle}>Transaksi</Text>
+          </View>
+        </View>
+
+        {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) */}
         <Pressable style={styles.scanModeBox} onPress={openKeyboard}>
-          <Ionicons name="barcode-outline" size={20} color={colors.brand} />
+          <View style={styles.scanIcon}>
+            <Ionicons name="barcode-outline" size={22} color={colors.brand} />
+          </View>
           <TextInput
             ref={inputRef}
             testID="scan-mode-input"
@@ -157,24 +170,24 @@ export default function TransaksiScreen() {
             blurOnSubmit={false}
             showSoftInputOnFocus={kbd}
             caretHidden={!kbd}
-            placeholder="Mode scan aktif — arahkan scanner ke barcode"
+            placeholder="Scan barcode di sini…"
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}
           />
           <View style={styles.readyDot} />
         </Pressable>
 
-        {/* 2) Tambah Item */}
-        <Pressable style={styles.rowBtn} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
-          <Ionicons name="add-circle-outline" size={18} color={colors.onSurface} />
-          <Text style={styles.rowBtnTxt}>Tambah Item / Biaya Tambahan</Text>
-        </Pressable>
-
-        {/* 3) Cari Barang — kotak ringkas seperti Tambah Item */}
-        <Pressable style={styles.rowBtn} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
-          <Ionicons name="search" size={18} color={colors.onSurface} />
-          <Text style={styles.rowBtnTxt}>Cari Barang</Text>
-        </Pressable>
+        {/* 2) Aksi: Tambah Item + Cari Barang */}
+        <View style={styles.actions}>
+          <Pressable style={[styles.actBtn, styles.actBtnFilled]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
+            <Ionicons name="add-circle-outline" size={20} color={colors.onSurface} />
+            <Text style={[styles.actTxt, { color: colors.onSurface }]}>Tambah Item</Text>
+          </Pressable>
+          <Pressable style={[styles.actBtn, styles.actBtnOutline]} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
+            <Ionicons name="search" size={20} color={colors.brand} />
+            <Text style={[styles.actTxt, { color: colors.brand }]}>Cari Barang</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.listHead}>
           <Text style={styles.listHeadTxt}>DAFTAR BELANJA</Text>
@@ -196,40 +209,44 @@ export default function TransaksiScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {cart.lines.map((l) => (
-            <View key={l.key} style={[styles.line, lastKey === l.key && styles.lineNew]} testID={`cart-line-${l.key}`}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <Text style={[styles.lineName, (l.tiers?.length ?? 0) > 0 && styles.lineNameGrosir]} numberOfLines={1}>{l.name}</Text>
-                <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
-                  <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
-                  <Ionicons name="create-outline" size={13} color={colors.brand} />
-                </Pressable>
-                {l.product_id ? (
-                  <Pressable
-                    style={styles.variasiBtn}
-                    testID={`cart-variasi-${l.key}`}
-                    onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
-                  >
-                    <Ionicons name="git-branch-outline" size={13} color={colors.brand} />
-                    <Text style={styles.variasiTxt}>Tambah Variasi</Text>
+            <View key={l.key} style={[styles.card, lastKey === l.key && styles.cardNew]} testID={`cart-line-${l.key}`}>
+              <View style={styles.cardTop}>
+                <View style={styles.thumb}>
+                  <Ionicons name="cube-outline" size={22} color={colors.brand} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.lineName, (l.tiers?.length ?? 0) > 0 && styles.lineNameGrosir]} numberOfLines={1}>{l.name}</Text>
+                  <Pressable style={styles.priceEdit} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
+                    <Text style={styles.linePrice}>{rupiah(l.price)} / {l.unit}</Text>
+                    <Ionicons name="create-outline" size={13} color={colors.brand} />
                   </Pressable>
-                ) : null}
-              </View>
-
-              <View style={styles.qtyBox}>
-                <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
-                  <Ionicons name="remove" size={16} color={colors.onSurface} />
-                </Pressable>
-                <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} testID={`cart-qty-${l.key}`} />
-                <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
-                  <Ionicons name="add" size={16} color={colors.onSurface} />
-                </Pressable>
-              </View>
-
-              <View style={styles.lineRight}>
-                <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
+                  {l.product_id ? (
+                    <Pressable
+                      style={styles.variasiBtn}
+                      testID={`cart-variasi-${l.key}`}
+                      onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
+                    >
+                      <Ionicons name="git-branch-outline" size={13} color={colors.brand} />
+                      <Text style={styles.variasiTxt}>Tambah Variasi</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
                 <Pressable onPress={() => { setDeleteLine(l); deleteSheet.current?.present(); }} style={styles.delBtn} testID={`cart-remove-${l.key}`}>
-                  <Ionicons name="trash-outline" size={17} color={colors.error} />
+                  <Ionicons name="trash-outline" size={20} color={colors.error} />
                 </Pressable>
+              </View>
+
+              <View style={styles.cardBottom}>
+                <View style={styles.qtyBox}>
+                  <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
+                    <Ionicons name="remove" size={20} color={colors.brand} />
+                  </Pressable>
+                  <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} testID={`cart-qty-${l.key}`} />
+                  <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
+                    <Ionicons name="add" size={20} color={colors.brand} />
+                  </Pressable>
+                </View>
+                <Text style={styles.lineSub}>{rupiah(l.price * l.quantity)}</Text>
               </View>
             </View>
           ))}
@@ -247,7 +264,7 @@ export default function TransaksiScreen() {
           onPress={() => router.push("/checkout?step=pay")}
           style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
         >
-          <Ionicons name="cash-outline" size={22} color={colors.onBrandPrimary} />
+          <Ionicons name="wallet-outline" size={22} color={colors.onBrandPrimary} />
           <Text style={styles.payBtnTxt}>Bayar</Text>
         </Pressable>
       </View>
@@ -349,39 +366,47 @@ function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: nu
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   top: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
-  rowBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
-  rowBtnTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
-  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 48, borderRadius: radius.md, borderWidth: 2, borderColor: colors.brand, paddingHorizontal: spacing.md },
-  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.xs },
+  hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
+  pageTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: 30, marginTop: 2 },
+  scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 56, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.borderStrong, paddingLeft: 6, paddingRight: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  scanIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
-  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  listHeadTxt: { color: colors.onSurfaceSecondary, fontFamily: font.bold, fontSize: fontSize.base, letterSpacing: 1 },
-  listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
+  actions: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xs },
+  actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.lg },
+  actBtnFilled: { backgroundColor: colors.brandSecondary },
+  actBtnOutline: { backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.borderStrong },
+  actTxt: { fontFamily: font.bold, fontSize: fontSize.lg },
+  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
+  listHeadTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1.5 },
+  listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },
   emptyTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
   emptyDesc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg, textAlign: "center" },
-  // kartu belanja
-  line: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary },
-  lineNew: { borderColor: colors.brand, backgroundColor: colors.brandTertiary },
-  qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
-  qtyBtn: { width: 30, height: 32, alignItems: "center", justifyContent: "center" },
-  qtyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, textAlign: "center" },
-  qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 26, width: 30, height: 32, paddingVertical: 0, paddingHorizontal: 2, textAlign: "center" },
+  // kartu belanja mengambang
+  card: { marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.md, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  cardNew: { borderColor: colors.brand, backgroundColor: colors.surfaceTertiary },
+  cardTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
+  thumb: { width: 48, height: 48, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 4, gap: 4 },
+  qtyBtn: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  qtyInput: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.lg, minWidth: 34, width: 40, height: 40, paddingVertical: 0, textAlign: "center" },
   lineName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   lineNameGrosir: { color: colors.success },
-  priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  priceEdit: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 },
   variasiBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4, alignSelf: "flex-start" },
   variasiTxt: { color: colors.brand, fontFamily: font.medium, fontSize: fontSize.sm },
-  linePrice: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
-  lineRight: { alignItems: "flex-end", marginLeft: spacing.sm, minWidth: 78 },
-  lineSub: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right" },
-  delBtn: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginTop: 3 },
-  payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.surfaceSecondary, borderTopWidth: 1, borderTopColor: colors.border },
+  linePrice: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
+  lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl, textAlign: "right" },
+  delBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  payBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.lg, paddingHorizontal: spacing.xl, paddingTop: spacing.lg, backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 26, borderTopRightRadius: 26, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -6 }, elevation: 12 },
   payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
-  payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize["2xl"] },
-  payBtn: { flex: 1, maxWidth: 260, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 56, borderRadius: radius.md },
-  payBtnDisabled: { backgroundColor: "#E7A9A2" },
-  payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.xl },
+  payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: 26 },
+  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.brand, height: 58, borderRadius: radius.lg, paddingHorizontal: 40 },
+  payBtnDisabled: { backgroundColor: "#F2B8C2" },
+  payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.xl },
   sheetTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   sheetLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   priceInputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 54 },

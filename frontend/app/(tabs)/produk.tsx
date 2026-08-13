@@ -24,7 +24,7 @@ import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
 
-const PRODUK_ROW_H = 76; // tinggi kartu (64) + jarak antar kartu (12) → getItemLayout scroll cepat
+const PRODUK_ROW_H = 96; // tinggi kartu (84) + jarak (12) → getItemLayout scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
   item, childCount, onEdit, onMenu,
@@ -33,17 +33,31 @@ const ProdukRow = React.memo(function ProdukRow({
   const totalVar = nestedCount + childCount;
   const hasVar = totalVar > 0;
   const stock = nestedCount > 0 ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
+  const low = !hasVar && stock <= 5;
   return (
-    <View style={styles.row} testID={`produk-row-${item.id}`}>
+    <View style={styles.card} testID={`produk-row-${item.id}`}>
+      <View style={styles.thumb}>
+        <Ionicons name="cube-outline" size={22} color={colors.brand} />
+      </View>
       <Pressable style={{ flex: 1 }} onPress={() => onEdit(item.id)}>
-        <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+          {low && (
+            <View style={styles.lowBadge}>
+              <Ionicons name="alert-circle" size={11} color={colors.onBrandTertiary} />
+              <Text style={styles.lowTxt}>Stok {stock}</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
           {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${totalVar} variasi` : ""}
         </Text>
       </Pressable>
-      <Text style={styles.rowPrice}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+      <View style={styles.pricePill}>
+        <Text style={styles.pricePillTxt}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+      </View>
       <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
-        <Ionicons name="ellipsis-vertical" size={20} color={colors.onSurfaceSecondary} />
+        <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
       </Pressable>
     </View>
   );
@@ -299,27 +313,32 @@ function MenuItem({ icon, label, onPress, danger, testID }: { icon: any; label: 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  titleBlock: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  titleBlock: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   title: { fontFamily: font.display, fontSize: fontSize["3xl"], color: colors.onSurface },
   subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
-  addBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.brand, paddingHorizontal: spacing.lg, height: 48, borderRadius: radius.md },
-  addTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
-  searchWrap: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, paddingHorizontal: spacing.md, height: 48, borderWidth: 1, borderColor: colors.border },
-  searchBoxScan: { borderWidth: 2, borderColor: colors.brand },
-  searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
-  kbdBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  scanCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginHorizontal: spacing.lg, marginBottom: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.brandTertiary },
+  addBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.brand, paddingHorizontal: spacing.lg, height: 48, borderRadius: radius.lg, shadowColor: colors.brand, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  addTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.lg },
+  searchWrap: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, paddingLeft: 6, paddingRight: spacing.md, height: 52, borderWidth: 1, borderColor: colors.border },
+  searchBoxScan: { borderWidth: 2, borderColor: colors.borderStrong },
+  searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  kbdBtn: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  scanCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginHorizontal: spacing.lg, marginBottom: spacing.md, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surfaceTertiary },
   scanCardLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 1 },
   scanCardName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, marginTop: 2 },
   scanCardMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   scanCardPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   scanCardClose: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, height: 64, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
-  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
-  rowPrice: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  menuBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  card: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.md, height: 84, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  thumb: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, flexShrink: 1 },
+  lowBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: colors.brandTertiary, borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 2 },
+  lowTxt: { color: colors.onBrandTertiary, fontFamily: font.bold, fontSize: 10 },
+  rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 3 },
+  pricePill: { backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
+  pricePillTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  menuBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
   sep: { height: spacing.md },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80, gap: spacing.md },
   dim: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg },

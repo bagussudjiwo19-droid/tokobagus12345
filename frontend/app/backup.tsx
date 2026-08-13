@@ -11,6 +11,7 @@ import { api } from "@/src/api";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
+import { mikoBus } from "@/src/mikoBus";
 
 export default function BackupScreen() {
   const insets = useSafeAreaInsets();
@@ -28,6 +29,7 @@ export default function BackupScreen() {
         await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Simpan Backup" });
       }
       toast.show(`File backup dibuat: ${data.counts.products} produk`, "success");
+      mikoBus.emit({ type: "backup_ok" });
     } catch (e: any) { toast.show(e?.message || "Gagal membuat backup", "error"); }
   };
 
@@ -41,6 +43,7 @@ export default function BackupScreen() {
       const result = await api.importBackup(data);
       await reload();
       toast.show(`Data dipulihkan: ${result.products} produk, ${result.transactions} transaksi`, "success");
+      mikoBus.emit({ type: "restore_ok" });
     } catch (e: any) { toast.show(e?.message || "Gagal memulihkan data", "error"); }
   };
 

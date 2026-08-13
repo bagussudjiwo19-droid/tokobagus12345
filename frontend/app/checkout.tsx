@@ -25,7 +25,8 @@ import type { Settings, Transaction } from "@/src/types";
 import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
-import { speakChange } from "@/src/voice";
+import { speakPaymentDone } from "@/src/voice";
+import { mikoBus } from "@/src/mikoBus";
 
 type Step = "cart" | "pay" | "done";
 
@@ -111,10 +112,11 @@ export default function CheckoutScreen() {
       setTx(created);
       setStep("done");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Suara Kembalian: hanya jika aktif & ada kembalian (change > 0).
-      if (settings?.voiceChange && change > 0) {
-        speakChange(change);
-      }
+      // Miko: rayakan pembayaran + sebutkan kembalian (bubble).
+      mikoBus.emit({ type: "pay_ok" });
+      if (change > 0) mikoBus.emit({ type: "change", amount: change });
+      // Suara feminin: bacakan hasil transaksi bila fitur suara aktif.
+      if (settings?.voiceChange) speakPaymentDone(change);
       cart.clear();
       reload();
     } catch (e: any) {
@@ -141,18 +143,22 @@ export default function CheckoutScreen() {
   const printReceipt = useCallback(async () => {
     if (!isBluetoothAvailable()) {
       toast.show(NATIVE_ONLY_MSG, "info");
+      mikoBus.emit({ type: "print_fail" });
       return;
     }
     if (!printer.address) {
       toast.show("Belum ada printer terpasang. Buka Pengaturan → Printer.", "info");
+      mikoBus.emit({ type: "print_fail" });
       return;
     }
     if (!tx || !settings) return;
     try {
       await printText(printer.address, buildReceiptText(tx, settings));
       toast.show("Struk dikirim ke printer", "success");
+      mikoBus.emit({ type: "print_ok" });
     } catch (e: any) {
       toast.show(e?.message || "Gagal mencetak", "error");
+      mikoBus.emit({ type: "print_fail" });
     }
   }, [printer, tx, settings, toast]);
 
