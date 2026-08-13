@@ -61,6 +61,52 @@ const SEPI: Line[] = [
   { t: "Semoga sebentar lagi ramai lagi ✨", p: "idea" }, { t: "Senyum dulu, biar rezeki lancar 😊", p: "wink" },
 ];
 
+// Teman kerja hangat & menyenangkan — muncul sesekali saat kasir menganggur lama.
+const WARM: Line[] = [
+  { t: "Hai, Kak! Miko di sini. 😊", p: "wave" },
+  { t: "Halo, Kak! Hari ini kita jualan bareng lagi.", p: "happy" },
+  { t: "Pagi, Kak! Semangat cari rezeki hari ini!", p: "wave" },
+  { t: "Siang, Kak! Jangan lupa minum ya.", p: "tea" },
+  { t: "Sore, Kak! Masih semangat?", p: "happy" },
+  { t: "Miko lihat Kakak rajin banget hari ini.", p: "star" },
+  { t: "Kak, senyum dulu dong. 😄", p: "wink" },
+  { t: "Miko senang kalau Kakak semangat.", p: "love" },
+  { t: "Tenang Kak, Miko siap bantu.", p: "thumbsup" },
+  { t: "Hari ini kelihatannya bakal ramai nih.", p: "idea" },
+  { t: "Miko sudah siap, Kak. Pelanggan berikutnya mana nih? 😆", p: "wink" },
+  { t: "Kak, jangan serius terus. Nanti Miko ikut tegang. 😄", p: "shy" },
+  { t: "Kalau capek, tarik napas sebentar ya, Kak.", p: "tea" },
+  { t: "Miko temani sampai toko tutup.", p: "love" },
+  { t: "Kita kerja santai, tapi tetap cepat.", p: "thumbsup" },
+  { t: "Wah, Kakak makin jago jadi kasir.", p: "star" },
+  { t: "Miko kasih jempol dulu buat Kakak! 👍", p: "thumbsup" },
+  { t: "Semangat, Kak! Sedikit lagi, sedikit lagi.", p: "wave" },
+  { t: "Pelanggan datang, Miko ikut senang!", p: "happy" },
+  { t: "Kak, Miko punya firasat transaksi berikutnya bakal lancar.", p: "idea" },
+  { t: "Jangan lupa senyum ke pelanggan ya, Kak. 😊", p: "wink" },
+  { t: "Kalau pelanggan senang, Miko juga ikut senang.", p: "hearts" },
+  { t: "Miko nggak bisa bantu angkat barang, tapi bisa nemenin. 😆", p: "shy" },
+  { t: "Kak, hari ini sudah banyak transaksi. Hebat!", p: "money" },
+  { t: "Miko bangga lihat Kakak tetap semangat.", p: "love" },
+  { t: "Eh Kak, jangan ngantuk dulu. 😴", p: "sleepy" },
+  { t: "Kalau toko mulai sepi, Miko siap jadi teman ngobrol.", p: "tea" },
+  { t: "Miko penasaran, hari ini siapa yang belanja paling banyak ya?", p: "thinking" },
+  { t: "Kak, jangan lupa istirahat kalau ada kesempatan.", p: "tea" },
+  { t: "Semoga hari ini rezekinya deras, Kak! ❤️", p: "pray" },
+];
+
+// Humor ringan — porsi kecil (sesekali saja), biar tidak berlebihan.
+const HUMOR: Line[] = [
+  { t: "Miko dari tadi siap kerja, lho. 😆", p: "wink" },
+  { t: "Kok sepi? Miko jadi malu sendiri.", p: "shy" },
+  { t: "Miko kira tadi ada pelanggan, ternyata cuma angin. 😂", p: "surprised" },
+  { t: "Kalau Miko punya dompet, mungkin Miko sudah ikut belanja.", p: "money" },
+  { t: "Miko tetap standby, walaupun pelanggan sedang sembunyi.", p: "thinking" },
+  { t: "Kayaknya Miko perlu kopi nih... eh, Kakak juga. ☕", p: "tea" },
+  { t: "Miko jangan ditinggal ya, Kak. 😄", p: "cry" },
+  { t: "Satu transaksi lagi, Miko traktir... eh, Miko kan nggak punya uang. 😂", p: "money" },
+];
+
 // Sapaan khusus layar Cek Harga (kios dinding — ditujukan ke PELANGGAN).
 const CEK_HARGA_GREET: Line[] = [
   { t: "Halo, Kak! Scan barcode-nya di sini ya 🔍", p: "wave" },
@@ -123,6 +169,7 @@ export default function Miko() {
   const posRef = useRef({ x: 0, y: 0 });
   const prevCount = useRef(cart.count);
   const lastActive = useRef(Date.now());
+  const idleGap = useRef(60000);
   const pathRef = useRef(pathname);
   const lastIdx = useRef<Record<string, number>>({});
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -207,16 +254,28 @@ export default function Miko() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // kalem: sapaan menganggur. Di layar Cek Harga (kios) lebih sering & mengajak
-  // pelanggan; layar lain seperti biasa (setelah idle panjang).
+  // Sapaan menganggur. Miko boleh menemani tanpa menunggu transaksi, TAPI:
+  // - Kios (Cek Harga): sering & mengajak pelanggan.
+  // - Layar kerja lain: hanya setelah kasir benar-benar diam lama (jeda panjang
+  //   & acak, 60–105 dtk) supaya tidak spam. Humor porsinya kecil.
+  // - JANGAN menyapa saat di layar pembayaran (checkout) — prioritas kerja kasir.
   useEffect(() => {
     const id = setInterval(() => {
-      const onKiosk = (pathRef.current || "").includes("cek-harga");
-      const threshold = onKiosk ? 22000 : 45000;
-      if (Date.now() - lastActive.current > threshold) {
-        say(onKiosk ? pickRot("ckidle", CEK_HARGA_IDLE) : pickRot("sepi", SEPI), 3400);
+      const p = pathRef.current || "";
+      const onKiosk = p.includes("cek-harga");
+      if (onKiosk) {
+        if (Date.now() - lastActive.current > 22000) say(pickRot("ckidle", CEK_HARGA_IDLE), 3400);
+        return;
       }
-    }, 15000);
+      // Jangan mengganggu saat pembayaran / memilih produk / tambah item.
+      if (p.includes("checkout") || p.includes("cari") || p.includes("produk-form") || p.includes("variasi") || p.includes("edit-transaksi")) return;
+      if (Date.now() - lastActive.current > idleGap.current) {
+        const line = Math.random() < 0.18 ? pickRot("humor", HUMOR) : pickRot("warm", [...WARM, ...SEPI]);
+        say(line, 3600);
+        // jeda berikutnya acak & panjang (±60–105 dtk) agar terasa natural, tidak spam.
+        idleGap.current = 60000 + Math.floor(Math.random() * 45000);
+      }
+    }, 12000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
