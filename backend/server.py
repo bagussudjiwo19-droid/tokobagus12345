@@ -431,9 +431,12 @@ async def put_printer(payload: Printer):
 
 @api_router.get("/reports/summary")
 async def reports_summary():
-    txs = await db.transactions.find().to_list(100000)
-    total_omzet = sum(t.get("total", 0) for t in txs)
-    return {"total_transaksi": len(txs), "total_omzet": total_omzet}
+    # Hitung total di database (agregasi) agar hemat memori walau transaksi banyak.
+    pipeline = [{"$group": {"_id": None, "total_omzet": {"$sum": "$total"}, "total_transaksi": {"$sum": 1}}}]
+    agg = await db.transactions.aggregate(pipeline).to_list(1)
+    if agg:
+        return {"total_transaksi": agg[0].get("total_transaksi", 0), "total_omzet": agg[0].get("total_omzet", 0)}
+    return {"total_transaksi": 0, "total_omzet": 0}
 
 
 @api_router.get("/backup/export")
