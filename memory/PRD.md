@@ -18,6 +18,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v42 — Backup/Restore diperkuat (anti hilang & anti-ganda) + konfirmasi
+- `src/localdb.ts` `importBackup`: RESTORE = ganti TOTAL (bukan tambah) → tak mungkin menggandakan. Dedupe by id (Map, id kembar ditimpa). Normalisasi field (tiers/variations array, angka) agar tak crash. ATOMIK: tulis ke DB dulu; bila gagal → kembalikan data lama sepenuhnya (tidak hilang sebagian). Validasi ketat (produk kosong/rusak → batal, data lama aman).
+- `app/backup.tsx` `importBackup`: tambah dialog KONFIRMASI (`Alert`) "Pulihkan Data? … akan DIGANTI" sebelum menimpa. Export tetap: exportBackup → tulis file → Sharing (simpan ke Drive/WA).
+- Uji algoritma pada seed 2261 produk: 2261→2261 (tanpa loss), sengaja gandakan 5 id → tetap 2261 (anti-ganda), round-trip export→import utuh. CATATAN: tulis/baca FILE (expo-file-system/DocumentPicker) hanya jalan di HP/BUILD APK, bukan web preview (di web muncul "not available on web" — wajar).
+
 ### v41 — APLIKASI OFFLINE PENUH (data di HP, tanpa server/internet)
 - Data terbaru diekspor dari backend → dibundel: `assets/seed/toko_bagus_backup.json` (2261 produk, 123 transaksi, settings, printer) sebagai BEKAL awal offline.
 - Baru: `src/localdb.ts` — mesin data lokal. Native (Android/iOS) pakai **expo-sqlite** (tabel products/transactions/kv, seed sekali di awal, write-through per mutasi) + salinan memori utk scan cepat. Web preview pakai memori (seed dari JSON, non-persisten — hanya utk uji tampilan). Meniru persis logika backend: resolusi induk utama (`resolveRootParent`), warisan tier variasi (`withResolvedTiers`), pengurangan/rekonsiliasi stok saat create/update transaksi, omzet, export/import backup (validasi + anti-produk-kosong).

@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,12 +39,29 @@ export default function BackupScreen() {
       if (res.canceled || !res.assets?.[0]) return;
       const content = await FileSystem.readAsStringAsync(res.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
       const data = JSON.parse(content);
-      if (!data.products) { toast.show("File backup tidak valid.", "error"); return; }
-      const result = await api.importBackup(data);
-      await reload();
-      toast.show(`Data dipulihkan: ${result.products} produk, ${result.transactions} transaksi`, "success");
-      mikoBus.emit({ type: "restore_ok" });
-    } catch (e: any) { toast.show(e?.message || "Gagal memulihkan data", "error"); }
+      if (!data.products || !Array.isArray(data.products)) { toast.show("File backup tidak valid.", "error"); return; }
+      const jumlah = data.products.length;
+      // Konfirmasi dulu — restore MENGGANTI semua data saat ini.
+      Alert.alert(
+        "Pulihkan Data?",
+        `File ini berisi ${jumlah} produk. Semua data di aplikasi saat ini akan DIGANTI dengan isi file. Lanjutkan?`,
+        [
+          { text: "Batal", style: "cancel" },
+          {
+            text: "Ya, Pulihkan",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const result = await api.importBackup(data);
+                await reload();
+                toast.show(`Data dipulihkan: ${result.products} produk, ${result.transactions} transaksi`, "success");
+                mikoBus.emit({ type: "restore_ok" });
+              } catch (e: any) { toast.show(e?.message || "Gagal memulihkan data", "error"); }
+            },
+          },
+        ],
+      );
+    } catch (e: any) { toast.show(e?.message || "Gagal membaca file backup", "error"); }
   };
 
   return (

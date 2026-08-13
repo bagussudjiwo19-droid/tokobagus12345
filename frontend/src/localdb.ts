@@ -395,32 +395,57 @@ export const local = {
     if (!Array.isArray(inProducts)) throw new Error("File backup tidak valid (data produk tidak ditemukan).");
     if (inProducts.length === 0) throw new Error("File backup tidak berisi produk. Pemulihan dibatalkan agar data lama tetap aman.");
 
-    // Validasi + dedupe by id.
+    // Validasi + normalisasi + dedupe by id (mencegah barang ganda/rusak).
     const newProducts = new Map<string, Product>();
     for (const raw of inProducts) {
       if (!raw || typeof raw !== "object" || !raw.name) throw new Error("File backup rusak: data produk tidak sesuai format.");
-      const p = { ...raw } as any; delete p._id;
+      const p = { ...raw } as any;
+      delete p._id;
       if (!p.id) p.id = genId();
-      newProducts.set(p.id, p as Product);
+      p.tiers = Array.isArray(p.tiers) ? p.tiers : [];
+      p.variations = Array.isArray(p.variations) ? p.variations : [];
+      p.stock = typeof p.stock === "number" ? p.stock : Number(p.stock) || 0;
+      p.buy_price = typeof p.buy_price === "number" ? p.buy_price : Number(p.buy_price) || 0;
+      p.sell_price = typeof p.sell_price === "number" ? p.sell_price : Number(p.sell_price) || 0;
+      p.unit = p.unit || "pcs";
+      p.category = p.category ?? "";
+      p.parent_id = p.parent_id ?? null;
+      p.barcode = p.barcode ?? null;
+      p.inherit_tiers = !!p.inherit_tiers;
+      newProducts.set(p.id, p as Product); // id kembar → otomatis ditimpa (tidak ganda)
     }
     const newTx: Transaction[] = [];
     const seenT = new Set<string>();
     for (const raw of inTx) {
       if (!raw || !Array.isArray(raw.items)) throw new Error("File backup rusak: data transaksi tidak sesuai format.");
-      const t = { ...raw } as any; delete t._id;
+      const t = { ...raw } as any;
+      delete t._id;
       if (!t.id) t.id = genId();
-      if (seenT.has(t.id)) continue;
+      if (seenT.has(t.id)) continue; // buang transaksi kembar
       seenT.add(t.id);
       newTx.push(t as Transaction);
     }
 
-    // Ganti data lama (di memori + DB).
+    // Ganti TOTAL data lama. Tulis ke DB dulu (atomik); bila gagal → kembalikan
+    // data lama sepenuhnya agar TIDAK ada barang yang hilang sebagian.
+    const prevProducts = products;
+    const prevTx = transactions;
+    const prevSettings = settings;
+    const prevPrinter = printer;
     products = newProducts;
     transactions = newTx;
     sortTx();
     if (data.settings) settings = { ...DEFAULT_SETTINGS, ...data.settings };
     if (data.printer) printer = { address: data.printer.address ?? null, name: data.printer.name ?? null };
-    await persistAll();
+    try {
+      await persistAll();
+    } catch {
+      products = prevProducts;
+      transactions = prevTx;
+      settings = prevSettings;
+      printer = prevPrinter;
+      throw new Error("Gagal menyimpan data pulihan ke HP. Data lama tetap aman, silakan coba lagi.");
+    }
     return { ok: true, products: newProducts.size, transactions: newTx.length };
   },
 };
