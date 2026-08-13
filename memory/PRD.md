@@ -19,7 +19,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
 ## Implemented (2026-08-12)
-### v28 — Produk redesign Soft Rose + reaksi Miko-Momo diperluas
+### v29 — Momo dihapus, Miko solo mungil & tidak menghalangi
+- Atas permintaan user (Momo mengganggu): `components/Miko.tsx` dikembalikan ke SATU maskot (Miko), SIZE 74→60, tetap bisa diseret (POS_KEY v2, AsyncStorage) & posisi diingat, di sudut kanan bawah (bottom insets+138) di ATAS pay bar. Momo tidak lagi di-require (aset momo_* tidak ikut bundle). Semua konteks tetap: greet per-layar, item/big/empty, not_found, pay, change (nominal), print ok/fail, price_changed, backup/restore, low_stock, sepi (idle>45s), tap cheer. Suara feminin pelan tetap.
+- Verified via screenshot: hanya 1 gambar (miko), mungil di sudut, tidak menutupi tombol Bayar.
+
+
 - `app/(tabs)/produk.tsx`: kartu mengambang (radius 20, shadow) + thumbnail bulat, nama tebal, meta, HARGA sebagai pil pink, menu 3-titik; search jadi pill (tombol keypad bulat); tombol "Tambah" pill bershadow. Badge "Stok N" merah muncul bila stok ≤ 5 (stok menipis). PRODUK_ROW_H 76→96 (getItemLayout tetap cepat). Fungsi scan/cari/menu/CRUD tidak diubah.
 - Reaksi Miko-Momo diperluas (mikoBus + handler): price_changed (index applyPermanent), backup_ok & restore_ok (backup.tsx), low_stock (handler siap). Semua tampil sebagai dialog berdua.
 - Verified via screenshot: Produk baru rapi + duo maskot tampil.
