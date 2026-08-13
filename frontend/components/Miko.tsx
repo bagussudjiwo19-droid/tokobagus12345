@@ -24,6 +24,10 @@ const POSES: Record<string, any> = {
   idea: require("../assets/mascot/miko_idea.png"), pray: require("../assets/mascot/miko_pray.png"),
   promo: require("../assets/mascot/miko_promo.png"), ok: require("../assets/mascot/miko_ok.png"),
   cry: require("../assets/mascot/miko_cry.png"), star: require("../assets/mascot/miko_star.png"),
+  bag: require("../assets/mascot/miko_bag.png"), bye: require("../assets/mascot/miko_bye.png"),
+  dance: require("../assets/mascot/miko_dance.png"), deepsleep: require("../assets/mascot/miko_deepsleep.png"),
+  hug: require("../assets/mascot/miko_hug.png"), phone: require("../assets/mascot/miko_phone.png"),
+  pout: require("../assets/mascot/miko_pout.png"), snack: require("../assets/mascot/miko_snack.png"),
 };
 
 const SIZE = 60;
@@ -186,32 +190,194 @@ const HUMOR: Line[] = [
   { t: "Sudah selesai, Kak. Sekarang tinggal tunggu pelanggan berikutnya... atau traktir Miko. 😜", p: "money" },
 ];
 
-// Sapaan khusus layar Cek Harga (kios dinding — ditujukan ke PELANGGAN).
-const CEK_HARGA_GREET: Line[] = [
-  { t: "Halo, Kak! Scan barcode-nya di sini ya 🔍", p: "wave" },
-  { t: "Mau cek harga? Tempelkan barcode-nya 😊", p: "happy" },
-  { t: "Selamat datang! Yuk cek harga barang 🛍️", p: "wave" },
-  { t: "Arahkan barcode ke kotak scan ya, Kak ✨", p: "wink" },
-  { t: "Hai! Aku Miko, siap bantu cek harga 😺", p: "love" },
-  { t: "Penasaran harganya? Scan aja, Kak! 🔍", p: "wink" },
-  { t: "Yuk, dekatkan barcode-nya ke sini 📷", p: "happy" },
-  { t: "Cek harga sendiri di sini, gratis kok! 😊", p: "thumbsup" },
-  { t: "Ada yang mau ditanya harganya? Scan ya 💕", p: "hearts" },
-  { t: "Halo Kakak cantik/ganteng! Scan dulu yuk 😸", p: "wink" },
+// Pose "lucu/menghibur" untuk kios Cek Harga (dipilih acak agar ekspresif).
+const CUTE_POSES = [
+  "happy", "wave", "wink", "love", "hearts", "idea", "thumbsup", "star", "shy",
+  "dance", "hug", "snack", "pout", "bye", "phone", "thinking", "tea", "ok", "surprised", "promo",
 ];
-// Ajakan saat kios menganggur — memanggil pelanggan yang lewat.
-const CEK_HARGA_IDLE: Line[] = [
-  { t: "Ada yang mau cek harga? Scan di sini ya 🔍", p: "wave" },
-  { t: "Tempelkan barcode barang untuk lihat harga 😊", p: "happy" },
-  { t: "Hai, Kak! Yuk cek harga sendiri di sini ✨", p: "wave" },
-  { t: "Scan barcode-nya, harganya langsung muncul! 🐾", p: "wink" },
-  { t: "Miko siap bantu cek harga, mendekat aja 💕", p: "love" },
-  { t: "Mau tahu harganya? Scan aja ya, Kak! 😺", p: "happy" },
-  { t: "Jangan malu, cek harganya di sini gratis 😊", p: "thumbsup" },
-  { t: "Barcode-nya didekatkan ke kotak scan ya ✨", p: "idea" },
-  { t: "Psst… harga barang bisa dicek sendiri lho 🔍", p: "wink" },
-  { t: "Yuk mampir, cek harga dulu sama Miko 🐾", p: "wave" },
+
+// Sapaan PELANGGAN untuk kios Cek Harga (layar penuh di dinding). Ditampilkan
+// acak & bergantian di balon teks Miko selama menganggur. Dari daftar user.
+const KIOSK_SAY: string[] = [
+  "Halo, Kak! Selamat datang di Toko Bagus 😊",
+  "Hai, Kak! Miko siap menemani belanja hari ini.",
+  "Selamat datang, Kak! Mau cari harga barang?",
+  "Halo, Kak! Ada yang sedang dicari?",
+  "Hai, Kak! Yuk, lihat harga barang dengan mudah.",
+  "Selamat datang di Toko Bagus! Semoga belanjanya menyenangkan 🛒",
+  "Halo, Kak! Jangan malu-malu, Miko nggak galak kok 😄",
+  "Hai, Kak! Mau cek harga? Miko siap bantu.",
+  "Selamat datang, Kak! Cek harga sendiri sekarang lebih gampang.",
+  "Halo, Kak! Miko sudah standby nih 👋",
+  "Kak, Miko lagi santai nih. Mau ajak cek harga?",
+  "Miko belum ngantuk, Kak. Yuk, cek harga 😄",
+  "Kak, jangan cuma lihat Miko. Coba cek harga juga 😆",
+  "Miko siap kerja, Kak. Tinggal kasih barcode.",
+  "Belanja boleh santai, cek harga jangan lupa ya, Kak.",
+  "Miko standby nih. Barang apa yang mau dicek?",
+  "Kak, kalau bingung harga, serahkan pada Miko 😉",
+  "Miko penasaran, Kak mau beli apa hari ini?",
+  "Yuk, cek harga dulu. Biar belanjanya makin mantap.",
+  "Tenang, Kak. Miko nggak akan nagih belanja 😄",
+  "Kalau mau tahu harganya, scan barcode di sini ya, Kak.",
+  "Tempelkan barcode ke kamera, Kak. Harganya langsung muncul.",
+  "Mau cek harga? Tekan tombol scan di sini ya.",
+  "Coba scan barangnya, Kak. Miko bantu lihat harganya.",
+  "Barcode-nya sini, Kak. Biar Miko yang cari harganya.",
+  "Yuk, scan barangnya. Harganya langsung kelihatan.",
+  "Mau tahu harga ecer atau grosir? Coba scan dulu, Kak.",
+  "Scan barcode-nya, Kak. Jangan sampai salah harga 😊",
+  "Satu scan, langsung tahu harganya.",
+  "Silakan scan barangnya, Kak. Miko siap!",
+  "Semoga belanjanya hari ini lancar dan menyenangkan, Kak.",
+  "Terima kasih sudah mampir ke Toko Bagus, Kak.",
+  "Semoga ada yang cocok untuk kebutuhan di rumah ya, Kak.",
+  "Belanja santai saja, Kak. Miko menemani.",
+  "Semoga hari Kakak menyenangkan dan belanjanya sesuai kebutuhan.",
+  "Kak, semoga hari ini rezekinya lancar ya 😊",
+  "Jangan buru-buru, Kak. Pilih yang paling sesuai kebutuhan.",
+  "Miko siap menemani sampai selesai belanja.",
+  "Semoga belanjanya dapat harga terbaik, Kak.",
+  "Terima kasih sudah berbelanja di Toko Bagus 💚",
+  "Tadi Miko lihat banyak barang datang. Kayaknya toko lagi ramai nih 😄",
+  "Miko penasaran, hari ini barang apa yang paling banyak dicari?",
+  "Kalau Miko bisa belanja, mungkin Miko bakal pilih camilan dulu 😋",
+  "Miko lagi duduk manis sambil menunggu pelanggan.",
+  "Hari ini Miko bertugas menjaga layar. Aman, Kak 😎",
+  "Miko sudah siap dari tadi. Tinggal menunggu barcode datang.",
+  "Kadang toko ramai, kadang sepi. Miko tetap standby.",
+  "Kalau toko sedang sepi begini, Miko jadi punya waktu untuk ngobrol.",
+  "Miko paling senang kalau pelanggan datang dengan wajah ceria.",
+  "Miko sedang menghitung... kira-kira hari ini ada berapa barang yang discan ya?",
+  "Miko tadi mau tidur sebentar... eh, ingat masih jam kerja 😴",
+  "Kalau Miko punya dompet, kira-kira Miko belanja apa ya?",
+  "Miko sudah siap kerja. Tapi jangan suruh angkat kardus ya, Kak 😹",
+  "Miko bisa cek harga, tapi belum bisa bayarin belanjaan 😆",
+  "Miko tidak pernah salah lihat harga. Kalau salah, jangan lihat Miko ya 😜",
+  "Miko penasaran, kenapa camilan selalu cepat habis?",
+  "Ada yang bilang belanja sedikit... tahu-tahu keranjangnya penuh 😆",
+  "Miko cuma bertugas di layar. Yang memilih barang tetap Kakak.",
+  "Miko sedang pura-pura sibuk supaya kelihatan rajin 😎",
+  "Kalau Miko punya kaki, mungkin dari tadi sudah keliling toko.",
+  "Miko senang melihat orang-orang datang memenuhi kebutuhan rumah.",
+  "Kadang belanja kecil ternyata sangat berarti di rumah.",
+  "Semoga setiap pelanggan pulang membawa barang yang memang dibutuhkan.",
+  "Miko berharap hari ini semua urusan Kakak berjalan lancar.",
+  "Sedikit belanja, sedikit senyum, semoga harinya jadi lebih baik.",
+  "Miko di sini bukan cuma untuk cek harga, tapi juga menemani Kakak.",
+  "Kalau hari ini terasa melelahkan, semoga belanja sebentar bisa bikin lebih santai.",
+  "Miko percaya, hal kecil seperti belanja kebutuhan rumah juga bagian dari menjaga keluarga.",
+  "Semoga rezeki Kakak selalu lancar dan kebutuhan rumah selalu tercukupi.",
+  "Miko tetap di sini, menemani siapa pun yang datang.",
+  "Miko sering melihat pelanggan membandingkan harga sebelum membeli. Itu bagus, Kak.",
+  "Kalau mau beli banyak, jangan lupa cek harga bertingkatnya ya.",
+  "Kadang harga satuan dan harga grosir memang berbeda. Makanya Miko siap membantu.",
+  "Miko suka kalau pelanggan belanja sesuai kebutuhan.",
+  "Kalau sudah tahu harganya, belanja jadi lebih tenang.",
+  "Miko paling senang kalau pelanggan menemukan harga yang cocok.",
+  "Mau beli satu boleh, mau stok di rumah juga boleh.",
+  "Kalau sedang belanja untuk keluarga, semoga semua yang dicari ketemu.",
+  "Miko siap membantu mencari informasi harga kapan saja.",
+  "Satu barcode bisa membuat pencarian harga jadi lebih mudah.",
+  "Sepertinya sedang sepi ya, Kak. Miko jadi punya teman ngobrol.",
+  "Toko sedang tenang. Miko tetap semangat menemani.",
+  "Sepi bukan berarti berhenti. Miko tetap siap kalau ada pelanggan.",
+  "Miko sedang menikmati suasana tenang sambil menunggu scan berikutnya.",
+  "Kalau belum ada yang scan, Miko ngobrol sebentar boleh ya 😄",
+  "Miko tetap semangat meskipun toko sedang sepi.",
+  "Kadang toko ramai, kadang tenang. Yang penting Miko selalu siap.",
+  "Miko tidak ke mana-mana, Kak. Masih standby di sini.",
+  "Kalau ada yang mau cek harga, panggil Miko saja.",
+  "Sambil menunggu pelanggan berikutnya, Miko duduk manis dulu 🐱",
+  // Cerita Miko tentang Kak Vita
+  "Tadi Miko lihat Kak Vita lagi sibuk melayani pelanggan. Semangat terus ya, Kak Vita! 😊",
+  "Kak Vita hari ini kelihatannya rajin sekali. Miko sampai ikut semangat.",
+  "Kalau ada yang bingung, mungkin Kak Vita bisa membantu.",
+  "Miko tadi lihat Kak Vita tersenyum. Semoga pelanggan hari ini juga ikut tersenyum.",
+  "Kak Vita sedang bekerja keras. Miko bantu jaga layar dulu ya.",
+  "Miko dan Kak Vita hari ini satu tim. Jangan sampai kalah semangat!",
+  "Kalau Miko bisa bantu Kak Vita, pasti Miko langsung lari.",
+  "Kak Vita sedang sibuk. Miko jangan mengganggu dulu deh 😄",
+  "Semoga pekerjaan Kak Vita hari ini lancar sampai selesai.",
+  "Miko titip semangat untuk Kak Vita hari ini 💚",
+  // Cerita Miko tentang Kak Sasa
+  "Tadi Miko lihat Kak Sasa sedang sibuk. Semangat ya, Kak Sasa!",
+  "Kak Sasa hari ini kelihatannya penuh energi. Miko jadi ikut semangat.",
+  "Kalau ada yang bingung, Kak Sasa mungkin bisa membantu.",
+  "Miko tadi lihat Kak Sasa tersenyum. Suasananya jadi ikut enak.",
+  "Kak Sasa sedang bekerja, Miko juga harus rajin dong.",
+  "Hari ini Miko dan Kak Sasa satu tim. Siap melayani pelanggan!",
+  "Kalau Miko punya tangan, mungkin sudah membantu Kak Sasa dari tadi 😆",
+  "Kak Sasa sedang sibuk. Miko bantu jaga toko dari layar saja.",
+  "Semoga pekerjaan Kak Sasa hari ini berjalan lancar.",
+  "Miko titip semangat untuk Kak Sasa hari ini 💕",
+  // Cerita Miko tentang mereka berdua
+  "Hari ini ada Kak Vita dan Kak Sasa. Wah, Miko punya banyak teman!",
+  "Kalau Kak Vita dan Kak Sasa bekerja bersama, Miko jadi ikut semangat.",
+  "Miko penasaran, siapa yang hari ini paling cepat melayani pelanggan? 😄",
+  "Kak Vita dan Kak Sasa jangan lupa istirahat kalau sudah capek ya.",
+  "Miko senang kalau Kak Vita dan Kak Sasa sedang ceria.",
+  "Kalau toko mulai ramai, Miko siap membantu dari layar.",
+  "Miko punya dua teman kasir: Kak Vita dan Kak Sasa. Lengkap sudah!",
+  "Kak Vita sibuk, Kak Sasa sibuk, Miko kebagian tugas menjaga layar 😆",
+  "Kalau pelanggan datang, Miko siap menyapa. Kak Vita dan Kak Sasa tinggal melayani.",
+  "Miko dan teman-teman kasir siap membuat hari ini lebih menyenangkan.",
+  // Lebih jahil tapi tetap sopan
+  "Miko mau cerita, tapi takut Kak Vita dengar duluan 😹",
+  "Miko sebenarnya mau bantu Kak Sasa, tapi Miko cuma punya kaki di gambar.",
+  "Kak Vita jangan kerja terus ya. Miko bisa ikut capek melihatnya 😆",
+  "Kak Sasa, Miko lihat lho... jangan lupa senyum hari ini.",
+  "Miko sedang mengawasi. Bukan mengawasi Kak Vita, kok... 😜",
+  "Kak Sasa, Miko siap jadi teman kerja paling kecil di sini.",
+  "Kalau Miko bisa bicara dengan Kak Vita langsung, pasti banyak ceritanya.",
+  "Miko penasaran, Kak Vita sudah minum belum hari ini?",
+  "Kak Sasa jangan terlalu serius. Miko di sini siap bikin suasana sedikit ceria 😄",
+  "Miko rasa Kak Vita dan Kak Sasa adalah tim yang kompak.",
+  // Miko bercerita tentang Toko Bagus
+  "Selamat datang di Toko Bagus! Miko senang bisa menemani Kakak hari ini 😊",
+  "Toko Bagus selalu siap membantu Kakak menemukan harga yang cocok.",
+  "Miko betah di Toko Bagus. Di sini banyak barang dan banyak cerita.",
+  "Kalau sedang mencari kebutuhan rumah, coba lihat-lihat dulu di Toko Bagus.",
+  "Toko Bagus bukan cuma tempat belanja, tapi tempat Miko bertemu banyak pelanggan.",
+  "Miko senang melihat Toko Bagus ramai oleh pelanggan.",
+  "Hari ini Toko Bagus siap melayani Kakak dengan senyum 😊",
+  "Semoga belanja di Toko Bagus hari ini menyenangkan.",
+  "Miko selalu siap membantu Kakak mengecek harga di Toko Bagus.",
+  "Kalau bingung dengan harga, jangan khawatir. Miko ada di sini.",
+  "Di Toko Bagus, Kakak bisa cek harga dengan mudah.",
+  "Miko bangga menjadi bagian kecil dari Toko Bagus.",
+  "Toko Bagus buka, Miko juga siap bertugas!",
+  "Miko sudah standby di Toko Bagus. Tinggal tunggu barcode nih.",
+  "Semoga hari ini Toko Bagus penuh dengan pelanggan yang bahagia.",
+  "Belanja kebutuhan rumah? Toko Bagus siap menemani.",
+  "Miko punya satu tugas: membantu Kakak mendapatkan informasi harga.",
+  "Toko Bagus dan Miko siap menemani perjalanan belanja Kakak.",
+  "Kalau sudah menemukan barang yang cocok, jangan lupa cek harganya ya, Kak.",
+  "Miko suka suasana Toko Bagus. Apalagi kalau banyak pelanggan datang 😄",
+  // Cerita ringan tentang Toko Bagus
+  "Toko Bagus sedang sepi? Tidak apa-apa, Miko tetap rajin menjaga layar.",
+  "Kalau Toko Bagus mulai ramai, Miko ikut deg-degan nih 😆",
+  "Miko belum pernah bosan melihat pelanggan datang ke Toko Bagus.",
+  "Toko Bagus hari ini tenang. Miko jadi punya waktu untuk ngobrol.",
+  "Miko sedang menunggu pelanggan berikutnya. Siapa ya kira-kira?",
+  "Kalau Toko Bagus ramai, Miko harus lebih semangat!",
+  "Miko tidak bisa angkat barang, tapi kalau soal cek harga, serahkan saja 😎",
+  "Miko punya tempat favorit. Ya di sini, di Toko Bagus.",
+  "Kalau Miko punya kaki, mungkin sudah keliling Toko Bagus dari tadi.",
+  "Toko Bagus punya banyak barang, Miko punya banyak cerita.",
+  // Sapaan yang membangun suasana toko
+  "Terima kasih sudah mampir ke Toko Bagus, Kak.",
+  "Semoga kebutuhan Kakak hari ini bisa ditemukan di Toko Bagus.",
+  "Selamat berbelanja di Toko Bagus. Jangan lupa tetap tersenyum 😊",
+  "Miko berharap Kakak mendapatkan barang dan harga yang sesuai kebutuhan.",
+  "Semoga belanja di Toko Bagus membuat hari Kakak sedikit lebih menyenangkan.",
+  "Miko dan seluruh tim Toko Bagus siap melayani Kakak.",
+  "Toko Bagus selalu senang menyambut pelanggan baru.",
+  "Untuk pelanggan lama, Miko juga senang bertemu lagi!",
+  "Miko titip salam dari Toko Bagus. Semoga hari Kakak lancar.",
+  "Sampai jumpa lagi di Toko Bagus, Kak. Jangan lupa mampir lagi 😊",
 ];
+const rndCute = () => CUTE_POSES[Math.floor(Math.random() * CUTE_POSES.length)];
 
 function timeGreet(): Line {
   const h = new Date().getHours();
@@ -226,7 +392,7 @@ function timeGreet(): Line {
 function greet(path: string): Line {
   if (path.includes("checkout")) return { t: "Yuk lanjut pembayaran, Kak 💗", p: "money" };
   if (path.includes("produk")) return { t: "Yuk rapikan produkmu~ 🐾", p: "happy" };
-  if (path.includes("cek-harga")) return rnd(CEK_HARGA_GREET);
+  if (path.includes("cek-harga")) return { t: KIOSK_SAY[Math.floor(Math.random() * KIOSK_SAY.length)], p: rndCute() };
   if (path.includes("riwayat")) return { t: "Lihat cuan hari ini yuk! 💰", p: "money" };
   // Layar utama (Transaksi/lainnya): sapaan sesuai waktu, sesekali sapaan lain.
   return Math.random() < 0.7 ? timeGreet() : rnd(OPEN);
@@ -243,6 +409,11 @@ export default function Miko() {
 
   const bob = useRef(new Animated.Value(0)).current;
   const pop = useRef(new Animated.Value(1)).current;
+  const jump = useRef(new Animated.Value(0)).current; // lompatan (kios)
+  const rot = useRef(new Animated.Value(0)).current;  // geleng/goyang (kios)
+  const walkX = useRef(new Animated.Value(0)).current; // jalan-jalan (kios)
+  const kioskTick = useRef(0);
+  const kioskI = useRef(-1);
   const bubbleA = useRef(new Animated.Value(0)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const posRef = useRef({ x: 0, y: 0 });
@@ -304,7 +475,7 @@ export default function Miko() {
 
   useEffect(() => {
     pathRef.current = pathname;
-    say(greet(pathname || ""), 3000);
+    say(greet(pathname || ""), (pathname || "").includes("cek-harga") ? 5000 : 3000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -328,10 +499,10 @@ export default function Miko() {
       else if (e.type === "backup_ok") say(pickRot("backup", BACKUP), 2600);
       else if (e.type === "restore_ok") say(pickRot("restore", RESTORE), 2600);
       else if (e.type === "low_stock") say(pickRot("low", LOW), 3000);
-      else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 3000);
+      else if (e.type === "price_found") say(pickRot("pricef", PRICE_FOUND), 5000);
       else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
       else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
-      else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 3400);
+      else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 5000);
       else if (e.type === "error") say(pickRot("err", ERR), 2800);
     });
     return off;
@@ -347,10 +518,7 @@ export default function Miko() {
     const id = setInterval(() => {
       const p = pathRef.current || "";
       const onKiosk = p.includes("cek-harga");
-      if (onKiosk) {
-        if (Date.now() - lastActive.current > 22000) say(pickRot("ckidle", CEK_HARGA_IDLE), 3400);
-        return;
-      }
+      if (onKiosk) return; // kios ditangani interval khusus (animasi + sapaan)
       // Jangan mengganggu saat pembayaran / memilih produk / tambah item.
       if (p.includes("checkout") || p.includes("cari") || p.includes("produk-form") || p.includes("variasi") || p.includes("edit-transaksi")) return;
       if (Date.now() - lastActive.current > idleGap.current) {
@@ -365,6 +533,70 @@ export default function Miko() {
   }, []);
 
   const bobY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
+  const jumpY = jump.interpolate({ inputRange: [0, 1], outputRange: [0, -26] });
+  const rotDeg = rot.interpolate({ inputRange: [-1, 1], outputRange: ["-14deg", "14deg"] });
+
+  // Animasi jenaka untuk kios (lompat / geleng / joget / jalan-jalan).
+  const playAnim = () => {
+    const kind = Math.floor(Math.random() * 4);
+    if (kind === 0) {
+      Animated.sequence([
+        Animated.spring(jump, { toValue: 1, useNativeDriver: true, friction: 4 }),
+        Animated.spring(jump, { toValue: 0, useNativeDriver: true, friction: 5 }),
+      ]).start();
+    } else if (kind === 1) {
+      Animated.sequence([
+        Animated.timing(rot, { toValue: 1, duration: 130, useNativeDriver: true }),
+        Animated.timing(rot, { toValue: -1, duration: 220, useNativeDriver: true }),
+        Animated.timing(rot, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(rot, { toValue: 0, duration: 130, useNativeDriver: true }),
+      ]).start();
+    } else if (kind === 2) {
+      // joget: goyang + lompat kecil bergantian
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(rot, { toValue: 1, duration: 160, useNativeDriver: true }),
+          Animated.spring(jump, { toValue: 1, useNativeDriver: true, friction: 5 }),
+        ]),
+        Animated.parallel([
+          Animated.timing(rot, { toValue: -1, duration: 160, useNativeDriver: true }),
+          Animated.spring(jump, { toValue: 0, useNativeDriver: true, friction: 5 }),
+        ]),
+        Animated.timing(rot, { toValue: 0, duration: 140, useNativeDriver: true }),
+      ]).start();
+    } else {
+      // jalan-jalan: bergeser kiri lalu kanan lalu kembali
+      Animated.sequence([
+        Animated.timing(walkX, { toValue: -46, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(walkX, { toValue: 30, duration: 1100, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(walkX, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]).start();
+    }
+  };
+
+  const sayKiosk = () => {
+    let i = Math.floor(Math.random() * KIOSK_SAY.length);
+    if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
+    kioskI.current = i;
+    say({ t: KIOSK_SAY[i], p: rndCute() }, 5000);
+  };
+
+  // Kios Cek Harga: Miko hidup & menghibur — ganti pose lucu + animasi tiap
+  // ~3.5 dtk, dan menyapa pelanggan (acak) tiap ~3 tick (~10 dtk).
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!(pathRef.current || "").includes("cek-harga")) return;
+      kioskTick.current++;
+      playAnim();
+      if (kioskTick.current % 3 === 0) {
+        sayKiosk();
+      } else if (!show) {
+        setPose(rndCute()); // ganti ekspresi saat tidak sedang menampilkan balon
+      }
+    }, 3500);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]);
 
   // Tap Miko: bila dipencet berkali-kali dalam 3 dtk → respons jenaka.
   const onTap = () => {
@@ -388,7 +620,7 @@ export default function Miko() {
           </Animated.View>
         )}
         <Pressable onPress={onTap} hitSlop={8}>
-          <Animated.View style={{ transform: [{ translateY: bobY }, { scale: pop }] }}>
+          <Animated.View style={{ transform: [{ translateX: walkX }, { translateY: Animated.add(bobY, jumpY) }, { rotate: rotDeg }, { scale: pop }] }}>
             <Image source={POSES[pose] || POSES.happy} style={styles.img} resizeMode="contain" />
           </Animated.View>
         </Pressable>

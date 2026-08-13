@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
@@ -112,6 +113,25 @@ export default function CekHargaScreen() {
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastClosing = useRef(-1);
   const lastNF = useRef(-1);
+  const navigation = useNavigation();
+  const [camOn, setCamOn] = useState(false);
+  const [facing, setFacing] = useState<"front" | "back">("front");
+  const [perm, requestPerm] = useCameraPermissions();
+  const camTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const camCooldown = useRef(0);
+
+  // Sembunyikan menu tab bawah saat di kios Cek Harga (pelanggan tak bisa pindah layar).
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
+      return () => navigation.setOptions({
+        tabBarStyle: {
+          backgroundColor: colors.surfaceSecondary, borderTopColor: colors.border, borderTopWidth: 1,
+          height: 60 + insets.bottom, paddingBottom: insets.bottom > 0 ? insets.bottom : 8, paddingTop: 8,
+        },
+      });
+    }, [navigation, insets.bottom]),
+  );
 
   // Bacakan hasil cek harga (suara HP / TTS). Nama + harga ecer + tiap tingkat
   // grosir + kalimat penutup ramah (bergantian). Hanya terdengar di HP/APK build.
@@ -217,35 +237,73 @@ export default function CekHargaScreen() {
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(handleScan, { isScanMode: () => true });
 
+  const clearCamTimer = () => { if (camTimer.current) { clearTimeout(camTimer.current); camTimer.current = null; } };
+  const closeCamera = useCallback(() => {
+    clearCamTimer();
+    setCamOn(false);
+    setTimeout(() => inputRef.current?.focus(), 80);
+  }, []);
+
+  const openCamera = async () => {
+    let granted = perm?.granted;
+    if (!granted) {
+      const r = await requestPerm();
+      granted = r.granted;
+      if (!granted) {
+        Alert.alert(
+          "Izin Kamera Diperlukan",
+          "Miko perlu izin kamera untuk memindai barcode. Aktifkan lewat Pengaturan ya, Kak.",
+          [{ text: "Batal", style: "cancel" }, { text: "Buka Pengaturan", onPress: () => Linking.openSettings() }],
+        );
+        return;
+      }
+    }
+    setCamOn(true);
+    clearCamTimer();
+    // Tutup otomatis bila 15 detik tidak ada barcode terbaca.
+    camTimer.current = setTimeout(() => closeCamera(), RESET_MS);
+  };
+
+  const onCamScan = useCallback((res: { data: string }) => {
+    const now = Date.now();
+    if (now - camCooldown.current < 2500) return; // hindari baca dobel
+    camCooldown.current = now;
+    const code = (res?.data || "").trim();
+    if (!code) return;
+    Haptics.selectionAsync();
+    closeCamera();
+    handleScan(code);
+  }, [closeCamera, handleScan]);
+
+  // Panah kembali (kiri-atas): saat kamera terbuka → tutup kamera; selain itu → keluar kios ke Transaksi.
+  const onBack = () => {
+    if (camOn) { closeCamera(); return; }
+    router.replace("/");
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.titleBlock}>
-        <Text style={styles.title}>Cek Harga</Text>
-        <Text style={styles.subtitle}>Arahkan scanner ke barcode untuk lihat harga</Text>
-      </View>
+      {/* Panah kembali kecil di pojok kiri atas (untuk kasir keluar dari kios) */}
+      <Pressable style={[styles.backBtn, { top: insets.top + 6 }]} onPress={onBack} testID="kiosk-back" hitSlop={10}>
+        <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
+      </Pressable>
 
-      {/* Mode scan aktif — input tersembunyi untuk scanner Bluetooth (keyboard HP TIDAK tampil) */}
-      <View style={styles.scanModeBox}>
-        <View style={styles.scanIcon}><Ionicons name="barcode-outline" size={22} color={colors.brand} /></View>
-        <TextInput
-          ref={inputRef}
-          testID="cekharga-scan-input"
-          defaultValue=""
-          onChangeText={scan.onChangeText}
-          onSubmitEditing={scan.onSubmitEditing}
-          blurOnSubmit={false}
-          showSoftInputOnFocus={false}
-          caretHidden
-          placeholder="Scan barcode di sini…"
-          placeholderTextColor={colors.muted}
-          style={styles.scanModeInput}
-        />
-        <View style={styles.readyDot} />
-      </View>
+      {/* Input scanner Bluetooth tersembunyi — tetap aktif tanpa keyboard HP */}
+      <TextInput
+        ref={inputRef}
+        testID="cekharga-scan-input"
+        defaultValue=""
+        onChangeText={scan.onChangeText}
+        onSubmitEditing={scan.onSubmitEditing}
+        blurOnSubmit={false}
+        showSoftInputOnFocus={false}
+        caretHidden
+        style={styles.hiddenInput}
+      />
 
       <View style={styles.body}>
         {result ? (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultScroll}>
           <View style={styles.resultCard} testID="cekharga-result">
             <Text style={styles.shopName}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
             <View style={styles.labelRow}>
@@ -285,27 +343,43 @@ export default function CekHargaScreen() {
 
             <View style={styles.countdownRow}>
               <Ionicons name="time-outline" size={16} color={colors.muted} />
-              <Text style={styles.countdownTxt}>Reset otomatis dalam {countdown}s · siap scan berikutnya</Text>
+              <Text style={styles.countdownTxt}>Kembali otomatis dalam {countdown}s</Text>
             </View>
-            <Pressable style={styles.againBtn} onPress={backToScan} testID="cekharga-again">
-              <Ionicons name="barcode-outline" size={20} color={colors.onBrandPrimary} />
-              <Text style={styles.againTxt}>Scan Barang Lain</Text>
-            </Pressable>
           </View>
           </ScrollView>
         ) : (
-          <View style={styles.idle}>
-            <Ionicons name="barcode-outline" size={64} color={colors.brand} />
-            <Text style={styles.idleTitle}>Siap Cek Harga</Text>
-            <Text style={styles.idleDesc}>Scan barcode dengan scanner Bluetooth. Harga akan tampil otomatis.</Text>
-            <Pressable style={styles.searchCard} testID="cekharga-search" onPress={() => router.push("/cari?mode=price")}>
-              <Ionicons name="search" size={22} color={colors.brand} />
-              <Text style={styles.searchTxt}>Cari Produk Manual</Text>
+          // Tampilan kios: layar penuh, hanya tombol Scan Barcode di tengah. Bawah kosong.
+          <View style={styles.kioskIdle}>
+            <Text style={styles.kioskTitle}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
+            <Text style={styles.kioskSub}>Cek Harga Mandiri</Text>
+            <Pressable style={styles.scanBigBtn} onPress={openCamera} testID="kiosk-scan-btn">
+              <Ionicons name="barcode-outline" size={64} color={colors.onBrandPrimary} />
+              <Text style={styles.scanBigTxt}>SCAN BARCODE</Text>
+              <Text style={styles.scanBigHint}>Ketuk lalu arahkan barcode ke kamera</Text>
             </Pressable>
           </View>
         )}
       </View>
-      <View style={{ height: insets.bottom }} />
+
+      {/* Overlay KAMERA (depan) — muncul saat tombol scan ditekan */}
+      {camOn && (
+        <View style={styles.camOverlay}>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            facing={facing}
+            barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39", "qr", "itf14", "codabar"] }}
+            onBarcodeScanned={onCamScan}
+          />
+          <View style={styles.camFrame} />
+          <Pressable style={[styles.backBtn, { top: insets.top + 6 }]} onPress={onBack} testID="kiosk-cam-back" hitSlop={10}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </Pressable>
+          <Pressable style={[styles.flipBtn, { top: insets.top + 6 }]} onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))} testID="kiosk-cam-flip" hitSlop={10}>
+            <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
+          </Pressable>
+          <Text style={[styles.camHint, { bottom: insets.bottom + 40 }]}>Arahkan barcode ke dalam kotak</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -319,12 +393,20 @@ const styles = StyleSheet.create({
   scanIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
-  body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  idle: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
-  idleTitle: { fontFamily: font.bold, fontSize: fontSize["2xl"], color: colors.onSurface, marginTop: spacing.sm },
-  idleDesc: { fontFamily: font.regular, fontSize: fontSize.lg, color: colors.muted, textAlign: "center", marginBottom: spacing.lg, paddingHorizontal: spacing.md },
-  searchCard: { width: "100%", height: 60, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
-  searchTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl },
+  body: { flex: 1, paddingHorizontal: spacing.lg },
+  backBtn: { position: "absolute", left: 10, zIndex: 30, width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
+  flipBtn: { position: "absolute", right: 10, zIndex: 30, width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" },
+  hiddenInput: { position: "absolute", width: 1, height: 1, opacity: 0, top: 0, left: 0 },
+  resultScroll: { flexGrow: 1, justifyContent: "center", paddingVertical: spacing.xl },
+  kioskIdle: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  kioskTitle: { fontFamily: font.display, fontSize: 34, color: colors.brand, letterSpacing: 1, textAlign: "center" },
+  kioskSub: { fontFamily: font.medium, fontSize: fontSize.lg, color: colors.muted, marginBottom: spacing.xl },
+  scanBigBtn: { width: 260, height: 260, borderRadius: 40, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", gap: spacing.xs, borderBottomWidth: 10, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+  scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 30, letterSpacing: 2, marginTop: spacing.sm, textAlign: "center" },
+  scanBigHint: { color: "rgba(255,255,255,0.9)", fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center", paddingHorizontal: spacing.lg, marginTop: 2 },
+  camOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000", zIndex: 20 },
+  camFrame: { position: "absolute", top: "30%", left: "12%", right: "12%", height: "26%", borderWidth: 3, borderColor: "#7CFC00", borderRadius: 16 },
+  camHint: { position: "absolute", alignSelf: "center", color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.lg, textShadowColor: "#000", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   resultCard: { backgroundColor: colors.surfaceSecondary, borderRadius: 28, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.lg, alignItems: "center", shadowColor: "#B0757F", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   shopName: { color: colors.brand, fontFamily: font.display, fontSize: 24, letterSpacing: 1, textAlign: "center" },
   labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, marginTop: 2 },

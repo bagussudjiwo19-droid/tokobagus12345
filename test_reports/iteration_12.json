@@ -1,0 +1,27 @@
+{
+  "summary": "Iteration 12 — Cek Harga fullscreen KIOSK verification (frontend only, mobile viewport 390x844, preview URL). ALL 6 spec items PASS. (1) Kiosk layout: opening Cek Harga renders fullscreen kiosk — big red 'SCAN BARCODE' pill in the vertical center with barcode icon and 'Ketuk lalu arahkan barcode ke kamera' hint (testID kiosk-scan-btn present); shop name 'TOKO BAGUS' + subtitle 'Cek Harga Mandiri' above; small circular back arrow top-left (testID kiosk-back present, 44x44 touch target); bottom area empty (Miko mascot floats over as expected — global overlay from _layout.tsx). Hidden scan input testID cekharga-scan-input present. (2) Bottom tab bar HIDDEN on kiosk: the Transaksi/Produk/Cek Harga/Riwayat bar is NOT rendered anywhere visible on screen — confirmed by DOM inspection and screenshot 01 (no tab strip at the bottom). useFocusEffect correctly sets tabBarStyle:{display:'none'} on focus. (3) Back arrow returns to Transaksi + restores tab bar: tapping kiosk-back navigates to /(tabs) index → scan-mode-input becomes visible, and the four-tab bar reappears at y=826 (Transaksi/Produk/Cek Harga/Riwayat all visible). (4) Bluetooth-style hidden input still resolves prices: focusing cekharga-scan-input and typing 'Aiueo' + Enter renders cekharga-result showing 'TOKO BAGUS · CEK HARGA · Sukses Rendang · HARGA ECER Rp 4.000 · HARGA GROSIR Mulai 5 pcs Rp 3.600' plus a 15-second countdown ('Kembali otomatis dalam 13s'). After ~15s the card auto-clears and the kiosk-scan-btn returns. Unknown barcode '0000000000000' + Enter shows 'tidak ditemukan' toast, keeps kiosk in scan mode (no crash, no result card). (5) Tapping SCAN BARCODE on web does NOT crash — a green camera overlay appears (getUserMedia fallback pattern rendered by expo-camera on web) with kiosk-cam-back and kiosk-cam-flip controls and hint 'Arahkan barcode ke dalam kotak'. As documented, camera scanning itself is native-only and not asserted here; the important thing is: no redbox, no unhandled exception. (6) Regression PASSED: Transaksi (scan 'Aiueo' adds Sukses Rendang to cart), Produk list renders, Riwayat renders 'Hari Ini' filter. NETWORK: ZERO /api/ calls captured across the entire scenario — app remains fully offline as required. Console shows only pre-existing RN-web deprecation warnings (shadow*, textShadow*, props.pointerEvents, useNativeDriver JS fallback) — unrelated to this change.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_12.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "cek-harga.tsx uses useFocusEffect + navigation.setOptions({tabBarStyle:{display:'none'}}) on focus and restores the original tabBarStyle on blur — correct pattern for hiding tab bar per screen. Confirmed by DOM inspection.",
+    "kiosk-scan-btn onPress → openCamera() properly requests permission and starts a 15s auto-close timer (RESET_MS). onCamScan has a 2500ms cooldown to prevent double reads — good.",
+    "Hidden TextInput uses showSoftInputOnFocus={false} + caretHidden + opacity 0 sizing, so keyboard never pops up but Bluetooth HID scanner input still flows through useBarcodeScan hook — verified functionally.",
+    "onBack() correctly handles two levels: if camera overlay is open it closes the camera first, otherwise it router.replace('/') to exit the kiosk — matches spec.",
+    "Miko mascot cycles CUTE_POSES + KIOSK_SAY every ~3.5s while on cek-harga (via interval that checks pathRef.current.includes('cek-harga')), and stops when leaving — confirmed with greeting bubbles observed in screenshots.",
+    "No new deprecated packages introduced. expo-camera (current) used correctly with barcodeScannerSettings + onBarcodeScanned."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only; app is offline by design)", "frontend": "100% (6/6 spec items pass)"},
+  "seed_data_creation": "None. Bundled seed used. Barcode 'Aiueo' → Sukses Rendang (Rp 4.000 ecer, tier 5 pcs @ Rp 3.600).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Cek Harga is now a fullscreen self-service KIOSK. Bottom tab bar is intentionally hidden while on this screen; back arrow (testID kiosk-back) returns to Transaksi and restores the tab bar. Tap kiosk-scan-btn to open the front-camera overlay (native only can actually decode; on web it just renders a black/green camera view — DO NOT assert scanning on web). The hidden Bluetooth-scan input (testID cekharga-scan-input, opacity 0) is the reliable path in automation: focus it via document.querySelector then page.keyboard.type('Aiueo') + Enter → cekharga-result renders; auto-resets after 15s. Unknown barcode → 'tidak ditemukan' toast, no crash. App is fully offline (0 /api/ calls). Preview URL: https://app-audit-preview.preview.emergentagent.com.",
+  "rca_of_issue": "N/A — feature verification pass with no bugs found."
+}

@@ -18,6 +18,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Core Requirements (static)
 - Bahasa Indonesia UI, Rupiah formatting (Rp 15.000), offline-friendly POS, keep original data.
 
+### v44 — Cek Harga jadi KIOS layar penuh + Scan KAMERA depan + Miko ekspresif
+- `(tabs)/cek-harga.tsx`: dirombak jadi kios self-service. Tab bar bawah disembunyikan saat fokus (navigation.setOptions tabBarStyle display none, dipulihkan saat blur). Panah kembali kecil kiri-atas (kamera terbuka → tutup kamera; selain itu → keluar ke Transaksi `router.replace("/")`). Tombol besar "SCAN BARCODE" di tengah, bawah kosong. Tombol "Cari Produk Manual" & tombol "Scan Barang Lain" dihilangkan (kios terkunci). Input scanner Bluetooth tetap aktif (tersembunyi, tanpa keyboard). Hasil harga auto-reset 15 dtk.
+- Scan KAMERA: `expo-camera` CameraView `facing="front"` (default), buka saat tombol ditekan; auto-tutup 15 dtk bila tak ada barcode; barcode terbaca → tutup + tampil harga/suara (cooldown 2.5s anti-dobel). Ada tombol balik kamera (depan↔belakang) & bingkai hijau. Izin kamera diminta kontekstual; ditolak → dialog Buka Pengaturan. (Plugin expo-camera + NSCameraUsageDescription + android CAMERA sudah ada.)
+- `components/Miko.tsx`: aktifkan SEMUA 28 pose (tambah bag/bye/dance/deepsleep/hug/phone/pout/snack). Di kios: ganti pose lucu tiap ~3.5 dtk + animasi jenaka (lompat/geleng/joget/jalan-jalan via Animated), dan menyapa PELANGGAN acak dari ~90 kalimat (KIOSK_SAY) tiap ~10 dtk. Sapaan idle layar lain tak berubah.
+- CATATAN: kamera & suara hanya jalan di HP (Expo Go/APK), bukan preview web. Verified layout kios via screenshot (tab bar hilang, tombol center, Miko menyapa & berpose).
+
 ### v43 — AUTO BACKUP (offline, harian, simpan 5 terakhir, selalu nyala)
 - Baru `src/autobackup.ts`: simpan cadangan `.json` ke `documentDirectory/auto-backups/` SEKALI SEHARI (dipicu saat app dibuka, senyap). Rotasi simpan 5 terbaru (hapus sisanya). `runAutoBackup()`, `listAutoBackups()`, `getLastAutoBackup()`, `maybeDailyAutoBackup()`. Native-only (expo-file-system/legacy + AsyncStorage utk timestamp). Web = no-op.
 - `app/_layout.tsx`: panggil `maybeDailyAutoBackup()` 2.5s setelah ready.
