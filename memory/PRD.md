@@ -318,3 +318,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Next Tasks
 - Generate native build to validate barcode scan + Bluetooth printing on device.
 - Optional: laporan/omzet per periode, ekspor CSV.
+
+
+## Session Log (fork) — Cek Harga Kiosk & Miko refinements
+- Balon teks Miko di kios Cek Harga: durasi 7 dtk + jeda 5 dtk sebelum balon berikutnya (siklus 12 dtk). `Miko.tsx` interval 12000ms (animId 3500ms terpisah).
+- Menambah 80+ kalimat kios Miko (KIOSK_SAY): cerita Vita, Sasa, keduanya, jahil sopan, Toko Bagus.
+- Keyboard fix: `variasi-cepat.tsx` & `edit-transaksi.tsx` diubah dari KeyboardAvoidingView(behavior undefined di Android) → `KeyboardAwareScrollView` + `KeyboardStickyView` (footer ikut naik). Edit Harga (index.tsx bottom sheet) sudah pakai BottomSheetTextInput.
+- Pengingat Backup (Miko): `autobackup.ts` tambah `markBackupShared/getLastBackupShare/shouldRemindBackup` (ingatkan >3 hari tak share, 1x/hari). `backup.tsx` catat waktu saat Sharing. `_layout.tsx` emit `backup_reminder` 6s setelah buka. Miko handler + array BACKUP_REMIND.
+- Cek Harga kios redesign: **Panggung Miko** (pedestal + spotlight, style pedestal 3D) dengan `<Miko mode="stage" />` (tidak bisa digeser). Global `<Miko />` disembunyikan saat pathname cek-harga (via usePathname di `_layout.tsx`). Tombol SCAN BARCODE jadi pill teks-saja (ikon barcode dihapus). Note petunjuk scanner fisik di bawah.
+- Miko `mode="stage"`: saat dipencet pelanggan → array KIOSK_TAP (60+ reaksi: senang/kaget/pura marah/genit/nangis/jahil/sapaan + rahasia Vita&Sasa), hold 4.5 dtk.
+- CATATAN: fitur hardware (TTS suara Miko, kamera, printer/scanner BT, auto-backup file) hanya jalan di HP/build, bukan preview web. Perubahan perlu redeploy (Publish) agar masuk ke HP.

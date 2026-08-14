@@ -16,6 +16,7 @@ import { speak, terbilang } from "@/src/voice";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
+import Miko from "@/components/Miko";
 
 const RESET_MS = 15000;
 
@@ -352,8 +353,18 @@ export default function CekHargaScreen() {
           <View style={styles.kioskIdle}>
             <Text style={styles.kioskTitle}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
             <Text style={styles.kioskSub}>Cek Harga Mandiri</Text>
+
+            {/* Panggung Miko: Miko berdiri di atas pedestal, menyapa pelanggan */}
+            <View style={styles.stage}>
+              <View style={styles.spotlight} />
+              <View style={styles.pedestal} />
+              <View style={styles.pedestalTop} />
+              <View style={styles.mikoSlot}>
+                <Miko mode="stage" />
+              </View>
+            </View>
+
             <Pressable style={styles.scanBigBtn} onPress={openCamera} testID="kiosk-scan-btn">
-              <Ionicons name="barcode-outline" size={64} color={colors.onBrandPrimary} />
               <Text style={styles.scanBigTxt}>SCAN BARCODE</Text>
             </Pressable>
 
@@ -406,10 +417,14 @@ const styles = StyleSheet.create({
   resultScroll: { flexGrow: 1, justifyContent: "center", paddingVertical: spacing.xl },
   kioskIdle: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
   kioskTitle: { fontFamily: font.display, fontSize: 34, color: colors.brand, letterSpacing: 1, textAlign: "center" },
-  kioskSub: { fontFamily: font.medium, fontSize: fontSize.lg, color: colors.muted, marginBottom: spacing.xl },
-  scanBigBtn: { width: 260, height: 260, borderRadius: 40, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", gap: spacing.xs, borderBottomWidth: 10, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
-  scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 30, letterSpacing: 2, marginTop: spacing.sm, textAlign: "center" },
-  scanBigHint: { color: "rgba(255,255,255,0.9)", fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center", paddingHorizontal: spacing.lg, marginTop: 2 },
+  kioskSub: { fontFamily: font.medium, fontSize: fontSize.lg, color: colors.muted, marginBottom: spacing.lg },
+  stage: { width: "100%", height: 240, alignItems: "center", justifyContent: "flex-end", marginBottom: spacing.md },
+  spotlight: { position: "absolute", bottom: 24, width: 210, height: 210, borderRadius: 105, backgroundColor: colors.brandTertiary, opacity: 0.4 },
+  pedestal: { position: "absolute", bottom: 8, width: 176, height: 34, borderRadius: 18, backgroundColor: colors.brandSecondary, borderBottomWidth: 7, borderBottomColor: colors.brand, shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  pedestalTop: { position: "absolute", bottom: 30, width: 150, height: 16, borderRadius: 10, backgroundColor: colors.surfaceSecondary, opacity: 0.95 },
+  mikoSlot: { position: "absolute", bottom: 26, alignSelf: "center" },
+  scanBigBtn: { minWidth: 240, paddingHorizontal: spacing.xl, paddingVertical: 20, borderRadius: 28, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", borderBottomWidth: 8, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
+  scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 28, letterSpacing: 2, textAlign: "center" },
   scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
   camOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000", zIndex: 20 },

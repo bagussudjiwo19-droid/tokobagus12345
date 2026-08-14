@@ -137,6 +137,77 @@ const CHEER_MULTI: Line[] = [
   { t: "Hehe, jangan pencet terus, Kak. 😆", p: "wink" }, { t: "Hehe, Miko dipanggil lagi. 😆", p: "shy" },
   { t: "Iya iya, Miko dengar kok!", p: "happy" }, { t: "Cie kangen Miko ya? 😸", p: "wink" },
 ];
+// Kios: saat pelanggan MEMENCET Miko di panggung — reaksi lucu & ramah.
+const KIOSK_TAP: Line[] = [
+  // Miko senang
+  { t: "Yeay! Miko disentuh! 😆", p: "happy" },
+  { t: "Hai, Kak! Miko senang kamu datang.", p: "wave" },
+  { t: "Hehe, akhirnya Miko diajak ngobrol.", p: "shy" },
+  { t: "Miko senang banget! 💕", p: "hearts" },
+  { t: "Kakak baik deh, masih ingat Miko.", p: "love" },
+  { t: "Wah, Miko jadi semangat lagi!", p: "star" },
+  { t: "Aduh, jadi malu nih. 😳", p: "shy" },
+  { t: "Miko siap menemani Kakak!", p: "thumbsup" },
+  // Miko kaget
+  { t: "Eh! Kaget Miko, Kak! 😳", p: "surprised" },
+  { t: "Waduh, tiba-tiba disentuh!", p: "surprised" },
+  { t: "Hah? Siapa tadi? 😆", p: "surprised" },
+  { t: "Miko hampir jatuh dari tempatnya!", p: "surprised" },
+  { t: "Aduh, jangan tiba-tiba begitu dong, Kak.", p: "pout" },
+  { t: "Miko belum siap! 😂", p: "surprised" },
+  // Miko pura-pura marah
+  { t: "Ih, kok dipencet terus sih! 😤", p: "pout" },
+  { t: "Miko bukan tombol mainan, Kak! 😆", p: "pout" },
+  { t: "Sekali lagi dipencet, Miko ngambek nih!", p: "pout" },
+  { t: "Hmm... Miko pura-pura marah dulu.", p: "pout" },
+  { t: "Awas ya, Miko catat! 😤😂", p: "pout" },
+  { t: "Miko protes! Tapi cuma sedikit. 😆", p: "pout" },
+  // Miko genit ringan
+  { t: "Hehe... kok Miko yang dipilih? 😉", p: "wink" },
+  { t: "Wah, perhatian banget sama Miko.", p: "shy" },
+  { t: "Miko jadi salah tingkah nih. 😳", p: "shy" },
+  { t: "Kak, jangan bikin Miko malu dong. 😆", p: "shy" },
+  { t: "Cie... datang lagi buat menyapa Miko.", p: "wink" },
+  { t: "Miko senang kalau diperhatikan. 😊", p: "hearts" },
+  { t: "Hmm, Miko jadi penasaran sama Kakak.", p: "thinking" },
+  { t: "Jangan sering-sering lihat Miko, nanti Miko geer. 😜", p: "wink" },
+  // Miko pura-pura menangis
+  { t: "Hiks... Miko disentuh cuma sekali. 😢", p: "cry" },
+  { t: "Miko kira mau diajak ngobrol...", p: "cry" },
+  { t: "Hiks... kok ditinggal lagi sih, Kak?", p: "cry" },
+  { t: "Miko sedih sebentar ya... 😭", p: "cry" },
+  { t: "Jangan tinggalin Miko lama-lama.", p: "pout" },
+  { t: "Miko hampir nangis nih... tapi bohong. 😂", p: "wink" },
+  { t: "Hiks... untung Miko cepat ceria lagi.", p: "happy" },
+  { t: "Miko sedih... siapa yang mau menghibur? 🥺", p: "cry" },
+  // Miko jahil
+  { t: "Ketahuan! Kakak penasaran sama Miko ya?", p: "wink" },
+  { t: "Miko tahu kok, Kakak sengaja pencet.", p: "wink" },
+  { t: "Hehe, Miko lihat tuh! 😆", p: "wink" },
+  { t: "Mau ngobrol sama Miko atau mau cek harga?", p: "thinking" },
+  { t: "Kalau Miko bisa jalan, sudah Miko kabur nih. 😂", p: "dance" },
+  { t: "Kak, Miko sedang sibuk... sibuk menunggu pelanggan. 😎", p: "thumbsup" },
+  { t: "Pencet Miko lagi? Wah, jadi terkenal nih.", p: "star" },
+  { t: "Miko siap! Tapi jangan disuruh kerja berat ya. 😆", p: "wink" },
+  // Sapaan manis
+  { t: "Hai, Kak. Senang ketemu lagi.", p: "wave" },
+  { t: "Miko di sini, Kak. Ada yang bisa dibantu?", p: "happy" },
+  { t: "Makasih sudah menyapa Miko. 💕", p: "hearts" },
+  { t: "Miko senang bisa menemani Kakak.", p: "love" },
+  { t: "Semoga belanjanya menyenangkan ya, Kak.", p: "star" },
+  { t: "Senyum dulu, Kak. Miko juga ikut senyum. 😊", p: "wink" },
+  // Rahasia kecil tentang Vita & Sasa
+  { t: "Kak, jangan bilang Vita dan Sasa ya... Miko sebenarnya bos kecil di sini. 😎", p: "thumbsup" },
+  { t: "Vita dan Sasa sibuk kerja, Miko sibuk mengawasi. Pembagian tugas yang adil. 😂", p: "wink" },
+  { t: "Kalau Vita dan Sasa mulai ramai, Miko pura-pura sibuk juga. 😆", p: "wink" },
+  { t: "Kak, menurut Miko Vita dan Sasa itu kompak... terutama kalau sama-sama lapar. 😂", p: "snack" },
+  { t: "Miko punya rahasia: kalau Vita dan Sasa ketawa, suasana toko ikut ramai.", p: "happy" },
+  { t: "Vita dan Sasa punya tugas melayani pelanggan. Miko punya tugas bikin mereka senyum. 😄", p: "hearts" },
+  { t: "Kalau ada lomba siapa paling sibuk, Miko nggak ikut. Miko takut menang. 😂", p: "wink" },
+  { t: "Kak, Miko mau cerita... Vita dan Sasa itu teman kerja Miko. Jangan direbut ya. 😜", p: "pout" },
+  { t: "Miko bingung, yang lebih sibuk siapa... Vita, Sasa, atau Miko yang dari tadi ngomong? 😂", p: "thinking" },
+  { t: "Ssst... Miko punya dua teman kasir. Vita dan Sasa. Tapi jangan bilang mereka Miko bilang begitu ya. 🤫😆", p: "shy" },
+];
 const SEPI: Line[] = [
   { t: "Santai dulu, Kak. Miko tetap siap 😊", p: "tea" }, { t: "Sepi ya... tapi semangat jangan ikut sepi 😊", p: "happy" },
   { t: "Miko nemenin dulu ya, Kak.", p: "love" }, { t: "Pelanggan bisa datang kapan saja, tenang 🍀", p: "pray" },
@@ -407,7 +478,7 @@ function greet(path: string): Line {
   return Math.random() < 0.7 ? timeGreet() : rnd(OPEN);
 }
 
-export default function Miko() {
+export default function Miko({ mode = "float" }: { mode?: "float" | "stage" }) {
   const cart = useCart();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
@@ -608,13 +679,34 @@ export default function Miko() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
 
-  // Tap Miko: bila dipencet berkali-kali dalam 3 dtk → respons jenaka.
+  // Tap Miko. Di panggung kios: reaksi ramah untuk pelanggan (KIOSK_TAP).
   const onTap = () => {
+    if (mode === "stage") { say(pickRot("ktap", KIOSK_TAP), 4500); return; }
     const now = Date.now();
     tapTimes.current = tapTimes.current.filter((t) => now - t < 3000);
     tapTimes.current.push(now);
     say(tapTimes.current.length >= 3 ? pickRot("cheerm", CHEER_MULTI) : pickRot("cheer", CHEER), 2200);
   };
+
+  // Mode PANGGUNG (kios Cek Harga): Miko berdiri di panggung, tidak bisa digeser,
+  // menyapa & bereaksi lucu saat dipencet pelanggan.
+  if (mode === "stage") {
+    return (
+      <View style={styles.stageWrap} pointerEvents="box-none">
+        {show && !!msg && (
+          <Animated.View style={[styles.bubbleStage, { opacity: bubbleA, transform: [{ scale: bubbleA }] }]}>
+            <Text style={styles.bubbleTxt}>{msg}</Text>
+            <View style={styles.tailStage} />
+          </Animated.View>
+        )}
+        <Pressable onPress={onTap} hitSlop={14} testID="miko-stage">
+          <Animated.View style={{ transform: [{ translateY: Animated.add(bobY, jumpY) }, { rotate: rotDeg }, { scale: pop }] }}>
+            <Image source={POSES[pose] || POSES.happy} style={styles.imgStage} resizeMode="contain" />
+          </Animated.View>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -645,4 +737,9 @@ const styles = StyleSheet.create({
   bubble: { position: "absolute", bottom: SIZE - 8, right: 0, minWidth: 120, maxWidth: 200, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.borderStrong, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 },
   bubbleTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.sm, textAlign: "center", lineHeight: 18 },
   tail: { position: "absolute", bottom: -7, right: 22, width: 12, height: 12, backgroundColor: colors.surfaceSecondary, borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: colors.borderStrong, transform: [{ rotate: "45deg" }] },
+  // Panggung (kios)
+  stageWrap: { alignItems: "center", justifyContent: "flex-end", width: "100%" },
+  imgStage: { width: 150, height: 150 },
+  bubbleStage: { position: "absolute", bottom: 150 - 10, alignSelf: "center", minWidth: 150, maxWidth: 270, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.borderStrong, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 8, zIndex: 5 },
+  tailStage: { position: "absolute", bottom: -7, left: "50%", marginLeft: -6, width: 12, height: 12, backgroundColor: colors.surfaceSecondary, borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: colors.borderStrong, transform: [{ rotate: "45deg" }] },
 });

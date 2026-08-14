@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -29,6 +29,7 @@ LogBox.ignoreAllLogs(true);
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const pathname = usePathname();
   const [loaded, error] = useIconFonts();
   const [fontsLoaded, fontsError] = useFonts({
     "DMSans-Regular": require("../assets/fonts/DMSans-Regular.ttf"),
@@ -89,7 +90,7 @@ export default function RootLayout() {
                   <Stack.Screen name="pengaturan-printer" options={{ presentation: "modal" }} />
                   <Stack.Screen name="kelola-stok" options={{ presentation: "modal" }} />
                 </Stack>
-                <Miko />
+                {!(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>
             </CartProvider>
           </ToastProvider>
