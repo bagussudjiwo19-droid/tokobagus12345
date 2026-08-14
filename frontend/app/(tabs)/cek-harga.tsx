@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { CameraView, useCameraPermissions } from "expo-camera";
 
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
@@ -115,11 +114,6 @@ export default function CekHargaScreen() {
   const lastClosing = useRef(-1);
   const lastNF = useRef(-1);
   const navigation = useNavigation();
-  const [camOn, setCamOn] = useState(false);
-  const [facing, setFacing] = useState<"front" | "back">("front");
-  const [perm, requestPerm] = useCameraPermissions();
-  const camTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const camCooldown = useRef(0);
 
   // Sembunyikan menu tab bawah saat di kios Cek Harga (pelanggan tak bisa pindah layar).
   useFocusEffect(
@@ -238,47 +232,8 @@ export default function CekHargaScreen() {
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(handleScan, { isScanMode: () => true });
 
-  const clearCamTimer = () => { if (camTimer.current) { clearTimeout(camTimer.current); camTimer.current = null; } };
-  const closeCamera = useCallback(() => {
-    clearCamTimer();
-    setCamOn(false);
-    setTimeout(() => inputRef.current?.focus(), 80);
-  }, []);
-
-  const openCamera = async () => {
-    let granted = perm?.granted;
-    if (!granted) {
-      const r = await requestPerm();
-      granted = r.granted;
-      if (!granted) {
-        Alert.alert(
-          "Izin Kamera Diperlukan",
-          "Miko perlu izin kamera untuk memindai barcode. Aktifkan lewat Pengaturan ya, Kak.",
-          [{ text: "Batal", style: "cancel" }, { text: "Buka Pengaturan", onPress: () => Linking.openSettings() }],
-        );
-        return;
-      }
-    }
-    setCamOn(true);
-    clearCamTimer();
-    // Tutup otomatis bila 15 detik tidak ada barcode terbaca.
-    camTimer.current = setTimeout(() => closeCamera(), RESET_MS);
-  };
-
-  const onCamScan = useCallback((res: { data: string }) => {
-    const now = Date.now();
-    if (now - camCooldown.current < 2500) return; // hindari baca dobel
-    camCooldown.current = now;
-    const code = (res?.data || "").trim();
-    if (!code) return;
-    Haptics.selectionAsync();
-    closeCamera();
-    handleScan(code);
-  }, [closeCamera, handleScan]);
-
-  // Panah kembali (kiri-atas): saat kamera terbuka → tutup kamera; selain itu → keluar kios ke Transaksi.
+  // Panah kembali (kiri-atas): keluar kios ke Transaksi.
   const onBack = () => {
-    if (camOn) { closeCamera(); return; }
     router.replace("/");
   };
 
@@ -364,10 +319,6 @@ export default function CekHargaScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.scanBigBtn} onPress={openCamera} testID="kiosk-scan-btn">
-              <Text style={styles.scanBigTxt}>SCAN BARCODE</Text>
-            </Pressable>
-
             <View style={styles.scanNote}>
               <Ionicons name="information-circle-outline" size={16} color={colors.brand} style={{ marginTop: 1 }} />
               <Text style={styles.scanNoteTxt}>
@@ -377,26 +328,6 @@ export default function CekHargaScreen() {
           </View>
         )}
       </View>
-
-      {/* Overlay KAMERA (depan) — muncul saat tombol scan ditekan */}
-      {camOn && (
-        <View style={styles.camOverlay}>
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            facing={facing}
-            barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39", "qr", "itf14", "codabar"] }}
-            onBarcodeScanned={onCamScan}
-          />
-          <View style={styles.camFrame} />
-          <Pressable style={[styles.backBtn, { top: insets.top + 6 }]} onPress={onBack} testID="kiosk-cam-back" hitSlop={10}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Pressable style={[styles.flipBtn, { top: insets.top + 6 }]} onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))} testID="kiosk-cam-flip" hitSlop={10}>
-            <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
-          </Pressable>
-          <Text style={[styles.camHint, { bottom: insets.bottom + 40 }]}>Arahkan barcode ke dalam kotak</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -418,7 +349,7 @@ const styles = StyleSheet.create({
   kioskIdle: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
   kioskTitle: { fontFamily: font.display, fontSize: 34, color: colors.brand, letterSpacing: 1, textAlign: "center" },
   kioskSub: { fontFamily: font.medium, fontSize: fontSize.lg, color: colors.muted, marginBottom: spacing.lg },
-  stage: { width: "100%", height: 240, alignItems: "center", justifyContent: "flex-end", marginBottom: spacing.md },
+  stage: { width: "100%", height: 300, alignItems: "center", justifyContent: "flex-end", marginBottom: spacing.md },
   spotlight: { position: "absolute", bottom: 24, width: 210, height: 210, borderRadius: 105, backgroundColor: colors.brandTertiary, opacity: 0.4 },
   pedestal: { position: "absolute", bottom: 8, width: 176, height: 34, borderRadius: 18, backgroundColor: colors.brandSecondary, borderBottomWidth: 7, borderBottomColor: colors.brand, shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   pedestalTop: { position: "absolute", bottom: 30, width: 150, height: 16, borderRadius: 10, backgroundColor: colors.surfaceSecondary, opacity: 0.95 },
