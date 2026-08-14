@@ -357,6 +357,13 @@ export default function CekHargaScreen() {
               <Text style={styles.scanBigTxt}>SCAN BARCODE</Text>
               <Text style={styles.scanBigHint}>Ketuk lalu arahkan barcode ke kamera</Text>
             </Pressable>
+
+            <View style={styles.scanNote}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.brand} style={{ marginTop: 1 }} />
+              <Text style={styles.scanNoteTxt}>
+                Ambil scanner di bawah HP, tekan tombolnya sekali dan tunggu bunyi tanda siap. Setelah berbunyi, arahkan scanner ke barcode barang untuk mengecek harga.
+              </Text>
+            </View>
           </View>
         )}
       </View>
@@ -404,6 +411,8 @@ const styles = StyleSheet.create({
   scanBigBtn: { width: 260, height: 260, borderRadius: 40, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", gap: spacing.xs, borderBottomWidth: 10, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.28, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
   scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 30, letterSpacing: 2, marginTop: spacing.sm, textAlign: "center" },
   scanBigHint: { color: "rgba(255,255,255,0.9)", fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center", paddingHorizontal: spacing.lg, marginTop: 2 },
+  scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
+  scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
   camOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000", zIndex: 20 },
   camFrame: { position: "absolute", top: "30%", left: "12%", right: "12%", height: "26%", borderWidth: 3, borderColor: "#7CFC00", borderRadius: 16 },
   camHint: { position: "absolute", alignSelf: "center", color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.lg, textShadowColor: "#000", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
