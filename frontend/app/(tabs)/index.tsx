@@ -265,7 +265,6 @@ export default function TransaksiScreen() {
         enableDynamicSizing
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
-        android_keyboardInputMode="adjustResize"
         backgroundStyle={{ backgroundColor: colors.surfaceSecondary }}
         handleIndicatorStyle={{ backgroundColor: colors.borderStrong }}
         backdropComponent={(props) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />}
