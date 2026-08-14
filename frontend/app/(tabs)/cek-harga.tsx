@@ -355,7 +355,6 @@ export default function CekHargaScreen() {
             <Pressable style={styles.scanBigBtn} onPress={openCamera} testID="kiosk-scan-btn">
               <Ionicons name="barcode-outline" size={64} color={colors.onBrandPrimary} />
               <Text style={styles.scanBigTxt}>SCAN BARCODE</Text>
-              <Text style={styles.scanBigHint}>Ketuk lalu arahkan barcode ke kamera</Text>
             </Pressable>
 
             <View style={styles.scanNote}>
