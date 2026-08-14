@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -114,8 +112,11 @@ export default function VariasiCepatScreen() {
         <View style={styles.iconBtn} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        bottomOffset={90}
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+      >
           <View style={styles.parentBox}>
             <Ionicons name="git-branch-outline" size={16} color={colors.brand} />
             <Text style={styles.parentTxt}>Induk: {rootName}</Text>
@@ -169,18 +170,19 @@ export default function VariasiCepatScreen() {
           )}
 
           <Text style={styles.hint}>Harga jual & beli mengikuti induk sebagai nilai awal dan bisa diedit. Stok baru = 999.</Text>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable style={styles.cancelBtn} onPress={() => router.back()} testID="variasi-cancel">
-            <Text style={styles.cancelTxt}>Batal</Text>
-          </Pressable>
-          <Pressable style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={onSave} disabled={saving} testID="variasi-save">
-            <Ionicons name="checkmark" size={20} color={colors.onBrandPrimary} />
-            <Text style={styles.saveTxt}>{saving ? "Menyimpan…" : "Simpan Variasi"}</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+        <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+            <Pressable style={styles.cancelBtn} onPress={() => router.back()} testID="variasi-cancel">
+              <Text style={styles.cancelTxt}>Batal</Text>
+            </Pressable>
+            <Pressable style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={onSave} disabled={saving} testID="variasi-save">
+              <Ionicons name="checkmark" size={20} color={colors.onBrandPrimary} />
+              <Text style={styles.saveTxt}>{saving ? "Menyimpan…" : "Simpan Variasi"}</Text>
+            </Pressable>
+          </View>
+        </KeyboardStickyView>
     </View>
   );
 }

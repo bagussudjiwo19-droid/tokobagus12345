@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -112,12 +110,13 @@ export default function EditTransaksiScreen() {
       {loading ? (
         <View style={styles.centerFill}><ActivityIndicator color={colors.brand} size="large" /></View>
       ) : (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
-          >
+        <>
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          bottomOffset={90}
+          contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}
+          keyboardShouldPersistTaps="handled"
+        >
             {createdAt ? (
               <View style={styles.dateBox}>
                 <Ionicons name="time-outline" size={16} color={colors.muted} />
@@ -190,18 +189,20 @@ export default function EditTransaksiScreen() {
                 </Text>
               </View>
             </View>
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
-          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-            <Pressable style={styles.cancelBtn} onPress={() => router.back()} testID="edit-cancel">
-              <Text style={styles.cancelTxt}>Batal</Text>
-            </Pressable>
-            <Pressable style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={onSave} disabled={saving} testID="edit-save">
-              <Ionicons name="checkmark" size={20} color={colors.onBrandPrimary} />
-              <Text style={styles.saveTxt}>{saving ? "Menyimpan…" : "Simpan Perubahan"}</Text>
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
+          <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+            <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+              <Pressable style={styles.cancelBtn} onPress={() => router.back()} testID="edit-cancel">
+                <Text style={styles.cancelTxt}>Batal</Text>
+              </Pressable>
+              <Pressable style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={onSave} disabled={saving} testID="edit-save">
+                <Ionicons name="checkmark" size={20} color={colors.onBrandPrimary} />
+                <Text style={styles.saveTxt}>{saving ? "Menyimpan…" : "Simpan Perubahan"}</Text>
+              </Pressable>
+            </View>
+          </KeyboardStickyView>
+        </>
       )}
     </View>
   );
