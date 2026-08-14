@@ -12,7 +12,7 @@ import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import { mikoBus } from "@/src/mikoBus";
-import { listAutoBackups, getLastAutoBackup, runAutoBackup, type AutoBackupFile } from "@/src/autobackup";
+import { listAutoBackups, getLastAutoBackup, runAutoBackup, markBackupShared, type AutoBackupFile } from "@/src/autobackup";
 
 export default function BackupScreen() {
   const insets = useSafeAreaInsets();
@@ -68,6 +68,7 @@ export default function BackupScreen() {
       await FileSystem.writeAsStringAsync(uri, JSON.stringify(data), { encoding: FileSystem.EncodingType.UTF8 });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Simpan Backup" });
+        await markBackupShared();
       }
       toast.show(`File backup dibuat: ${data.counts.products} produk`, "success");
       mikoBus.emit({ type: "backup_ok" });
@@ -94,7 +95,7 @@ export default function BackupScreen() {
   };
 
   const shareAuto = async (uri: string) => {
-    try { if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Bagikan Backup" }); }
+    try { if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Bagikan Backup" }); await markBackupShared(); } }
     catch (e: any) { toast.show(e?.message || "Gagal membagikan", "error"); }
   };
 

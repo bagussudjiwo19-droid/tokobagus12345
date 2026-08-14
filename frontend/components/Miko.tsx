@@ -88,6 +88,15 @@ const RESTORE: Line[] = [
   { t: "Data berhasil dipulihkan! 🎉", p: "love" }, { t: "Tenang, data sudah aman.", p: "happy" },
   { t: "Aman, datanya sudah tersimpan.", p: "ok" },
 ];
+// Pengingat lembut agar rutin membagikan cadangan ke Google Drive / WhatsApp.
+const BACKUP_REMIND: Line[] = [
+  { t: "Kak, sudah lama belum simpan cadangan. Yuk backup ke Google Drive atau WhatsApp ya 💾", p: "phone" },
+  { t: "Jangan lupa cadangkan data ke Drive/WhatsApp, Kak. Biar aman kalau HP bermasalah 😊", p: "phone" },
+  { t: "Miko ingatkan ya, Kak: bagikan cadangan ke Google Drive supaya data tetap aman 💚", p: "phone" },
+  { t: "Sudah beberapa hari nih. Yuk simpan backup ke WhatsApp atau Drive, Kak 🗂️", p: "phone" },
+  { t: "Data toko itu berharga, Kak. Sempatkan backup ke Google Drive hari ini ya 💾", p: "thinking" },
+  { t: "Kak, buka Pengaturan → Backup, lalu Bagikan ke Drive/WhatsApp. Cuma sebentar kok 😊", p: "phone" },
+];
 const LOW: Line[] = [
   { t: "Stoknya mulai menipis. 📦", p: "surprised" }, { t: "Kak, barang ini hampir habis.", p: "surprised" },
   { t: "Sepertinya waktunya restock.", p: "idea" }, { t: "Stok tinggal sedikit nih.", p: "thinking" },
@@ -502,6 +511,7 @@ export default function Miko() {
       else if (e.type === "product_saved") say(pickRot("saved", SAVED), 2400);
       else if (e.type === "product_deleted") say(pickRot("deleted", DELETED), 2400);
       else if (e.type === "say") say({ t: e.text, p: e.pose || "surprised" }, 7000);
+      else if (e.type === "backup_reminder") say(pickRot("bkrem", BACKUP_REMIND), 6000);
       else if (e.type === "error") say(pickRot("err", ERR), 2800);
     });
     return off;

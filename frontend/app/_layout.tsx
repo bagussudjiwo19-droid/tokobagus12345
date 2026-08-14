@@ -14,7 +14,8 @@ import { CartProvider } from "@/src/cart";
 import { DataProvider } from "@/src/data";
 import { ToastProvider } from "@/src/toast";
 import { colors } from "@/src/theme";
-import { maybeDailyAutoBackup } from "@/src/autobackup";
+import { maybeDailyAutoBackup, shouldRemindBackup } from "@/src/autobackup";
+import { mikoBus } from "@/src/mikoBus";
 import Miko from "@/components/Miko";
 
 // Disable logbox errors etc so that users can see the app
@@ -50,7 +51,11 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
       // Auto backup harian (senyap, offline, hanya di HP).
       const t = setTimeout(() => { maybeDailyAutoBackup(); }, 2500);
-      return () => clearTimeout(t);
+      // Pengingat Miko: ajak bagikan cadangan ke Drive/WhatsApp bila sudah lama.
+      const r = setTimeout(async () => {
+        try { if (await shouldRemindBackup()) mikoBus.emit({ type: "backup_reminder" }); } catch { /* abaikan */ }
+      }, 6000);
+      return () => { clearTimeout(t); clearTimeout(r); };
     }
   }, [ready]);
 

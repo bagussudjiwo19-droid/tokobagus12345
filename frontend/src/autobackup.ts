@@ -13,6 +13,9 @@ const isNative = Platform.OS !== "web";
 const DIR = (FileSystem.documentDirectory || "") + "auto-backups/";
 const KEEP = 5;
 const LAST_KEY = "autobackup:last"; // ISO timestamp backup otomatis terakhir
+const SHARE_KEY = "backup:lastShare"; // ISO timestamp terakhir kali user BAGIKAN cadangan (Drive/WA/Files)
+const REMIND_KEY = "backup:lastRemind"; // tanggal (toDateString) terakhir Miko mengingatkan (agar tidak spam)
+const REMIND_AFTER_DAYS = 3; // ingatkan bila sudah > 3 hari tidak membagikan cadangan
 
 export type AutoBackupFile = { name: string; uri: string };
 
@@ -71,5 +74,34 @@ export async function maybeDailyAutoBackup(): Promise<void> {
     if (lastDay !== today) await runAutoBackup();
   } catch {
     /* jangan ganggu startup bila gagal */
+  }
+}
+
+// Catat waktu terakhir user MEMBAGIKAN cadangan (ke Drive/WhatsApp/Files).
+export async function markBackupShared(): Promise<void> {
+  try { await AsyncStorage.setItem(SHARE_KEY, new Date().toISOString()); } catch { /* abaikan */ }
+}
+
+export async function getLastBackupShare(): Promise<string | null> {
+  try { return await AsyncStorage.getItem(SHARE_KEY); } catch { return null; }
+}
+
+// Cek apakah Miko perlu mengingatkan untuk membagikan cadangan ke Drive/WhatsApp.
+// True bila belum pernah membagikan ATAU sudah > REMIND_AFTER_DAYS hari, dan
+// belum diingatkan hari ini (agar tidak mengganggu berulang).
+export async function shouldRemindBackup(): Promise<boolean> {
+  try {
+    const today = new Date().toDateString();
+    const lastRemind = await AsyncStorage.getItem(REMIND_KEY);
+    if (lastRemind === today) return false; // sudah diingatkan hari ini
+    const share = await AsyncStorage.getItem(SHARE_KEY);
+    if (share) {
+      const days = (Date.now() - new Date(share).getTime()) / 86400000;
+      if (days < REMIND_AFTER_DAYS) return false;
+    }
+    await AsyncStorage.setItem(REMIND_KEY, today);
+    return true;
+  } catch {
+    return false;
   }
 }
