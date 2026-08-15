@@ -328,3 +328,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Cek Harga kios redesign: **Panggung Miko** (pedestal + spotlight, style pedestal 3D) dengan `<Miko mode="stage" />` (tidak bisa digeser). Global `<Miko />` disembunyikan saat pathname cek-harga (via usePathname di `_layout.tsx`). Tombol SCAN BARCODE jadi pill teks-saja (ikon barcode dihapus). Note petunjuk scanner fisik di bawah.
 - Miko `mode="stage"`: saat dipencet pelanggan → array KIOSK_TAP (60+ reaksi: senang/kaget/pura marah/genit/nangis/jahil/sapaan + rahasia Vita&Sasa), hold 4.5 dtk.
 - CATATAN: fitur hardware (TTS suara Miko, kamera, printer/scanner BT, auto-backup file) hanya jalan di HP/build, bukan preview web. Perubahan perlu redeploy (Publish) agar masuk ke HP.
+
+## Session Log (fork) — Edit Transaksi: Tambah Barang + fixes
+- Cek Harga kios: tombol SCAN BARCODE + fitur kamera (expo-camera) DIHAPUS total (hanya scanner fisik). openCamera/camOn/overlay/onBack camera dibersihkan. Physical scanner (hidden input) tetap aktif. Stage Miko height 300 agar balon tak menutupi subjudul.
+- Miko KIOSK_SAY +30 kalimat pengingat kebutuhan rumah/dapur (acak, bukan tap).
+- Edit Harga (index.tsx bottom sheet): HAPUS `android_keyboardInputMode="adjustResize"` — penyebab kolom mentok di keyboard (konflik gorhom v5 + keyboard-controller). Fix per web research.
+- BARU: edit-transaksi.tsx "Tambah Barang" — BottomSheetModal (snap 82%) berisi BottomSheetFlatList katalog (roots + ekspansi variasi nested & anak) + mode Manual (nama+harga). addCatalog() merge qty by product_id+variation_id; addManual() append item product_id null. Tombol X tutup (add-close). WEB FIX: `SheetInput = Platform.OS==="web" ? TextInput : BottomSheetTextInput` (BottomSheetTextInput crash di react-native-web: TextInput.State.currentlyFocusedInput). Divalidasi via screenshot: buat tx manual → Riwayat → Edit → Tambah Barang (katalog variasi + manual) sukses, toast hijau, tanpa crash.
+- CATATAN: perubahan perlu redeploy (Publish) agar masuk ke HP. Keyboard/printer/scanner/TTS/kamera = native-only.
+
