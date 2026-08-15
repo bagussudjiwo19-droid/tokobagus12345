@@ -11,7 +11,7 @@ import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
-import { speak, terbilang } from "@/src/voice";
+import { speakCalm, terbilang } from "@/src/voice";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
@@ -131,19 +131,28 @@ export default function CekHargaScreen() {
   // Bacakan hasil cek harga (suara HP / TTS). Nama + harga ecer + tiap tingkat
   // grosir + kalimat penutup ramah (bergantian). Hanya terdengar di HP/APK build.
   const speakPrice = (name: string, price: number, unit: string, tiers: Tier[]) => {
+    // Pengaturan khusus Cek Harga (default aktif bila belum diset).
+    const readOn = settings?.readPrice !== false;
+    const closingOn = settings?.priceClosing !== false;
     const clean = (s: string) => s.replace(/—/g, " ").replace(/\s+/g, " ").trim();
-    const parts: string[] = [`${clean(name)}.`, `Harga ${terbilang(price).trim()} rupiah.`];
-    const u = unit && unit !== "pcs" ? ` ${unit}` : "";
-    tiers.forEach((t) => {
-      parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
-    });
-    let i = Math.floor(Math.random() * CLOSINGS.length);
-    if (i === lastClosing.current) i = (i + 1) % CLOSINGS.length;
-    lastClosing.current = i;
-    // Buang emoji agar tidak ikut terbaca aneh oleh TTS.
-    const closing = CLOSINGS[i].replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim();
-    parts.push(closing);
-    speak(parts.join(" "), 0.9);
+    const parts: string[] = [];
+    if (readOn) {
+      parts.push(`${clean(name)}.`, `Harga ${terbilang(price).trim()} rupiah.`);
+      const u = unit && unit !== "pcs" ? ` ${unit}` : "";
+      tiers.forEach((t) => {
+        parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
+      });
+    }
+    if (closingOn) {
+      let i = Math.floor(Math.random() * CLOSINGS.length);
+      if (i === lastClosing.current) i = (i + 1) % CLOSINGS.length;
+      lastClosing.current = i;
+      // Buang emoji agar tidak ikut terbaca aneh oleh TTS.
+      const closing = CLOSINGS[i].replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim();
+      if (closing) parts.push(closing);
+    }
+    if (parts.length === 0) return; // kedua suara OFF → diam
+    speakCalm(parts.join(" "));
   };
 
   const clearTimers = () => {
@@ -185,6 +194,8 @@ export default function CekHargaScreen() {
   useFocusEffect(
     useCallback(() => {
       const t = setTimeout(() => inputRef.current?.focus(), 350);
+      // Muat ulang pengaturan tiap layar dibuka agar toggle suara langsung berlaku.
+      api.getSettings().then(setSettings).catch(() => {});
       return () => { clearTimeout(t); clearTimers(); };
     }, []),
   );
@@ -224,7 +235,7 @@ export default function CekHargaScreen() {
       lastNF.current = i;
       const msg = NOT_FOUND[i];
       mikoBus.emit({ type: "say", text: msg, pose: "surprised" });
-      speak(msg.replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim(), 0.9);
+      speakCalm(msg.replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").trim());
       // Stay in scan mode, ready for the next barcode.
       setTimeout(() => inputRef.current?.focus(), 100);
     }

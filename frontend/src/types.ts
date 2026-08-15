@@ -77,6 +77,8 @@ export type Settings = {
   showCashPaid: boolean;
   showChange: boolean;
   voiceChange: boolean;
+  readPrice?: boolean; // Cek Harga: bacakan nama & harga setelah barcode ditemukan
+  priceClosing?: boolean; // Cek Harga: bacakan kalimat penutup setelah baca harga
   showNote: boolean;
   showThanks: boolean;
 };

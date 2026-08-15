@@ -36,6 +36,19 @@ export function speak(text: string, rate = 0.85): void {
 }
 
 
+// Suara TENANG untuk Cek Harga: lembut, damai, tempo sedang, volume rendah,
+// nyaman didengar berulang. Tanpa efek/alarm. Jeda antar info via titik.
+export function speakCalm(text: string): void {
+  try {
+    if (!text) return;
+    Speech.stop();
+    const opts: any = { language: "id-ID", rate: 0.9, pitch: 1.02, volume: 0.55 };
+    if (PICKED) opts.voice = PICKED;
+    Speech.speak(text, opts);
+  } catch { /* abaikan */ }
+}
+
+
 const SATUAN = [
   "", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan",
   "sepuluh", "sebelas",

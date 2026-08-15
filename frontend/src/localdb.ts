@@ -41,6 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
   showQR: false, showItemName: true, showVariation: true, showBarcode: false,
   showUnitPrice: true, showQty: true, showSubtotal: true, showDiscount: false,
   showTotal: true, showCashPaid: true, showChange: true, voiceChange: true,
+  readPrice: true, priceClosing: true,
   showNote: false, showThanks: true,
 };
 

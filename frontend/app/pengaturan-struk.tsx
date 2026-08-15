@@ -74,6 +74,10 @@ export default function PengaturanStrukScreen() {
         <SectionLabel text="SUARA" />
         <Toggle label="Suara Pembayaran" subtitle="Bacakan diterima, total, dan kembalian saat pembayaran berhasil" value={s.voiceChange} onValueChange={(v) => set("voiceChange", v)} tkey="voiceChange" />
 
+        <SectionLabel text="SUARA CEK HARGA" />
+        <Toggle label="Suara Baca Harga" subtitle="Miko membacakan nama & harga setelah barcode ditemukan (tetap tampil di layar bila OFF)" value={s.readPrice !== false} onValueChange={(v) => set("readPrice", v)} tkey="readPrice" />
+        <Toggle label="Suara Setelah Baca Harga" subtitle="Miko membacakan kalimat penutup setelah nama & harga" value={s.priceClosing !== false} onValueChange={(v) => set("priceClosing", v)} tkey="priceClosing" />
+
         <SectionLabel text="PENUTUP" />
         <Field label="Catatan" value={s.note} onChange={(t) => set("note", t)} placeholder="cth: Barang yang dibeli tidak dapat ditukar" testID="set-note" />
         <Toggle label="Tampilkan Catatan" value={s.showNote} onValueChange={(v) => set("showNote", v)} tkey="showNote" />
