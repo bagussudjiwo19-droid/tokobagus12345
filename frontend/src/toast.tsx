@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, font, fontSize, radius, spacing } from "./theme";
+import { sfx } from "./sfx";
 
 type ToastType = "success" | "error" | "info";
 type ToastCtx = { show: (message: string, type?: ToastType) => void };
@@ -19,6 +20,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const show = useCallback(
     (message: string, t: ToastType = "info") => {
+      // Umpan balik suara halus: berhasil → "tik", gagal → "tok".
+      if (t === "success") sfx.playOk();
+      else if (t === "error") sfx.playFail();
       setMsg(message);
       setType(t);
       setVisible(true);

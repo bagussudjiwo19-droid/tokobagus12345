@@ -47,6 +47,7 @@ export type Transaction = {
   cash_paid: number;
   change: number;
   created_at: string;
+  updated_at?: string;
 };
 
 export type Settings = {

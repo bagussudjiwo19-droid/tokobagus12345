@@ -176,6 +176,9 @@ export default function RiwayatScreen() {
           <Text style={styles.subtitle}>Transaksi yang sudah tersimpan</Text>
         </View>
         <View style={styles.actions}>
+          <Pressable style={styles.actionIcon} testID="riwayat-sync" onPress={() => router.push("/sync-toko")}>
+            <Ionicons name="cloud-outline" size={20} color={colors.brand} />
+          </Pressable>
           <Pressable style={styles.actionIcon} testID="riwayat-backup" onPress={() => router.push("/backup")}>
             <Ionicons name="save-outline" size={20} color={colors.brand} />
           </Pressable>

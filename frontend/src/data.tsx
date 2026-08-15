@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { Product } from "./types";
 import { api } from "./api";
+import { onLocalChange } from "./localdb";
 
 type PricePick = { productId: string; variationId: string | null; ts: number } | null;
 
@@ -35,6 +36,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     reload();
+    // Muat ulang produk saat data lokal berubah karena sinkron cloud masuk.
+    const off = onLocalChange(() => { reload(); });
+    return off;
   }, [reload]);
 
   return <Ctx.Provider value={{ products, loading, error, reload, pricePick, setPricePick }}>{children}</Ctx.Provider>;

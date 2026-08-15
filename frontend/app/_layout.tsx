@@ -16,6 +16,7 @@ import { ToastProvider } from "@/src/toast";
 import { colors } from "@/src/theme";
 import { maybeDailyAutoBackup, shouldRemindBackup } from "@/src/autobackup";
 import { mikoBus } from "@/src/mikoBus";
+import { startAutoSync } from "@/src/sync";
 import Miko from "@/components/Miko";
 
 // Disable logbox errors etc so that users can see the app
@@ -56,7 +57,9 @@ export default function RootLayout() {
       const r = setTimeout(async () => {
         try { if (await shouldRemindBackup()) mikoBus.emit({ type: "backup_reminder" }); } catch { /* abaikan */ }
       }, 6000);
-      return () => { clearTimeout(t); clearTimeout(r); };
+      // Sinkronisasi cloud otomatis (aktif hanya jika Kode Toko sudah diisi).
+      const stopSync = startAutoSync();
+      return () => { clearTimeout(t); clearTimeout(r); stopSync(); };
     }
   }, [ready]);
 

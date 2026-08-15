@@ -542,6 +542,77 @@ async def backup_import(data: dict = Body(...)):
     return {"ok": True, "products": len(cprods), "transactions": len(ctx)}
 
 
+# ----------------------------- SYNC (Hybrid Cloud) -----------------------------
+# Sinkronisasi multi-HP tanpa login. Data dipisah per "Kode Toko" (store).
+# Aturan gabung: produk/pengaturan = "yang terbaru menang" (LWW by updated_at ms),
+# transaksi = union by id (LWW). Penghapusan produk memakai flag deleted (tombstone).
+import time as _time
+
+
+def _ms() -> int:
+    return int(_time.time() * 1000)
+
+
+@api_router.get("/sync/pull")
+async def sync_pull(store: str, since: int = 0):
+    prods = await db.s_products.find({"store": store, "updated_at": {"$gt": since}}).to_list(1000000)
+    txs = await db.s_transactions.find({"store": store, "updated_at": {"$gt": since}}).to_list(1000000)
+    sett = await db.s_settings.find_one({"store": store})
+    settings = None
+    if sett and int(sett.get("updated_at", 0)) > since:
+        settings = {"doc": sett.get("doc"), "updated_at": int(sett.get("updated_at", 0))}
+    return {
+        "now": _ms(),
+        "products": [{"id": p["id"], "doc": p.get("doc"), "updated_at": int(p.get("updated_at", 0)), "deleted": bool(p.get("deleted", False))} for p in prods],
+        "transactions": [{"id": t["id"], "doc": t.get("doc"), "updated_at": int(t.get("updated_at", 0))} for t in txs],
+        "settings": settings,
+    }
+
+
+@api_router.post("/sync/push")
+async def sync_push(body: dict = Body(...)):
+    store = body.get("store")
+    if not store:
+        raise HTTPException(status_code=400, detail="Kode Toko wajib diisi")
+    for p in (body.get("products") or []):
+        pid = p.get("id")
+        if not pid:
+            continue
+        upd = int(p.get("updated_at") or 0)
+        existing = await db.s_products.find_one({"store": store, "id": pid})
+        if existing and int(existing.get("updated_at", 0)) > upd:
+            continue  # server punya versi lebih baru → jangan ditimpa
+        await db.s_products.update_one(
+            {"store": store, "id": pid},
+            {"$set": {"store": store, "id": pid, "doc": p.get("doc"), "updated_at": upd, "deleted": bool(p.get("deleted", False))}},
+            upsert=True,
+        )
+    for t in (body.get("transactions") or []):
+        tid = t.get("id")
+        if not tid:
+            continue
+        upd = int(t.get("updated_at") or 0)
+        existing = await db.s_transactions.find_one({"store": store, "id": tid})
+        if existing and int(existing.get("updated_at", 0)) > upd:
+            continue
+        await db.s_transactions.update_one(
+            {"store": store, "id": tid},
+            {"$set": {"store": store, "id": tid, "doc": t.get("doc"), "updated_at": upd}},
+            upsert=True,
+        )
+    sett = body.get("settings")
+    if sett and sett.get("doc") is not None:
+        upd = int(sett.get("updated_at") or 0)
+        existing = await db.s_settings.find_one({"store": store})
+        if not (existing and int(existing.get("updated_at", 0)) > upd):
+            await db.s_settings.update_one(
+                {"store": store},
+                {"$set": {"store": store, "doc": sett.get("doc"), "updated_at": upd}},
+                upsert=True,
+            )
+    return {"ok": True, "now": _ms()}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -558,6 +629,11 @@ async def on_startup():
     await db.products.create_index("id")
     await db.products.create_index("barcode")
     await db.transactions.create_index("id")
+    await db.s_products.create_index([("store", 1), ("id", 1)])
+    await db.s_products.create_index([("store", 1), ("updated_at", 1)])
+    await db.s_transactions.create_index([("store", 1), ("id", 1)])
+    await db.s_transactions.create_index([("store", 1), ("updated_at", 1)])
+    await db.s_settings.create_index("store")
     await seed_if_empty()
 
 

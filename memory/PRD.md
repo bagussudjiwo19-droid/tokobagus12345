@@ -338,3 +338,15 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 
 
 - UX: Tambah Barang (edit-transaksi) sekarang auto-dismiss sheet + scroll list ke atas setelah item ditambahkan (katalog biasa, setelah pilih variasi, dan manual). Via scrollRef pada KeyboardAwareScrollView + afterAdd(). Divalidasi screenshot.
+
+## Session Log (fork) — HYBRID CLOUD SYNC (Fase 1) SELESAI & TERUJI
+- Backend (server.py): endpoint /api/sync/push & /api/sync/pull, data per "store" (Kode Toko), LWW by updated_at(ms). Collections: s_products, s_transactions, s_settings (+indexes). Tombstone via field deleted pada produk.
+- localdb.ts: tambah deletions map (tombstone) + settingsUpdatedAt; tx create/update set updated_at; onLocalChange/notifyChange (UI reload); methods collectDirty(sinceMs)/applyRemote(remote)/clearDeletions. deleteProduct catat tombstone.
+- src/sync.ts (BARU): Kode Toko (get/set/clear/makeStoreCode), syncOnce (push lalu pull, timeout 12s = deteksi offline), startAutoSync (interval 45s + AppState active). Base = EXPO_PUBLIC_BACKEND_URL + /api. Keys AsyncStorage: sync:storeCode, sync:lastPull(server ms), sync:lastPush(device ms).
+- data.tsx: subscribe onLocalChange -> reload produk saat sinkron masuk.
+- _layout.tsx: startAutoSync saat ready.
+- app/sync-toko.tsx (BARU): layar Kode Toko (buat/gabung/salin/sinkron/putus + status). Link ikon cloud di header Riwayat (testID riwayat-sync). Pakai expo-clipboard (baru diinstall ~8.0.8).
+- TERUJI end-to-end di preview: create code -> server terima 2261 produk + 123 tx; simulasi HP2 push produk -> HP ini pull -> muncul di Cari (cari-row-zzz-sync-1 = 1).
+- DESAIN: tanpa login, 3 HP (2 kasir + 1 cek harga dinding), stok DIABAIKAN saat merge (produk LWW, transaksi union). Butuh internet+server aktif (50 kredit/bulan, koordinasi owner). Offline & Backup/Restore manual tetap jalan bila server mati.
+
+- SUARA (sfx): expo-audio ~1.1.1 + assets/sounds/tik.wav (berhasil) & tok.wav (gagal), disintesis stdlib (volume tipis). src/sfx.ts (playOk/playFail, lazy init, playsInSilentMode, try/catch web-safe). Disambung ke src/toast.tsx: type success->tik, error->tok. Otomatis mencakup: barang masuk keranjang, tambah produk, edit barang, stok masuk (success toast) & barcode tidak ditemukan/aksi gagal (error toast). Hanya berbunyi penuh di HP/build.

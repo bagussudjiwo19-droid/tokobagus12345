@@ -19,8 +19,19 @@ let products = new Map<string, Product>();
 let transactions: Transaction[] = []; // urut terbaru → terlama
 let settings: Settings | null = null;
 let printer: Printer = { address: null, name: null };
+// Sinkronisasi cloud: catatan penghapusan (tombstone) & waktu ubah pengaturan.
+let deletions = new Map<string, number>(); // productId -> ts(ms) dihapus
+let settingsUpdatedAt = 0; // ms terakhir pengaturan diubah (untuk sinkron)
 
 let initPromise: Promise<void> | null = null;
+
+// Pemberitahuan perubahan data (dipakai agar UI reload setelah sinkron masuk).
+const changeCbs: (() => void)[] = [];
+export function onLocalChange(cb: () => void): () => void {
+  changeCbs.push(cb);
+  return () => { const i = changeCbs.indexOf(cb); if (i >= 0) changeCbs.splice(i, 1); };
+}
+function notifyChange() { for (const c of [...changeCbs]) { try { c(); } catch { /* abaikan */ } } }
 
 const DEFAULT_SETTINGS: Settings = {
   shopName: "TOKO BAGUS", address: "", phone: "", cashier: "", note: "",
@@ -91,6 +102,10 @@ async function loadFromDb(): Promise<void> {
   settings = { ...DEFAULT_SETTINGS, ...(s ? JSON.parse(s.v) : {}) };
   const pr = await db.getFirstAsync("SELECT v FROM kv WHERE k = 'printer'");
   printer = pr ? JSON.parse(pr.v) : { address: null, name: null };
+  const del = await db.getFirstAsync("SELECT v FROM kv WHERE k = 'deletions'");
+  deletions = new Map(Object.entries(del ? JSON.parse(del.v) : {}).map(([k, v]) => [k, Number(v)]));
+  const su = await db.getFirstAsync("SELECT v FROM kv WHERE k = 'settings_updated_at'");
+  settingsUpdatedAt = su ? Number(JSON.parse(su.v)) : 0;
 }
 
 async function persistAll(): Promise<void> {
@@ -236,7 +251,9 @@ export const local = {
     await ensureInit();
     if (!products.has(id)) throw new Error("Produk tidak ditemukan");
     products.delete(id);
+    deletions.set(id, Date.now());
     await removeProduct(id);
+    await putKv("deletions", Object.fromEntries(deletions));
     return { ok: true };
   },
 
@@ -262,6 +279,7 @@ export const local = {
       cash_paid: payload.cash_paid ?? 0,
       change: payload.change ?? 0,
       created_at: nowIso(),
+      updated_at: nowIso(),
     };
     transactions.unshift(tx);
     sortTx();
@@ -333,6 +351,7 @@ export const local = {
       cash_paid: payload.cash_paid,
       change: payload.change,
       created_at: payload.created_at || existing.created_at,
+      updated_at: nowIso(),
     };
     transactions[idx] = updated;
     sortTx();
@@ -348,7 +367,9 @@ export const local = {
   async saveSettings(s: Settings): Promise<Settings> {
     await ensureInit();
     settings = { ...DEFAULT_SETTINGS, ...s };
+    settingsUpdatedAt = Date.now();
     await putKv("settings", settings);
+    await putKv("settings_updated_at", settingsUpdatedAt);
     return clone(settings);
   },
 
@@ -447,5 +468,72 @@ export const local = {
       throw new Error("Gagal menyimpan data pulihan ke HP. Data lama tetap aman, silakan coba lagi.");
     }
     return { ok: true, products: newProducts.size, transactions: newTx.length };
+  },
+
+  // ------------------------- SINKRONISASI CLOUD -------------------------
+  // Kumpulkan perubahan lokal setelah `sinceMs` (jam HP ini) untuk dikirim ke server.
+  async collectDirty(sinceMs: number): Promise<{ products: any[]; transactions: any[]; settings: any }> {
+    await ensureInit();
+    const outP: any[] = [];
+    for (const pr of products.values()) {
+      const ms = Date.parse(pr.updated_at || pr.created_at || "") || 0;
+      if (ms > sinceMs) outP.push({ id: pr.id, doc: pr, updated_at: ms, deleted: false });
+    }
+    for (const [id, ts] of deletions) outP.push({ id, doc: null, updated_at: ts, deleted: true });
+    const outT: any[] = [];
+    for (const tx of transactions) {
+      const ms = Date.parse((tx as any).updated_at || tx.created_at || "") || 0;
+      if (ms > sinceMs) outT.push({ id: tx.id, doc: tx, updated_at: ms });
+    }
+    let outS: any = null;
+    if (settingsUpdatedAt > sinceMs && settings) outS = { doc: settings, updated_at: settingsUpdatedAt };
+    return { products: outP, transactions: outT, settings: outS };
+  },
+
+  // Terapkan data dari server (LWW). Kembalikan true bila ada perubahan.
+  async applyRemote(remote: { products?: any[]; transactions?: any[]; settings?: any }): Promise<boolean> {
+    await ensureInit();
+    let changed = false;
+    for (const rp of remote.products || []) {
+      const local = products.get(rp.id);
+      const lms = local ? (Date.parse(local.updated_at || local.created_at || "") || 0) : -1;
+      if (rp.deleted) {
+        if (local && rp.updated_at >= lms) { products.delete(rp.id); await removeProduct(rp.id); changed = true; }
+        continue;
+      }
+      if ((!local || rp.updated_at > lms) && rp.doc) {
+        const doc = rp.doc as Product;
+        products.set(doc.id, doc);
+        await putProduct(doc);
+        changed = true;
+      }
+    }
+    for (const rt of remote.transactions || []) {
+      const idx = transactions.findIndex((x) => x.id === rt.id);
+      const local = idx >= 0 ? transactions[idx] : null;
+      const lms = local ? (Date.parse((local as any).updated_at || local.created_at || "") || 0) : -1;
+      if ((!local || rt.updated_at > lms) && rt.doc) {
+        const doc = rt.doc as Transaction;
+        if (idx >= 0) transactions[idx] = doc; else transactions.push(doc);
+        await putTx(doc);
+        changed = true;
+      }
+    }
+    if (remote.settings && remote.settings.doc) {
+      settings = { ...DEFAULT_SETTINGS, ...remote.settings.doc };
+      settingsUpdatedAt = Number(remote.settings.updated_at) || settingsUpdatedAt;
+      await putKv("settings", settings);
+      await putKv("settings_updated_at", settingsUpdatedAt);
+      changed = true;
+    }
+    if (changed) { sortTx(); notifyChange(); }
+    return changed;
+  },
+
+  // Hapus daftar tombstone setelah berhasil dikirim ke server.
+  async clearDeletions(): Promise<void> {
+    if (deletions.size === 0) return;
+    deletions.clear();
+    await putKv("deletions", {});
   },
 };
