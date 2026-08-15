@@ -2,25 +2,24 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-aud
 
 // ============================================================================
 // Efek suara halus untuk umpan balik aksi:
-//   - "tik"  (lembut, pendek, nada agak tinggi)  → aksi BERHASIL
-//   - "tok"  (sedikit lebih rendah & pelan)       → aksi GAGAL / belum tercatat
+//   - BERHASIL → "tok" (nada lebih rendah, satu kali)
+//   - GAGAL    → "tik" DUA KALI (nada lebih tinggi, cepat) agar jelas ini gagal
 // Volume tipis & natural, tidak melelahkan telinga. Hanya berbunyi di HP (build).
 // ============================================================================
 
-let ok: AudioPlayer | null = null;
-let fail: AudioPlayer | null = null;
+let tik: AudioPlayer | null = null; // nada tinggi
+let tok: AudioPlayer | null = null; // nada rendah
 let ready = false;
 
 function ensure() {
   if (ready) return;
   ready = true;
   try {
-    // Tetap berbunyi walau HP dalam mode senyap (silent switch).
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-    ok = createAudioPlayer(require("../assets/sounds/tik.wav"));
-    fail = createAudioPlayer(require("../assets/sounds/tok.wav"));
-    if (ok) ok.volume = 0.7;
-    if (fail) fail.volume = 0.7;
+    tik = createAudioPlayer(require("../assets/sounds/tik.wav"));
+    tok = createAudioPlayer(require("../assets/sounds/tok.wav"));
+    if (tik) tik.volume = 0.7;
+    if (tok) tok.volume = 0.7;
   } catch {
     /* abaikan bila audio tidak tersedia (mis. web) */
   }
@@ -37,6 +36,12 @@ function play(p: AudioPlayer | null) {
 }
 
 export const sfx = {
-  playOk() { ensure(); play(ok); },
-  playFail() { ensure(); play(fail); },
+  // Aksi berhasil → satu "tok" lembut.
+  playOk() { ensure(); play(tok); },
+  // Aksi gagal → "tik" dua kali beruntun.
+  playFail() {
+    ensure();
+    play(tik);
+    setTimeout(() => play(tik), 150);
+  },
 };
