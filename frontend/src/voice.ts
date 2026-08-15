@@ -74,16 +74,23 @@ export function terbilang(input: number): string {
   return `${terbilang(Math.floor(n / 1000000000))} miliar${sisa ? ` ${terbilang(sisa)}` : ""}`;
 }
 
-// Bacakan hasil transaksi dgn suara feminin & ramah. Bila ada kembalian,
-// nominal ASLI dibacakan dalam kata (mis. "empat puluh delapan ribu").
-export function speakPaymentDone(change: number): void {
+// Bacakan ringkasan pembayaran dengan suara HANGAT & tempo sedang, volume rendah,
+// dan jeda singkat antar bagian. Tanpa musik/efek/suara hewan.
+// Contoh: "Diterima lima puluh ribu rupiah. Total empat puluh delapan ribu rupiah.
+//          Kembalian dua ribu rupiah. Terima kasih."
+export function speakPaymentDone(cash: number, total: number, change: number): void {
   try {
-    if (change && change > 0) {
-      const words = terbilang(change).trim().replace(/\s+/g, " ");
-      speak(`Transaksi berhasil. Kembaliannya, ${words}, rupiah ya, Kak.`, 0.9);
-    } else {
-      speak("Transaksi berhasil, Kak.", 0.95);
-    }
+    const w = (n: number) => (terbilang(Math.max(0, Math.floor(n))).trim().replace(/\s+/g, " ") || "nol");
+    // Titik di antara bagian → jeda alami singkat.
+    const text =
+      `Diterima ${w(cash)} rupiah. ` +
+      `Total ${w(total)} rupiah. ` +
+      `Kembalian ${w(change)} rupiah. ` +
+      `Terima kasih.`;
+    Speech.stop();
+    const opts: any = { language: "id-ID", rate: 0.9, pitch: 1.03, volume: 0.6 };
+    if (PICKED) opts.voice = PICKED;
+    Speech.speak(text, opts);
   } catch { /* abaikan */ }
 }
 

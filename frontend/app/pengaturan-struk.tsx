@@ -72,7 +72,7 @@ export default function PengaturanStrukScreen() {
         <Toggle label="Kembalian" value={s.showChange} onValueChange={(v) => set("showChange", v)} tkey="showChange" />
 
         <SectionLabel text="SUARA" />
-        <Toggle label="Suara Kembalian" subtitle="Bacakan jumlah kembalian otomatis (Bahasa Indonesia)" value={s.voiceChange} onValueChange={(v) => set("voiceChange", v)} tkey="voiceChange" />
+        <Toggle label="Suara Pembayaran" subtitle="Bacakan diterima, total, dan kembalian saat pembayaran berhasil" value={s.voiceChange} onValueChange={(v) => set("voiceChange", v)} tkey="voiceChange" />
 
         <SectionLabel text="PENUTUP" />
         <Field label="Catatan" value={s.note} onChange={(t) => set("note", t)} placeholder="cth: Barang yang dibeli tidak dapat ditukar" testID="set-note" />

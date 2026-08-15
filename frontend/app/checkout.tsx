@@ -116,7 +116,7 @@ export default function CheckoutScreen() {
       mikoBus.emit({ type: "pay_ok" });
       if (change > 0) mikoBus.emit({ type: "change", amount: change });
       // Suara feminin: bacakan hasil transaksi bila fitur suara aktif.
-      if (settings?.voiceChange) speakPaymentDone(change);
+      if (settings?.voiceChange) speakPaymentDone(cash, total, change);
       cart.clear();
       reload();
     } catch (e: any) {

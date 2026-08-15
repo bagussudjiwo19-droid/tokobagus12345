@@ -350,3 +350,5 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - DESAIN: tanpa login, 3 HP (2 kasir + 1 cek harga dinding), stok DIABAIKAN saat merge (produk LWW, transaksi union). Butuh internet+server aktif (50 kredit/bulan, koordinasi owner). Offline & Backup/Restore manual tetap jalan bila server mati.
 
 - SUARA (sfx): expo-audio ~1.1.1 + assets/sounds/tik.wav (berhasil) & tok.wav (gagal), disintesis stdlib (volume tipis). src/sfx.ts (playOk/playFail, lazy init, playsInSilentMode, try/catch web-safe). Disambung ke src/toast.tsx: type success->tik, error->tok. Otomatis mencakup: barang masuk keranjang, tambah produk, edit barang, stok masuk (success toast) & barcode tidak ditemukan/aksi gagal (error toast). Hanya berbunyi penuh di HP/build.
+
+- SUARA BAYAR: speakPaymentDone(cash,total,change) di voice.ts diubah -> bacakan "Diterima X rupiah. Total Y rupiah. Kembalian Z rupiah. Terima kasih." (hangat, rate 0.9, pitch 1.03, volume 0.6, jeda via titik, tanpa efek/hewan). checkout.tsx kirim cash,total,change. Toggle "Suara Pembayaran" (voiceChange, default ON) di pengaturan-struk. Hanya berbunyi di HP/build.
