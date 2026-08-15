@@ -208,11 +208,6 @@ export default function EditTransaksiScreen() {
               </View>
             ) : null}
 
-            <Pressable style={styles.addItemBtn} onPress={openAdd} testID="edit-add-item">
-              <Ionicons name="add-circle-outline" size={20} color={colors.brand} />
-              <Text style={styles.addItemTxt}>Tambah Barang</Text>
-            </Pressable>
-
             {items.map((it, idx) => (
               <View key={`${it.product_id ?? "manual"}-${it.variation_id ?? ""}-${idx}`} style={styles.itemCard} testID={`edit-item-${idx}`}>
                 <View style={styles.itemTop}>
@@ -251,6 +246,12 @@ export default function EditTransaksiScreen() {
                 </View>
               </View>
             ))}
+
+            {/* Tombol Tambah Barang di BAWAH barang terbaru */}
+            <Pressable style={styles.addItemBtn} onPress={openAdd} testID="edit-add-item">
+              <Ionicons name="add-circle-outline" size={20} color={colors.brand} />
+              <Text style={styles.addItemTxt}>Tambah Barang</Text>
+            </Pressable>
 
             <View style={styles.payCard}>
               <Text style={styles.payLabel}>Uang Bayar</Text>

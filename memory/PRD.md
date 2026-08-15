@@ -356,3 +356,5 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - CEK HARGA VOICE SETTINGS: 2 toggle di pengaturan-struk (SUARA CEK HARGA): readPrice (Suara Baca Harga) & priceClosing (Suara Setelah Baca Harga), default ON (types.ts optional + DEFAULT_SETTINGS). cek-harga.speakPrice gate: readOn->nama+harga+tier, closingOn->kalimat penutup; kosong->diam. Pakai voice.ts speakCalm (rate 0.9, pitch 1.02, volume 0.55, jeda via titik, tanpa efek). Not-found juga pakai speakCalm. Settings di-refetch on focus. Hanya untuk Cek Harga.
 
 - TRANSAKSI UI: tombol Tambah Item & Cari Barang dipindah dari atas ke BAWAH daftar (akhir ScrollView, di bawah barang terbaru karena item append ke bawah) + di empty state. Desain baru: addBar/addBtnBig, primary (brand + shadow + ikon lingkaran putih) & ghost (outline). Style lama actions/actBtn dibiarkan (tak terpakai).
+
+- EDIT RIWAYAT UI: tombol "Tambah Barang" dipindah dari atas (setelah dateBox) ke BAWAH daftar barang (setelah items.map, sebelum payCard) → di bawah barang terbaru. Auto-scroll (afterAdd -> scrollToEnd) tetap aktif.
