@@ -132,7 +132,7 @@ export default function CekHargaScreen() {
   // grosir + kalimat penutup ramah (bergantian). Hanya terdengar di HP/APK build.
   const speakPrice = (name: string, price: number, unit: string, tiers: Tier[]) => {
     const clean = (s: string) => s.replace(/—/g, " ").replace(/\s+/g, " ").trim();
-    const parts: string[] = [`${clean(name)}.`, `Harga ecer ${terbilang(price).trim()} rupiah.`];
+    const parts: string[] = [`${clean(name)}.`, `Harga ${terbilang(price).trim()} rupiah.`];
     const u = unit && unit !== "pcs" ? ` ${unit}` : "";
     tiers.forEach((t) => {
       parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
