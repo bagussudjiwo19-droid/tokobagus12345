@@ -51,6 +51,13 @@ export default function EditTransaksiScreen() {
   const [manualMode, setManualMode] = useState(false);
   const [manualName, setManualName] = useState("");
   const [manualPrice, setManualPrice] = useState("");
+  const scrollRef = useRef<any>(null);
+
+  // Setelah barang ditambahkan: tutup sheet & scroll daftar edit ke atas.
+  const afterAdd = () => {
+    addSheet.current?.dismiss();
+    setTimeout(() => scrollRef.current?.scrollTo?.({ y: 0, animated: true }), 250);
+  };
 
   useEffect(() => {
     let active = true;
@@ -125,6 +132,7 @@ export default function EditTransaksiScreen() {
     });
     Haptics.selectionAsync();
     toast.show(`${name} ditambahkan`, "success");
+    afterAdd();
   };
 
   const onPickRoot = (p: Product) => {
@@ -140,6 +148,7 @@ export default function EditTransaksiScreen() {
     setManualName(""); setManualPrice("");
     Haptics.selectionAsync();
     toast.show(`${nm} ditambahkan`, "success");
+    afterAdd();
   };
 
   const onSave = async () => {
@@ -181,6 +190,7 @@ export default function EditTransaksiScreen() {
       ) : (
         <>
         <KeyboardAwareScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           bottomOffset={90}
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}

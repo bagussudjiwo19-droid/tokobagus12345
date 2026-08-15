@@ -336,3 +336,5 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - BARU: edit-transaksi.tsx "Tambah Barang" — BottomSheetModal (snap 82%) berisi BottomSheetFlatList katalog (roots + ekspansi variasi nested & anak) + mode Manual (nama+harga). addCatalog() merge qty by product_id+variation_id; addManual() append item product_id null. Tombol X tutup (add-close). WEB FIX: `SheetInput = Platform.OS==="web" ? TextInput : BottomSheetTextInput` (BottomSheetTextInput crash di react-native-web: TextInput.State.currentlyFocusedInput). Divalidasi via screenshot: buat tx manual → Riwayat → Edit → Tambah Barang (katalog variasi + manual) sukses, toast hijau, tanpa crash.
 - CATATAN: perubahan perlu redeploy (Publish) agar masuk ke HP. Keyboard/printer/scanner/TTS/kamera = native-only.
 
+
+- UX: Tambah Barang (edit-transaksi) sekarang auto-dismiss sheet + scroll list ke atas setelah item ditambahkan (katalog biasa, setelah pilih variasi, dan manual). Via scrollRef pada KeyboardAwareScrollView + afterAdd(). Divalidasi screenshot.
