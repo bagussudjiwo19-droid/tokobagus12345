@@ -170,18 +170,7 @@ export default function TransaksiScreen() {
           <View style={styles.readyDot} />
         </View>
 
-        {/* 2) Aksi: Tambah Item + Cari Barang */}
-        <View style={styles.actions}>
-          <Pressable style={[styles.actBtn, styles.actBtnFilled]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
-            <Ionicons name="add-circle-outline" size={18} color={colors.onSurface} />
-            <Text style={[styles.actTxt, { color: colors.onSurface }]}>Tambah Item</Text>
-          </Pressable>
-          <Pressable style={[styles.actBtn, styles.actBtnOutline]} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
-            <Ionicons name="search" size={18} color={colors.brand} />
-            <Text style={[styles.actTxt, { color: colors.brand }]}>Cari Barang</Text>
-          </Pressable>
-        </View>
-
+        {/* Header daftar belanja */}
         <View style={styles.listHead}>
           <Text style={styles.listHeadTxt}>DAFTAR BELANJA</Text>
           <Text style={styles.listHeadCount}>{cart.lines.length} baris</Text>
@@ -192,7 +181,17 @@ export default function TransaksiScreen() {
         <View style={styles.empty}>
           <Ionicons name="barcode-outline" size={56} color={colors.brand} />
           <Text style={styles.emptyTitle}>Belum ada barang</Text>
-          <Text style={styles.emptyDesc}>Scan barcode dengan scanner Bluetooth, atau gunakan Cari Barang untuk mulai transaksi.</Text>
+          <Text style={styles.emptyDesc}>Scan barcode dengan scanner Bluetooth, atau gunakan tombol di bawah untuk mulai transaksi.</Text>
+          <View style={[styles.addBar, { marginHorizontal: 0, marginTop: spacing.xl }]}>
+            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
+              <View style={styles.addIconCircle}><Ionicons name="add" size={18} color={colors.brand} /></View>
+              <Text style={styles.addBtnPrimaryTxt}>Tambah Item</Text>
+            </Pressable>
+            <Pressable style={[styles.addBtnBig, styles.addBtnGhost]} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
+              <Ionicons name="search" size={18} color={colors.brand} />
+              <Text style={styles.addBtnGhostTxt}>Cari Barang</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -240,6 +239,18 @@ export default function TransaksiScreen() {
               </View>
             </View>
           ))}
+
+          {/* Tombol aksi di BAWAH barang terbaru */}
+          <View style={styles.addBar}>
+            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
+              <View style={styles.addIconCircle}><Ionicons name="add" size={18} color={colors.brand} /></View>
+              <Text style={styles.addBtnPrimaryTxt}>Tambah Item</Text>
+            </Pressable>
+            <Pressable style={[styles.addBtnBig, styles.addBtnGhost]} testID="cari-barang-button" onPress={() => router.push("/cari?mode=cart")}>
+              <Ionicons name="search" size={18} color={colors.brand} />
+              <Text style={styles.addBtnGhostTxt}>Cari Barang</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       )}
 
@@ -379,6 +390,14 @@ const styles = StyleSheet.create({
   actBtnFilled: { backgroundColor: colors.brandSecondary },
   actBtnOutline: { backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.borderStrong },
   actTxt: { fontFamily: font.bold, fontSize: fontSize.base },
+  // Tombol aksi (bawah daftar) — desain lebih cantik & senada tema.
+  addBar: { flexDirection: "row", gap: spacing.md, marginHorizontal: spacing.lg, marginTop: spacing.lg, marginBottom: spacing.sm },
+  addBtnBig: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 54, borderRadius: 18 },
+  addBtnPrimary: { backgroundColor: colors.brand, shadowColor: colors.brand, shadowOpacity: 0.32, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
+  addBtnGhost: { backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.brand },
+  addIconCircle: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.onBrandPrimary, alignItems: "center", justifyContent: "center" },
+  addBtnPrimaryTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  addBtnGhostTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm },
   listHeadTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xs, letterSpacing: 1.2 },
   listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
