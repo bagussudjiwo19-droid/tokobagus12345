@@ -272,7 +272,7 @@ export default function CekHargaScreen() {
             {/* HARGA ECER — kartu 3D merah */}
             <View style={styles.ecerPill}>
               <View style={styles.ecerChip}>
-                <Text style={styles.ecerChipTxt}>HARGA ECER</Text>
+                <Text style={styles.ecerChipTxt}>HARGA</Text>
               </View>
               <Text style={styles.ecerPrice}>{rupiah(result.price)}</Text>
             </View>
