@@ -58,7 +58,10 @@ export function useBarcodeScan(onComplete: (code: string) => void, opts: Opts = 
       const scanMode = optsRef.current.isScanMode ? optsRef.current.isScanMode() : true;
       // Hanya saat mode scan: jeda memicu proses otomatis. Saat ketik manual, jangan
       // memproses otomatis agar pencarian manual tidak dianggap barcode.
-      if (scanMode) timerRef.current = setTimeout(finish, optsRef.current.pauseMs ?? 140);
+      // Ambang 300ms: cukup lama untuk menahan jitter Bluetooth di tengah scan
+      // (mencegah barcode terpotong → "tidak ditemukan"), tetap terasa instan
+      // karena mayoritas scanner diakhiri ENTER (langsung diproses via onSubmitEditing).
+      if (scanMode) timerRef.current = setTimeout(finish, optsRef.current.pauseMs ?? 300);
     },
     [finish],
   );
