@@ -53,10 +53,15 @@ export default function EditTransaksiScreen() {
   const [manualPrice, setManualPrice] = useState("");
   const scrollRef = useRef<any>(null);
 
-  // Setelah barang ditambahkan: tutup sheet & scroll daftar edit ke atas.
+  // Setelah barang ditambahkan: tutup sheet & scroll ke barang baru (paling bawah).
   const afterAdd = () => {
     addSheet.current?.dismiss();
-    setTimeout(() => scrollRef.current?.scrollTo?.({ y: 0, animated: true }), 250);
+    setTimeout(() => {
+      const s: any = scrollRef.current;
+      if (!s) return;
+      if (typeof s.scrollToEnd === "function") s.scrollToEnd({ animated: true });
+      else if (typeof s.scrollTo === "function") s.scrollTo({ y: 100000, animated: true });
+    }, 350);
   };
 
   useEffect(() => {
