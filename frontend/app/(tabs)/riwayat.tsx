@@ -188,6 +188,9 @@ export default function RiwayatScreen() {
           <Pressable style={styles.actionIcon} testID="riwayat-printer-settings" onPress={() => router.push("/pengaturan-printer")}>
             <Ionicons name="print-outline" size={20} color={colors.brand} />
           </Pressable>
+          <Pressable style={styles.actionIcon} testID="riwayat-admin-pin" onPress={() => router.push("/admin-pin")}>
+            <Ionicons name="lock-closed-outline" size={20} color={colors.brand} />
+          </Pressable>
         </View>
       </View>
 

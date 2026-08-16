@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,6 +10,7 @@ import { mikoBus } from "@/src/mikoBus";
 import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
+import { hasAdminPin, setAdminPin, verifyAdminPin } from "@/src/adminPin";
 import { rupiah } from "@/src/format";
 import { speakCalm, terbilang } from "@/src/voice";
 import { mikoAsk, mikoThinking, collectFacts, searchProductsByName, type ChatCtx } from "@/src/mikoChat";
@@ -114,6 +115,18 @@ export default function CekHargaScreen() {
   const [searchResults, setSearchResults] = useState<Product[] | null>(null);
   const [varProduct, setVarProduct] = useState<Product | null>(null);
   const [noResultQuery, setNoResultQuery] = useState<string | null>(null);
+  // --- Kunci PIN Admin untuk kios Cek Harga ---
+  const [needCreate, setNeedCreate] = useState(false); // wajib buat PIN saat pertama
+  const [cPin, setCPin] = useState("");
+  const [cPin2, setCPin2] = useState("");
+  const [cErr, setCErr] = useState("");
+  const [exitOpen, setExitOpen] = useState(false); // popup peringatan + PIN keluar
+  const [xPin, setXPin] = useState("");
+  const [xErr, setXErr] = useState("");
+  const needCreateRef = useRef(false);
+  const exitOpenRef = useRef(false);
+  useEffect(() => { needCreateRef.current = needCreate; }, [needCreate]);
+  useEffect(() => { exitOpenRef.current = exitOpen; }, [exitOpen]);
   const searchRef = useRef<TextInput>(null);
   const selTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -393,6 +406,42 @@ export default function CekHargaScreen() {
   useEffect(() => { api.getSettings().then(setSettings).catch(() => {}); }, []);
   useHideScanKeyboard(inputRef, kbdRef);
 
+  // Cek PIN Admin saat masuk kios + INTERCEPT tombol Back Android (APK).
+  useFocusEffect(
+    useCallback(() => {
+      hasAdminPin().then((has) => { needCreateRef.current = !has; setNeedCreate(!has); });
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (needCreateRef.current) return true; // sedang setup PIN → blokir keluar
+        if (!exitOpenRef.current) { exitOpenRef.current = true; setXPin(""); setXErr(""); setExitOpen(true); }
+        return true; // SELALU cegah keluar default dari kios
+      });
+      return () => sub.remove();
+    }, []),
+  );
+
+  // Simpan PIN baru (setup pertama). Tidak disimpan sebagai teks biasa.
+  const submitCreatePin = async () => {
+    const a = cPin.trim(), b = cPin2.trim();
+    if (!/^\d{4,6}$/.test(a)) { setCErr("PIN harus 4–6 angka."); return; }
+    if (a !== b) { setCErr("Konfirmasi PIN tidak sama."); return; }
+    await setAdminPin(a);
+    setCPin(""); setCPin2(""); setCErr("");
+    setNeedCreate(false);
+    setTimeout(() => inputRef.current?.focus(), 120);
+  };
+
+  // Verifikasi PIN untuk KELUAR dari kios.
+  const submitExitPin = async () => {
+    const ok = await verifyAdminPin(xPin.trim());
+    if (ok) {
+      setExitOpen(false); setXPin(""); setXErr("");
+      router.replace("/");
+    } else {
+      setXErr("PIN salah.");
+      setXPin("");
+    }
+  };
+
   // Manual search: when a product is picked on the Cari screen (price mode),
   // it lands here via pricePick — show name + price, then ready to scan again.
   useEffect(() => {
@@ -437,9 +486,9 @@ export default function CekHargaScreen() {
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(handleScan, { isScanMode: () => true });
 
-  // Panah kembali (kiri-atas): keluar kios ke Transaksi.
+  // Panah kembali (kiri-atas): TIDAK langsung keluar. Munculkan peringatan + PIN.
   const onBack = () => {
-    router.replace("/");
+    setXPin(""); setXErr(""); setExitOpen(true);
   };
 
   return (
@@ -638,12 +687,6 @@ export default function CekHargaScreen() {
               </View>
             </View>
 
-            {/* Tombol besar: pelanggan bisa ngobrol/tanya harga langsung ke Miko */}
-            <Pressable style={styles.askBtn} onPress={openChat} testID="tanya-miko">
-              <Ionicons name="chatbubbles" size={24} color={colors.onBrandPrimary} />
-              <Text style={styles.askTxt}>TANYA MIKO</Text>
-            </Pressable>
-
             <View style={styles.scanNote}>
               <Ionicons name="information-circle-outline" size={16} color={colors.brand} style={{ marginTop: 1 }} />
               <Text style={styles.scanNoteTxt}>
@@ -736,6 +779,81 @@ export default function CekHargaScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* MODAL: Buat PIN Admin (setup pertama, wajib). PIN disimpan aman (hash). */}
+      <Modal visible={needCreate} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.pinBackdrop}>
+          <View style={styles.pinCard}>
+            <View style={styles.pinIconWrap}><Ionicons name="lock-closed" size={26} color={colors.brand} /></View>
+            <Text style={styles.pinTitle}>Buat PIN Admin</Text>
+            <Text style={styles.pinDesc}>Sekali saja. PIN ini dipakai admin untuk keluar dari mode Cek Harga (kios). Simpan baik-baik ya, Kak.</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={cPin}
+              onChangeText={(t) => { setCPin(t.replace(/\D/g, "")); setCErr(""); }}
+              placeholder="Buat PIN (4–6 angka)"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              testID="create-pin-1"
+            />
+            <TextInput
+              style={styles.pinInput}
+              value={cPin2}
+              onChangeText={(t) => { setCPin2(t.replace(/\D/g, "")); setCErr(""); }}
+              placeholder="Konfirmasi PIN"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              onSubmitEditing={submitCreatePin}
+              testID="create-pin-2"
+            />
+            {!!cErr && <Text style={styles.pinErr}>{cErr}</Text>}
+            <Pressable style={styles.pinPrimary} onPress={submitCreatePin} testID="create-pin-save">
+              <Text style={styles.pinPrimaryTxt}>Simpan PIN</Text>
+            </Pressable>
+            <Pressable onPress={() => router.replace("/")} hitSlop={8} testID="create-pin-cancel">
+              <Text style={styles.pinCancel}>Nanti saja (keluar)</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL: Peringatan + PIN untuk KELUAR dari kios. */}
+      <Modal visible={exitOpen} transparent animationType="fade" onRequestClose={() => { setExitOpen(false); setXPin(""); setXErr(""); }}>
+        <View style={styles.pinBackdrop}>
+          <View style={styles.pinCard}>
+            <View style={styles.pinIconWrap}><Ionicons name="shield-checkmark" size={26} color={colors.brand} /></View>
+            <Text style={styles.pinTitle}>Keluar dari Cek Harga?</Text>
+            <Text style={styles.pinDesc}>
+              Miko dibuat dan dirancang oleh Mas Bagus untuk tetap berada di menu Cek Harga agar pelanggan dapat menggunakan Miko dengan nyaman. Jika Kakak memang ingin keluar dari menu ini, silakan masukkan PIN Admin.
+            </Text>
+            <TextInput
+              style={styles.pinInput}
+              value={xPin}
+              onChangeText={(t) => { setXPin(t.replace(/\D/g, "")); setXErr(""); }}
+              placeholder="Masukkan PIN Admin"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              onSubmitEditing={submitExitPin}
+              testID="exit-pin-input"
+            />
+            {!!xErr && <Text style={styles.pinErr}>{xErr}</Text>}
+            <View style={styles.pinRow}>
+              <Pressable style={styles.pinGhost} onPress={() => { setExitOpen(false); setXPin(""); setXErr(""); setTimeout(() => inputRef.current?.focus(), 120); }} testID="exit-pin-cancel">
+                <Text style={styles.pinGhostTxt}>Batal</Text>
+              </Pressable>
+              <Pressable style={styles.pinPrimaryHalf} onPress={submitExitPin} testID="exit-pin-confirm">
+                <Text style={styles.pinPrimaryTxt}>Keluar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -766,6 +884,22 @@ const styles = StyleSheet.create({
   scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 28, letterSpacing: 2, textAlign: "center" },
   scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
+
+  // Modal PIN Admin
+  pinBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  pinCard: { width: "100%", maxWidth: 380, backgroundColor: colors.surface, borderRadius: 24, padding: spacing.xl, alignItems: "center", gap: spacing.sm },
+  pinIconWrap: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center", marginBottom: 2 },
+  pinTitle: { fontFamily: font.display, fontSize: fontSize.xl, color: colors.onSurface, textAlign: "center" },
+  pinDesc: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.onSurfaceSecondary, textAlign: "center", lineHeight: 19, marginBottom: spacing.sm },
+  pinInput: { width: "100%", height: 52, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: spacing.lg, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "center", letterSpacing: 6 },
+  pinErr: { color: colors.error, fontFamily: font.medium, fontSize: fontSize.sm, textAlign: "center" },
+  pinPrimary: { width: "100%", height: 52, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", marginTop: spacing.sm },
+  pinPrimaryHalf: { flex: 1, height: 52, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  pinPrimaryTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  pinCancel: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm, marginTop: spacing.md, textDecorationLine: "underline" },
+  pinRow: { flexDirection: "row", gap: spacing.sm, width: "100%", marginTop: spacing.sm },
+  pinGhost: { flex: 1, height: 52, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  pinGhostTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
 
   // Kolom pencarian ketik (idle)
   searchRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, width: "100%", maxWidth: 420, marginTop: spacing.lg, paddingLeft: spacing.md, paddingRight: 6, height: 54, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandTertiary, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },

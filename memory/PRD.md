@@ -442,3 +442,17 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - FIX overlap: tombol keluar kios (kiosk-back, absolute kiri-atas) DISEMBUNYIKAN saat layar pilihan/belum-ketemu aktif (searchResults||varProduct||noResultQuery) agar tak menumpuk tombol back header (pick-back). 
 - DIVERIFIKASI (screenshot preview): "terigu"→2 produk terigu saja; "gula"→9 produk gula relevan; "qwertyxx"→layar Belum Ketemu + 2 tombol; "Tampilkan Semua Produk"→200 produk urut. Data DB TIDAK diubah (hanya algoritma filter). Lint clean (1 warning lama).
 - CATATAN: FRONTEND-only → user REDEPLOY. Relasi Induk→Variasi→Harga tetap utuh.
+
+## Session Log (fork, PRODUCTION) — KUNCI PIN ADMIN untuk kios Cek Harga + hapus tombol Tanya Miko
+- Tujuan: HP di dinding sebagai kios pelanggan; tidak bisa keluar Cek Harga tanpa PIN Admin. Fitur lain tidak diubah.
+- Paket: `expo-crypto@15.0.9` (baru) + `expo-secure-store` (sudah ada).
+- BARU `src/adminPin.ts`: simpan PIN AMAN & TIDAK plaintext → hash SHA-256(salt+pin). Device: SecureStore (Keystore/Keychain). Web preview: fallback AsyncStorage (agar bisa diuji). API: `hasAdminPin`, `setAdminPin`, `verifyAdminPin`.
+- `app/(tabs)/cek-harga.tsx`:
+  - Setup pertama (belum ada PIN) → Modal "Buat PIN Admin" (2 input: buat + konfirmasi, 4–6 angka, secureTextEntry numeric). "Simpan PIN" → setAdminPin → tidak diminta lagi. Ada "Nanti saja (keluar)" → router.replace('/') agar admin tak terjebak.
+  - Tombol back kios (kiri-atas) `onBack` kini BUKAN keluar langsung → buka Modal peringatan + PIN.
+  - BackHandler (Android) di-intercept via useFocusEffect → selalu return true (blokir keluar default), buka Modal keluar. (Hanya jalan di APK Android, bukan web.)
+  - Modal Keluar: teks peringatan persis permintaan ("...dibuat dan dirancang oleh Mas Bagus..."), input PIN, tombol Batal (tetap di kios) & Keluar (verify → benar: router.replace('/'); salah: "PIN salah." tetap di kios).
+  - HAPUS tombol "TANYA MIKO" (chat/sales AI kini tak terjangkau dari kios; kode chat masih ada namun dorman — openChat unused warning, tidak mengganggu). Pencarian ketik tetap ada.
+- BARU `app/admin-pin.tsx` (modal, terdaftar di `_layout.tsx`): Ubah/atur PIN Admin. Bila PIN ada → minta PIN lama dulu, lalu PIN baru + konfirmasi. Diakses via ikon gembok baru di header Riwayat (`riwayat-admin-pin`).
+- DIVERIFIKASI (screenshot preview, 1 sesi): buat PIN 1234 → masuk kios; back → modal peringatan+PIN; PIN salah(9999) → tetap di kios; Batal → tetap; PIN benar(1234) → keluar ke Transaksi; setelah dibuat tak minta buat lagi (dalam sesi yang sama). Catatan: tiap panggilan screenshot = browser/localStorage baru → modal buat muncul lagi (artefak web saja; di HP SecureStore permanen). Lint clean (2 warning lama tak berbahaya).
+- CATATAN: BackHandler Android hanya efektif di APK (bukan preview web). FRONTEND-only → user REDEPLOY & build APK untuk uji penuh (termasuk gesture/tombol back Android). Fitur Kasir/Cek Harga/scan/pencarian/varian/suara Miko/Import-Restore/DB TIDAK diubah.
