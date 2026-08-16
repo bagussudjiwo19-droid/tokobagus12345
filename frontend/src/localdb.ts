@@ -84,13 +84,21 @@ async function init(): Promise<void> {
 function loadSeedIntoMemory(): void {
   products = new Map();
   transactions = [];
-  const sp: Product[] = (seed as any).products || [];
-  for (const p of sp) products.set(p.id, p as Product);
-  transactions = ((seed as any).transactions || []) as Transaction[];
+  // PRODUKSI (APK publish): __DEV__ = false → database produk KOSONG.
+  // Pemilik toko mengisi lewat Restore/Import. Dev/preview tetap pakai seed
+  // agar mudah diuji. Struktur DB & fitur tidak berubah.
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    const sp: Product[] = (seed as any).products || [];
+    for (const p of sp) products.set(p.id, p as Product);
+    transactions = ((seed as any).transactions || []) as Transaction[];
+    settings = { ...DEFAULT_SETTINGS, ...((seed as any).settings || {}) };
+    const pr = (seed as any).printer || {};
+    printer = { address: pr.address ?? null, name: pr.name ?? null };
+  } else {
+    settings = { ...DEFAULT_SETTINGS };
+    printer = { address: null, name: null };
+  }
   sortTx();
-  settings = { ...DEFAULT_SETTINGS, ...((seed as any).settings || {}) };
-  const pr = (seed as any).printer || {};
-  printer = { address: pr.address ?? null, name: pr.name ?? null };
 }
 
 async function loadFromDb(): Promise<void> {
