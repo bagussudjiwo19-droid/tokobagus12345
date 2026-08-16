@@ -124,7 +124,7 @@ export default function CekHargaScreen() {
   const navigation = useNavigation();
 
   // --- Ngobrol dengan Miko (asisten suara, Tahap 1: otak offline) ---
-  type ChatMsg = { who: "miko" | "cust"; text: string };
+  type ChatMsg = { who: "miko" | "cust"; text: string; card?: Product | null };
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -188,12 +188,23 @@ export default function CekHargaScreen() {
     setChatBusy(true);
     scrollChat();
 
-    // Fakta produk dari DB lokal (anti-ngarang) + perbarui konteks untuk follow-up.
-    const { facts, best, matches } = collectFacts(products, q, chatCtx.current);
-    if (best) chatCtx.current = { lastProduct: best, lastMatches: matches, lastName: q, at: Date.now() };
+    // 1) MODE SALES OFFLINE (deterministik): kuasai fakta harga/stok, tawaran, & kartu produk.
+    const sales = mikoAsk(products, q, chatCtx.current);
+    chatCtx.current = sales.ctx;
 
+    if (sales.intent !== "chitchat") {
+      // Pertanyaan produk / sales → jawab dari DB lokal (jalan online & offline).
+      setChatMsgs((m) => [...m, { who: "miko", text: sales.reply, card: sales.card || null }]);
+      speakCalm(cleanTTS(sales.speak));
+      setChatBusy(false);
+      scrollChat();
+      armAutoClose();
+      return;
+    }
+
+    // 2) Obrolan bebas / curhat → coba AI ONLINE (natural), fallback ke offline.
+    const { facts } = collectFacts(products, q, chatCtx.current);
     try {
-      // ONLINE dulu: AI percakapan penuh (butuh internet + server).
       const reply = await askMikoOnline({
         sessionId: sessionId.current,
         message: q,
@@ -204,11 +215,8 @@ export default function CekHargaScreen() {
       setChatMsgs((m) => [...m, { who: "miko", text: reply }]);
       speakCalm(cleanTTS(reply));
     } catch {
-      // OFFLINE / server mati → mesin percakapan offline (terbatas).
-      const res = mikoAsk(products, q, chatCtx.current);
-      chatCtx.current = res.ctx;
-      setChatMsgs((m) => [...m, { who: "miko", text: res.reply }]);
-      speakCalm(cleanTTS(res.speak));
+      setChatMsgs((m) => [...m, { who: "miko", text: sales.reply }]);
+      speakCalm(cleanTTS(sales.speak));
     } finally {
       setChatBusy(false);
       scrollChat();
@@ -620,11 +628,34 @@ export default function CekHargaScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              {chatMsgs.map((m, i) => (
-                <View key={i} style={[styles.bubble, m.who === "miko" ? styles.bubbleMiko : styles.bubbleCust]}>
-                  <Text style={m.who === "miko" ? styles.bubbleMikoTxt : styles.bubbleCustTxt}>{m.text}</Text>
-                </View>
-              ))}
+              {chatMsgs.map((m, i) => {
+                const card = m.card;
+                return (
+                  <View key={i} style={{ gap: 6, alignItems: m.who === "miko" ? "flex-start" : "flex-end", width: "100%" }}>
+                    {!!m.text && (
+                      <View style={[styles.bubble, m.who === "miko" ? styles.bubbleMiko : styles.bubbleCust]}>
+                        <Text style={m.who === "miko" ? styles.bubbleMikoTxt : styles.bubbleCustTxt}>{m.text}</Text>
+                      </View>
+                    )}
+                    {card && (
+                      <Pressable
+                        style={styles.chatCard}
+                        onPress={() => { closeChat(); setTimeout(() => pickProduct(card), 260); }}
+                        testID={`chat-card-${card.id}`}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.chatCardName} numberOfLines={2}>{card.name}</Text>
+                          <Text style={styles.chatCardPrice}>{rupiah(card.sell_price)}</Text>
+                        </View>
+                        <View style={styles.chatCardBtn}>
+                          <Text style={styles.chatCardBtnTxt}>Lihat</Text>
+                          <Ionicons name="chevron-forward" size={18} color={colors.onBrandPrimary} />
+                        </View>
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
               {chatBusy && (
                 <View style={[styles.bubble, styles.bubbleMiko]}>
                   <ActivityIndicator color={colors.brand} />
@@ -719,6 +750,12 @@ const styles = StyleSheet.create({
   bubbleCust: { alignSelf: "flex-end", backgroundColor: colors.brand, borderTopRightRadius: 4 },
   bubbleMikoTxt: { color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base, lineHeight: 21 },
   bubbleCustTxt: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.base, lineHeight: 21 },
+  // Kartu produk di dalam chat (hasil tawaran sales Miko)
+  chatCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start", maxWidth: "88%", paddingLeft: spacing.md, paddingRight: 6, paddingVertical: 8, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandTertiary },
+  chatCardName: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  chatCardPrice: { fontFamily: font.display, fontSize: fontSize.lg, color: colors.brand, marginTop: 2 },
+  chatCardBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.brand },
+  chatCardBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.sm },
   chatInputRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   chatInput: { flex: 1, height: 50, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
   chatSend: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },

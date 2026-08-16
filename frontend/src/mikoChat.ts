@@ -17,12 +17,17 @@ export type ChatCtx = {
   lastProduct?: Product; // produk yang sedang dibahas
   lastName?: string; // nama query terakhir (mentah, untuk kalimat natural)
   at?: number; // kapan konteks dibuat (ms)
+  pendingOffer?: Product | null; // produk yang baru DITAWARKAN ("Mau Miko tampilkan?")
+  declinedIds?: string[]; // produk yang sudah ditolak → jangan ditawarkan lagi
+  complementOffered?: boolean; // sudah menawarkan produk pelengkap sekali di percakapan ini
 };
 
 export type ChatReply = {
   reply: string; // teks untuk ditampilkan di layar
   speak: string; // teks untuk dibacakan TTS (angka jadi kata)
   product?: Product | null; // produk yang ditemukan (bila ada)
+  card?: Product | null; // produk yang harus DITAMPILKAN sebagai kartu besar
+  intent: string; // 'price'|'stock'|'offer'|'show'|'decline'|'greet'|'thanks'|'help'|'chitchat'|'none'
   ctx: ChatCtx; // konteks diperbarui
 };
 
@@ -118,17 +123,87 @@ function priceSentences(p: Product): { reply: string; speak: string } {
   return { reply: openR + extraR, speak: openS + extraS };
 }
 
+// Aturan produk PELENGKAP (mudah ditambah). Bila token `match` ada di nama/kategori
+// produk, Miko boleh menawarkan produk dari `want`. Tidak dipaksakan.
+const COMPLEMENTS: { match: string[]; want: string[] }[] = [
+  { match: ["kopi"], want: ["gula"] },
+  { match: ["teh"], want: ["gula"] },
+  { match: ["gula"], want: ["kopi"] },
+  { match: ["mie", "indomie", "mi instan", "mie instan"], want: ["telur", "telor"] },
+  { match: ["beras"], want: ["minyak"] },
+  { match: ["tepung"], want: ["telur", "telor"] },
+  { match: ["sabun"], want: ["shampo", "sampo"] },
+  { match: ["shampo", "sampo"], want: ["sabun"] },
+  { match: ["rokok"], want: ["korek"] },
+  { match: ["susu"], want: ["roti"] },
+  { match: ["roti"], want: ["selai", "susu"] },
+  { match: ["popok", "pampers", "diapers"], want: ["tisu basah"] },
+];
+
+function findComplement(products: Product[], base: Product, declined: string[]): Product | null {
+  const nb = norm(base.name) + " " + norm(base.category || "");
+  for (const rule of COMPLEMENTS) {
+    if (rule.match.some((m) => nb.includes(m))) {
+      for (const w of rule.want) {
+        const found = findByName(products, w).find(
+          (p) => p.id !== base.id && (p.stock || 0) > 0 && !declined.includes(p.id),
+        );
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
-// Fungsi utama: proses satu ucapan/ketikan pelanggan → jawaban Miko.
+// Fungsi utama (MODE SALES OFFLINE): proses satu ucapan/ketikan pelanggan →
+// jawaban Miko + (opsional) kartu produk. Alur tawaran: tawarkan → "boleh"
+// tampilkan kartu / "tidak" jangan tawarkan lagi. Tidak cerewet: harga polos
+// dijawab polos. Semua fakta dari DB lokal (tanpa mengarang).
 // ---------------------------------------------------------------------------
 export function mikoAsk(products: Product[], textRaw: string, prev: ChatCtx): ChatReply {
   const now = Date.now();
   const ctxValid = !!prev.at && now - prev.at < CTX_MS && !!prev.lastProduct;
-  let text = norm(textRaw).replace(/\bmiko\b/g, " ").replace(/\s+/g, " ").trim();
+  const declined = prev.declinedIds || [];
+  const text = norm(textRaw).replace(/\bmiko\b/g, " ").replace(/\s+/g, " ").trim();
 
-  const done = (reply: string, speak: string, ctx: ChatCtx, product?: Product | null): ChatReply => ({
-    reply, speak, product: product ?? null, ctx: { ...ctx, at: now },
+  const done = (
+    reply: string,
+    speak: string,
+    ctx: ChatCtx,
+    opts?: { product?: Product | null; card?: Product | null; intent?: string },
+  ): ChatReply => ({
+    reply,
+    speak,
+    product: opts?.product ?? null,
+    card: opts?.card ?? null,
+    intent: opts?.intent ?? "none",
+    ctx: { ...ctx, at: now, declinedIds: ctx.declinedIds ?? declined },
   });
+
+  const hasFactIntent = /(murah|mahal|harga|berapa|stok|sisa|ukuran|varian|lebih)/.test(text);
+  const affirm = /\b(boleh|iya|iyaa|ya|yaa|yoi|mau|oke|okey|okay|ok|sip|tampilkan|tampilin|lihat|liat|liatin|silakan|silahkan|gas|yuk|ayo)\b/;
+  const negate = /\b(tidak|ga|gak|nggak|ngga|enggak|engga|jangan|nanti|skip|gausah|udah|sudah|cukup)\b/;
+
+  // 0) TANGGAPAN atas TAWARAN sebelumnya ("Mau Miko tampilkan?")
+  if (prev.pendingOffer && ctxValid && !hasFactIntent) {
+    const offered = prev.pendingOffer;
+    if (negate.test(text)) {
+      const s = pick(["Baik, Kak. 😊", "Oke, Kak, tidak apa-apa. 😊", "Siap, Kak. Kalau butuh, panggil Miko lagi ya."]);
+      return done(s, s, { ...prev, pendingOffer: null, declinedIds: [...declined, offered.id] }, { intent: "decline" });
+    }
+    if (affirm.test(text)) {
+      const nm = speakName(offered.name);
+      const price = offered.sell_price;
+      const reply = pick([
+        `Nih, Kak, ${nm} harganya ${rupiah(price)}. Sentuh kartunya untuk lihat detail ya.`,
+        `Siap! Ini ${nm}, ${rupiah(price)}, Kak. Boleh disentuh untuk detailnya.`,
+      ]);
+      const speak = reply.replace(rupiah(price), `${terbilang(price).trim()} rupiah`);
+      return done(reply, speak, { ...prev, pendingOffer: null, lastProduct: offered, lastName: offered.name }, { product: offered, card: offered, intent: "show" });
+    }
+    // Bukan ya/tidak → anggap ganti topik: lupakan tawaran, proses seperti biasa.
+  }
 
   // Sapaan / kosong
   if (!text || /^(halo|hai|hi|hei|hey|hello|selamat|assalam|permisi|misi)\b/.test(text)) {
@@ -137,7 +212,7 @@ export function mikoAsk(products: Product[], textRaw: string, prev: ChatCtx): Ch
       "Hai, Kak! Mau cek harga apa hari ini? Sebut saja nama barangnya.",
       "Halo! Miko siap bantu cek harga. Contohnya, tanya harga sabun atau harga minyak.",
     ]);
-    return done(s, s, { at: now });
+    return done(s, s, { declinedIds: declined, complementOffered: prev.complementOffered }, { intent: "greet" });
   }
 
   // Terima kasih
@@ -147,73 +222,64 @@ export function mikoAsk(products: Product[], textRaw: string, prev: ChatCtx): Ch
       "Sama-sama, Kak. Kalau mau cek harga lain, panggil Miko lagi ya.",
       "Dengan senang hati, Kak! Semoga harinya menyenangkan.",
     ]);
-    return done(s, s, { at: now });
+    return done(s, s, { declinedIds: declined, complementOffered: prev.complementOffered }, { intent: "thanks" });
   }
 
   // Bantuan / siapa kamu
   if (/(bisa apa|kamu siapa|siapa kamu|kamu bisa apa|fungsi kamu|apa aja)/.test(text)) {
     const s = "Miko bisa bantu cek harga dan stok barang di toko ini, Kak. Sebut saja, misalnya, harga gula, atau stok beras. Nanti Miko carikan.";
-    return done(s, s, { at: now });
+    return done(s, s, { declinedIds: declined, complementOffered: prev.complementOffered }, { intent: "help" });
   }
 
   const isCheaper = /(lebih murah|yang murah|murah lagi|lebih hemat|paling murah|termurah|murahan)/.test(text);
   const isPricier = /(lebih mahal|yang mahal|paling mahal|termahal|premium|bagusan)/.test(text);
   const isStock = /(stok|stoknya|sisa|sisanya|masih ada|ada berapa|tinggal berapa|persediaan|habis)/.test(text);
 
-  // "Ada yang lebih murah/mahal?" → gunakan konteks barang terakhir
+  // TAWARKAN alternatif lebih murah / lebih mahal (pakai konteks). Belum tampilkan kartu.
   if ((isCheaper || isPricier) && ctxValid) {
     const cur = prev.lastProduct!;
     const pool = (prev.lastMatches && prev.lastMatches.length > 1 ? prev.lastMatches : findByName(products, prev.lastName || cur.name))
-      .filter((p) => p.id !== cur.id);
+      .filter((p) => p.id !== cur.id && !declined.includes(p.id));
     let cand: Product | undefined;
-    if (isCheaper) {
-      cand = pool.filter((p) => p.sell_price < cur.sell_price).sort((a, b) => a.sell_price - b.sell_price)[0];
-    } else {
-      cand = pool.filter((p) => p.sell_price > cur.sell_price).sort((a, b) => b.sell_price - a.sell_price)[0];
-    }
+    if (isCheaper) cand = pool.filter((p) => p.sell_price < cur.sell_price).sort((a, b) => a.sell_price - b.sell_price)[0];
+    else cand = pool.filter((p) => p.sell_price > cur.sell_price).sort((a, b) => b.sell_price - a.sell_price)[0];
     if (cand) {
-      const diff = Math.abs(cand.sell_price - cur.sell_price);
       const nm = speakName(cand.name);
       const reply = isCheaper
         ? pick([
-            `Ada, Kak. ${nm} lebih murah, harganya ${rupiah(cand.sell_price)}. Hemat ${rupiah(diff)}.`,
-            `Ada yang lebih hemat, Kak: ${nm} cuma ${rupiah(cand.sell_price)}, selisih ${rupiah(diff)}.`,
+            `Ada, Kak. Miko nemu yang lebih hemat: ${nm}, cuma ${rupiah(cand.sell_price)}. Mau Miko tampilkan?`,
+            `Ada yang lebih murah, Kak: ${nm} ${rupiah(cand.sell_price)}. Mau Miko tampilkan?`,
           ])
         : pick([
-            `Ada, Kak. ${nm} harganya ${rupiah(cand.sell_price)}, ${rupiah(diff)} lebih mahal tapi biasanya lebih besar atau lebih bagus.`,
-            `Ada pilihan lain, Kak: ${nm} seharga ${rupiah(cand.sell_price)}.`,
+            `Ada yang lebih premium, Kak: ${nm} ${rupiah(cand.sell_price)}. Mau Miko tampilkan?`,
+            `Ada pilihan lebih tinggi, Kak: ${nm} ${rupiah(cand.sell_price)}. Mau Miko tampilkan?`,
           ]);
-      const speak = reply
-        .replace(rupiah(cand.sell_price), `${terbilang(cand.sell_price).trim()} rupiah`)
-        .replace(rupiah(diff), `${terbilang(diff).trim()} rupiah`);
-      return done(reply, speak, { lastMatches: prev.lastMatches, lastProduct: cand, lastName: prev.lastName }, cand);
+      const speak = reply.replace(rupiah(cand.sell_price), `${terbilang(cand.sell_price).trim()} rupiah`);
+      return done(reply, speak, { ...prev, pendingOffer: cand }, { product: cur, intent: "offer" });
     }
     const nm = speakName(cur.name);
     const s = isCheaper
       ? `Untuk ${nm}, sepertinya ini sudah yang paling murah di toko, Kak.`
-      : `Untuk ${nm}, belum ada pilihan yang lebih mahal, Kak. Ini sudah yang teratas.`;
-    return done(s, s, prev, cur);
+      : `Untuk ${nm}, belum ada yang lebih tinggi, Kak. Ini sudah teratas.`;
+    return done(s, s, { ...prev, pendingOffer: null }, { product: cur, intent: "price" });
   }
 
-  // Perlu cari nama barang (harga / stok / sebut nama saja)
+  // Cari nama barang (harga / stok / sebut nama saja)
   const nameQ = extractName(text);
-  // Jika tak ada nama tapi konteks masih hidup → pakai barang terakhir
   if (!nameQ && ctxValid) {
     const cur = prev.lastProduct!;
-    if (isStock) {
-      const s = stockSentence(cur);
-      return done(s.reply, s.speak, prev, cur);
-    }
+    if (isStock) { const s = stockSentence(cur); return done(s.reply, s.speak, prev, { product: cur, intent: "stock" }); }
     const s = priceSentences(cur);
-    return done(s.reply, s.speak, prev, cur);
+    return done(s.reply, s.speak, prev, { product: cur, intent: "price" });
   }
 
   if (!nameQ) {
+    // Bukan pertanyaan produk (obrolan bebas / curhat) → biar AI online yang bantu (kalau ada).
     const s = pick([
-      "Maaf, Kak, Miko belum menangkap nama barangnya. Coba sebutkan lagi, misalnya, harga kopi.",
-      "Hmm, barangnya apa ya, Kak? Sebut saja namanya, nanti Miko carikan harganya.",
+      "Hehe, Miko kurang paham nih, Kak. Kalau mau cek harga, sebut saja nama barangnya ya.",
+      "Maaf, Kak, Miko belum menangkap maksudnya. Coba sebut nama barang yang ingin dicek harganya ya.",
     ]);
-    return done(s, s, prev);
+    return done(s, s, { ...prev }, { intent: "chitchat" });
   }
 
   const matches = findByName(products, nameQ);
@@ -222,20 +288,28 @@ export function mikoAsk(products: Product[], textRaw: string, prev: ChatCtx): Ch
       `Maaf, Kak, Miko belum menemukan "${nameQ}" di data toko. Mungkin bisa tanya ke kasir Vita atau Sasa ya.`,
       `Hmm, "${nameQ}" belum ada di daftar Miko, Kak. Coba tanyakan ke Vita atau Sasa.`,
     ]);
-    return done(s, s, { at: now });
+    return done(s, s, { declinedIds: declined, complementOffered: prev.complementOffered }, { intent: "price" });
   }
 
   const best = matches[0];
-  const newCtx: ChatCtx = { lastMatches: matches.slice(0, 12), lastProduct: best, lastName: nameQ };
+  const newCtx: ChatCtx = { ...prev, lastMatches: matches.slice(0, 12), lastProduct: best, lastName: nameQ, pendingOffer: null };
 
   if (isStock) {
     const s = stockSentence(best);
-    return done(s.reply, s.speak, newCtx, best);
+    return done(s.reply, s.speak, newCtx, { product: best, intent: "stock" });
   }
+
   const s = priceSentences(best);
-  // tambah ajakan natural sesekali
-  const tailR = matches.length > 1 ? pick(["", "", " Kalau mau, Miko bisa carikan yang lebih murah."]) : "";
-  return done(s.reply + tailR, s.speak + tailR, newCtx, best);
+  // Produk PELENGKAP: tawarkan MAKSIMAL sekali per percakapan (tidak cerewet).
+  if (!prev.complementOffered) {
+    const comp = findComplement(products, best, declined);
+    if (comp) {
+      const cnm = speakName(comp.name);
+      const offer = ` Oh iya, kalau perlu ada ${cnm} juga, Kak. Mau Miko tampilkan?`;
+      return done(s.reply + offer, s.speak + offer, { ...newCtx, complementOffered: true, pendingOffer: comp }, { product: best, intent: "price" });
+    }
+  }
+  return done(s.reply, s.speak, newCtx, { product: best, intent: "price" });
 }
 
 function stockSentence(p: Product): { reply: string; speak: string } {
