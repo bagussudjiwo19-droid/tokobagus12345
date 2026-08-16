@@ -459,3 +459,15 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 
 ## Session Log — Ganti note petunjuk Cek Harga
 - `cek-harga.tsx` scanNote diganti jadi 4 baris besar & ramah (persis permintaan): "👋 Mau cek harga?" / "📱 Ada barcode? Arahkan ke scanner." / "⌨️ Tidak ada barcode? Ketik nama barang." / "Miko akan membantu menemukan harga untuk Kakak. 😊". Style dibesarkan (title xl, baris lg, tengah). Diverifikasi screenshot. FRONTEND-only → redeploy.
+
+## Session Log — Fitur "Rapikan Item Produk" (multi-select hapus massal) di Produk
+- `app/(tabs)/produk.tsx`: mode Rapikan.
+  - Tombol ikon "checkmark-done" di header (produk-tidy-button) → masuk mode seleksi; header berubah jadi "N dipilih" + tombol "Selesai" (exit).
+  - Toolbar: "Pilih Semua" (produk-select-all, memilih semua hasil filter), "Batalkan Semua" (produk-clear-all), jumlah terpilih.
+  - Baris produk: checkbox (checkbox/square-outline), tap toggle (bukan edit), menu titik-tiga disembunyikan, kartu ter-highlight saat dipilih. Seleksi via Set<string> (ringan untuk banyak produk; FlatList tetap virtualized).
+  - Bar bawah "Hapus N Produk" (produk-delete-selected) muncul bila ada yang dipilih.
+  - Modal konfirmasi: "Hapus N produk yang dipilih?" + PERINGATAN bila ada produk terpilih yang punya variasi/turunan ("...Menghapus produk induk dapat menghapus variasinya juga. Lanjutkan?") + catatan "Hanya menghapus dari data aplikasi. File backup Kasir asli tidak terpengaruh." + tombol Batal / Hapus (dengan loading).
+  - `doBulkDelete`: hapus induk terpilih + anak turunannya (childrenByParent, agar tak yatim) via `api.deleteProduct` (DB lokal saja). Setelah selesai reload + toast "N produk dihapus. Sisa X produk." + keluar mode seleksi.
+  - Pencarian produk tetap aktif di mode Rapikan; hanya menghapus yang dicentang; harga/stok/barcode/variasi produk lain tidak diubah; file backup tidak disentuh.
+- DIVERIFIKASI (screenshot preview): pilih 2 → bar "Hapus 2 Produk" & "2 dipilih"; konfirmasi tampil dgn peringatan variasi + catatan backup; Batal tetap di mode; Hapus → keluar mode + toast sisa. Lint clean.
+- CATATAN: FRONTEND-only → user REDEPLOY.

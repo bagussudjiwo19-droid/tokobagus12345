@@ -2,6 +2,7 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useSt
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -28,19 +29,29 @@ import type { Product } from "@/src/types";
 const PRODUK_ROW_H = 96; // tinggi kartu (84) + jarak (12) → getItemLayout scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
-  item, childCount, onEdit, onMenu,
-}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void }) {
+  item, childCount, onEdit, onMenu, selectMode, checked, onToggle,
+}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void }) {
   const nestedCount = item.variations.length;
   const totalVar = nestedCount + childCount;
   const hasVar = totalVar > 0;
   const stock = nestedCount > 0 ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
   const low = !hasVar && stock <= 5;
   return (
-    <View style={styles.card} testID={`produk-row-${item.id}`}>
-      <View style={styles.thumb}>
-        <Ionicons name="cube-outline" size={22} color={colors.brand} />
-      </View>
-      <Pressable style={{ flex: 1 }} onPress={() => onEdit(item.id)}>
+    <Pressable
+      style={[styles.card, selectMode && checked && styles.cardChecked]}
+      testID={`produk-row-${item.id}`}
+      onPress={() => (selectMode ? onToggle?.(item.id) : onEdit(item.id))}
+    >
+      {selectMode ? (
+        <View style={styles.thumb}>
+          <Ionicons name={checked ? "checkbox" : "square-outline"} size={26} color={checked ? colors.brand : colors.muted} />
+        </View>
+      ) : (
+        <View style={styles.thumb}>
+          <Ionicons name="cube-outline" size={22} color={colors.brand} />
+        </View>
+      )}
+      <View style={{ flex: 1 }}>
         <View style={styles.nameRow}>
           <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
           {low && (
@@ -53,14 +64,16 @@ const ProdukRow = React.memo(function ProdukRow({
         <Text style={styles.rowMeta} numberOfLines={1}>
           {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${totalVar} variasi` : ""}
         </Text>
-      </Pressable>
+      </View>
       <View style={styles.pricePill}>
         <Text style={styles.pricePillTxt}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
       </View>
-      <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
-        <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
-      </Pressable>
-    </View>
+      {!selectMode && (
+        <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
+        </Pressable>
+      )}
+    </Pressable>
   );
 });
 
@@ -74,6 +87,11 @@ export default function ProdukScreen() {
   const [menuProduct, setMenuProduct] = useState<Product | null>(null);
   const [scanResult, setScanResult] = useState<Product | null>(null);
   const [manualMode, setManualMode] = useState(false);
+  // --- Mode Rapikan (multi-select hapus) ---
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const sheetRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
   const skipBlur = useRef(false);
@@ -183,11 +201,68 @@ export default function ProdukScreen() {
   const openMenu = useCallback((p: Product) => { setMenuProduct(p); sheetRef.current?.present(); }, []);
   const openEdit = useCallback((id: string) => router.push({ pathname: "/produk-form", params: { id } }), [router]);
 
+  // --- Rapikan: seleksi & hapus massal (hanya DB aplikasi, bukan file backup) ---
+  const toggleSelect = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const enterSelect = () => { setSelectMode(true); setSelected(new Set()); setScanResult(null); };
+  const exitSelect = () => { setSelectMode(false); setSelected(new Set()); };
+  const selectAll = () => setSelected(new Set(filtered.map((p) => p.id)));
+  const clearAll = () => setSelected(new Set());
+
+  const selectedCount = selected.size;
+  // Ada produk terpilih yang punya variasi / produk turunan?
+  const selectedHasVar = useMemo(() => {
+    for (const id of selected) {
+      const p = products.find((x) => x.id === id);
+      if (!p) continue;
+      if ((p.variations?.length || 0) > 0 || (childrenByParent.get(id)?.length || 0) > 0) return true;
+    }
+    return false;
+  }, [selected, products, childrenByParent]);
+
+  const doBulkDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    // Kumpulkan id induk terpilih + anak turunannya (parent_id) agar tak jadi yatim.
+    const allIds = new Set<string>();
+    for (const id of selected) {
+      allIds.add(id);
+      for (const k of (childrenByParent.get(id) || [])) allIds.add(k.id);
+    }
+    const remaining = Math.max(0, products.length - allIds.size);
+    try {
+      for (const id of allIds) { try { await api.deleteProduct(id); } catch {} }
+      await reload();
+      mikoBus.emit({ type: "product_deleted" });
+      toast.show(`${selected.size} produk dihapus. Sisa ${remaining} produk.`, "success");
+    } catch {
+      toast.show("Sebagian produk gagal dihapus", "error");
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+      setSelected(new Set());
+      setSelectMode(false);
+    }
+  };
+
   const renderRow = useCallback(
     ({ item }: { item: Product }) => (
-      <ProdukRow item={item} childCount={(childrenByParent.get(item.id) || []).length} onEdit={openEdit} onMenu={openMenu} />
+      <ProdukRow
+        item={item}
+        childCount={(childrenByParent.get(item.id) || []).length}
+        onEdit={openEdit}
+        onMenu={openMenu}
+        selectMode={selectMode}
+        checked={selected.has(item.id)}
+        onToggle={toggleSelect}
+      />
     ),
-    [openEdit, openMenu, childrenByParent],
+    [openEdit, openMenu, childrenByParent, selectMode, selected, toggleSelect],
   );
 
   return (
@@ -195,13 +270,38 @@ export default function ProdukScreen() {
       <View style={styles.titleBlock}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Produk</Text>
-          <Text style={styles.subtitle}>Kelola katalog, harga & stok</Text>
+          <Text style={styles.subtitle}>{selectMode ? `${selectedCount} dipilih` : "Kelola katalog, harga & stok"}</Text>
         </View>
-        <Pressable style={styles.addBtn} testID="produk-add-button" onPress={() => router.push("/produk-form")}>
-          <Ionicons name="add" size={22} color={colors.onBrandPrimary} />
-          <Text style={styles.addTxt}>Tambah</Text>
-        </Pressable>
+        {selectMode ? (
+          <Pressable style={styles.tidyDone} testID="produk-tidy-done" onPress={exitSelect}>
+            <Text style={styles.tidyDoneTxt}>Selesai</Text>
+          </Pressable>
+        ) : (
+          <>
+            <Pressable style={styles.tidyBtn} testID="produk-tidy-button" onPress={enterSelect}>
+              <Ionicons name="checkmark-done-outline" size={20} color={colors.brand} />
+            </Pressable>
+            <Pressable style={styles.addBtn} testID="produk-add-button" onPress={() => router.push("/produk-form")}>
+              <Ionicons name="add" size={22} color={colors.onBrandPrimary} />
+              <Text style={styles.addTxt}>Tambah</Text>
+            </Pressable>
+          </>
+        )}
       </View>
+
+      {selectMode && (
+        <View style={styles.tidyBar}>
+          <Pressable style={styles.tidyChip} testID="produk-select-all" onPress={selectAll}>
+            <Ionicons name="checkmark-done" size={16} color={colors.brand} />
+            <Text style={styles.tidyChipTxt}>Pilih Semua</Text>
+          </Pressable>
+          <Pressable style={styles.tidyChip} testID="produk-clear-all" onPress={clearAll}>
+            <Ionicons name="close" size={16} color={colors.muted} />
+            <Text style={styles.tidyChipTxt}>Batalkan Semua</Text>
+          </Pressable>
+          <Text style={styles.tidyCount}>{selectedCount} dipilih</Text>
+        </View>
+      )}
       <View style={styles.searchWrap}>
         <View style={[styles.searchBox, !manualMode && styles.searchBoxScan]}>
           <Ionicons name={manualMode ? "search" : "barcode-outline"} size={18} color={manualMode ? colors.muted : colors.brand} />
@@ -261,7 +361,7 @@ export default function ProdukScreen() {
           maxToRenderPerBatch={12}
           updateCellsBatchingPeriod={40}
           windowSize={9}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 24 + insets.bottom }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: (selectMode ? 96 : 24) + insets.bottom }}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
@@ -289,6 +389,38 @@ export default function ProdukScreen() {
           <MenuItem icon="trash-outline" label="Hapus" danger onPress={doDelete} testID="menu-delete" />
         </BottomSheetView>
       </BottomSheetModal>
+
+      {/* Bar bawah: Hapus produk terpilih */}
+      {selectMode && selectedCount > 0 && (
+        <View style={[styles.deleteBar, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <Pressable style={styles.deleteBtn} testID="produk-delete-selected" onPress={() => setConfirmOpen(true)}>
+            <Ionicons name="trash-outline" size={20} color={colors.onBrandPrimary} />
+            <Text style={styles.deleteBtnTxt}>Hapus {selectedCount} Produk</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Modal konfirmasi hapus massal */}
+      <Modal visible={confirmOpen} transparent animationType="fade" onRequestClose={() => !deleting && setConfirmOpen(false)}>
+        <View style={styles.confirmBackdrop}>
+          <View style={styles.confirmCard}>
+            <View style={styles.confirmIcon}><Ionicons name="trash" size={24} color={colors.error} /></View>
+            <Text style={styles.confirmTitle}>Hapus {selectedCount} produk yang dipilih?</Text>
+            {selectedHasVar && (
+              <Text style={styles.confirmWarn}>Sebagian produk memiliki variasi. Menghapus produk induk dapat menghapus variasinya juga. Lanjutkan?</Text>
+            )}
+            <Text style={styles.confirmSub}>Hanya menghapus dari data aplikasi. File backup Kasir asli tidak terpengaruh.</Text>
+            <View style={styles.confirmRow}>
+              <Pressable style={styles.confirmCancel} testID="produk-delete-cancel" disabled={deleting} onPress={() => setConfirmOpen(false)}>
+                <Text style={styles.confirmCancelTxt}>Batal</Text>
+              </Pressable>
+              <Pressable style={styles.confirmDelete} testID="produk-delete-confirm" disabled={deleting} onPress={doBulkDelete}>
+                {deleting ? <ActivityIndicator color={colors.onBrandPrimary} /> : <Text style={styles.confirmDeleteTxt}>Hapus</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -309,6 +441,28 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
   addBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.brand, paddingHorizontal: spacing.lg, height: 48, borderRadius: radius.lg, shadowColor: colors.brand, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   addTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.lg },
+  tidyBtn: { width: 48, height: 48, borderRadius: radius.lg, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center", marginRight: spacing.sm },
+  tidyDone: { paddingHorizontal: spacing.lg, height: 48, borderRadius: radius.lg, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  tidyDoneTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.lg },
+  tidyBar: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  tidyChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary },
+  tidyChipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.sm },
+  tidyCount: { marginLeft: "auto", color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
+  cardChecked: { borderColor: colors.brand, borderWidth: 2, backgroundColor: colors.surfaceTertiary },
+  deleteBar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 54, borderRadius: radius.pill, backgroundColor: colors.error },
+  deleteBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  confirmBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  confirmCard: { width: "100%", maxWidth: 380, backgroundColor: colors.surface, borderRadius: 24, padding: spacing.xl, alignItems: "center", gap: spacing.sm },
+  confirmIcon: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  confirmTitle: { fontFamily: font.bold, fontSize: fontSize.xl, color: colors.onSurface, textAlign: "center" },
+  confirmWarn: { fontFamily: font.medium, fontSize: fontSize.sm, color: colors.error, textAlign: "center", lineHeight: 19 },
+  confirmSub: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.muted, textAlign: "center", lineHeight: 18 },
+  confirmRow: { flexDirection: "row", gap: spacing.sm, width: "100%", marginTop: spacing.sm },
+  confirmCancel: { flex: 1, height: 52, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  confirmCancelTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  confirmDelete: { flex: 1, height: 52, borderRadius: radius.pill, backgroundColor: colors.error, alignItems: "center", justifyContent: "center" },
+  confirmDeleteTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   searchWrap: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, paddingLeft: 6, paddingRight: spacing.md, height: 52, borderWidth: 1, borderColor: colors.border },
   searchBoxScan: { borderWidth: 2, borderColor: colors.borderStrong },
