@@ -61,6 +61,38 @@ async function fetchJSON(url: string, opts?: RequestInit, timeoutMs = 12000): Pr
 
 let inFlight = false;
 
+// Batas aman: ingress/proxy menolak body POST besar (±1MB). Kirim bertahap
+// per potongan kecil agar tiap request ringan & tidak diblokir/timeout di 4G.
+const PUSH_CHUNK = 150;
+
+async function pushBody(store: string, body: any): Promise<void> {
+  await fetchJSON(`${BASE}/sync/push`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ store, ...body }),
+  }, 20000);
+}
+
+// Kirim perubahan lokal ke server SECARA BERTAHAP (chunk) supaya tidak
+// menembus batas ukuran body proxy. Settings dititipkan di request pertama.
+async function pushDirty(store: string, dirty: { products: any[]; transactions: any[]; settings: any }): Promise<void> {
+  let settingsSent = false;
+  const takeSettings = () => { if (settingsSent) return null; settingsSent = true; return dirty.settings || null; };
+
+  for (let i = 0; i < dirty.products.length; i += PUSH_CHUNK) {
+    const chunk = dirty.products.slice(i, i + PUSH_CHUNK);
+    await pushBody(store, { products: chunk, transactions: [], settings: takeSettings() });
+  }
+  for (let i = 0; i < dirty.transactions.length; i += PUSH_CHUNK) {
+    const chunk = dirty.transactions.slice(i, i + PUSH_CHUNK);
+    await pushBody(store, { products: [], transactions: chunk, settings: takeSettings() });
+  }
+  // Belum ada apa pun yang terkirim, tetapi settings berubah → kirim sendiri.
+  if (!settingsSent && dirty.settings) {
+    await pushBody(store, { products: [], transactions: [], settings: dirty.settings });
+  }
+}
+
 // Satu putaran sinkron: PUSH perubahan lokal → PULL perubahan server.
 export async function syncOnce(): Promise<SyncStatus> {
   const store = await getStoreCode();
@@ -74,11 +106,7 @@ export async function syncOnce(): Promise<SyncStatus> {
     const startedAt = Date.now();
     const dirty = await local.collectDirty(lastPush);
     if (dirty.products.length || dirty.transactions.length || dirty.settings) {
-      await fetchJSON(`${BASE}/sync/push`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ store, ...dirty }),
-      });
+      await pushDirty(store, dirty);
     }
     await AsyncStorage.setItem(K_LAST_PUSH, String(startedAt));
     await local.clearDeletions();

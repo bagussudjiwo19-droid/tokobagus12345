@@ -358,3 +358,14 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - TRANSAKSI UI: tombol Tambah Item & Cari Barang dipindah dari atas ke BAWAH daftar (akhir ScrollView, di bawah barang terbaru karena item append ke bawah) + di empty state. Desain baru: addBar/addBtnBig, primary (brand + shadow + ikon lingkaran putih) & ghost (outline). Style lama actions/actBtn dibiarkan (tak terpakai).
 
 - EDIT RIWAYAT UI: tombol "Tambah Barang" dipindah dari atas (setelah dateBox) ke BAWAH daftar barang (setelah items.map, sebelum payCard) → di bawah barang terbaru. Auto-scroll (afterAdd -> scrollToEnd) tetap aktif.
+
+
+## Session Log (fork) — DIAGNOSA "Sinkron Offline" + chunked push
+- Keluhan user: 2 HP tidak bisa saling terhubung meski Kode Toko sama; layar Sinkron Cloud menampilkan "Offline — menunggu internet".
+- DIAGNOSA MENYELURUH:
+  - Backend `/api/sync/pull` & `/api/sync/push` SEHAT. Push penuh 2261 produk (958KB) ke URL eksternal = HTTP 200 dalam ~1.8 dtk (dengan User-Agent HP normal: okhttp/iOS → 200).
+  - 403 (Cloudflare error 1010) yang sempat muncul HANYA saat memakai tool testing tanpa UA (urllib/curl default) — proteksi bot Cloudflare, BUKAN batas ukuran body & BUKAN bug kode.
+  - Alur klien diverifikasi end-to-end di preview web: buat kode TOKO-6964-ALHB → status "Tersinkron" → server menerima 2261 produk + 123 transaksi.
+  - KESIMPULAN: kode & server benar. Penyebab "Offline" di HP user = APK menembak backend URL yang TIDAK terjangkau (URL preview berubah setelah fork / preview tidur saat workspace idle). Cloud Sync hanya andal bila backend DI-DEPLOY (Publish) → dapat URL produksi stabil & selalu online, lalu APK di-build ulang.
+- PERBAIKAN KODE (robustness 4G lemah): `src/sync.ts` push kini BERTAHAP (chunk 150 item/request, timeout 20 dtk/request; settings dititip di request pertama) via `pushDirty()` → hindari 1 request 958KB timeout di 4G lemah. Cursor K_LAST_PUSH hanya maju setelah semua chunk sukses. Pull tetap 1 GET. Lint clean, diverifikasi round-trip di preview.
+- CATATAN untuk agent berikutnya: Cloud Sync = butuh backend deployed. Arahkan user ke tombol Publish + build ulang APK bila ingin sinkron antar-HP jalan permanen.
