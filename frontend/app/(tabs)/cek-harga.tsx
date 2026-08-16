@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,6 +12,7 @@ import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { speakCalm, terbilang } from "@/src/voice";
+import { mikoAsk, mikoThinking, type ChatCtx } from "@/src/mikoChat";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
@@ -114,6 +115,53 @@ export default function CekHargaScreen() {
   const lastClosing = useRef(-1);
   const lastNF = useRef(-1);
   const navigation = useNavigation();
+
+  // --- Ngobrol dengan Miko (asisten suara, Tahap 1: otak offline) ---
+  type ChatMsg = { who: "miko" | "cust"; text: string };
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
+  const chatCtx = useRef<ChatCtx>({});
+  const chatScrollRef = useRef<ScrollView>(null);
+
+  const openChat = () => {
+    clearTimers();
+    setResult(null);
+    setCountdown(0);
+    const greet = "Halo, Kak! Miko siap bantu cek harga. Tanya saja, misalnya, harga Soklin berapa?";
+    chatCtx.current = {};
+    setChatMsgs([{ who: "miko", text: greet }]);
+    setChatBusy(false);
+    setChatInput("");
+    setChatOpen(true);
+    speakCalm(greet);
+  };
+  const closeChat = () => {
+    setChatOpen(false);
+    setTimeout(() => inputRef.current?.focus(), 150);
+  };
+  const scrollChat = () => setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 60);
+
+  const askMiko = (raw: string) => {
+    const q = (raw || "").trim();
+    if (!q || chatBusy) return;
+    setChatInput("");
+    setChatMsgs((m) => [...m, { who: "cust", text: q }]);
+    const thinking = mikoThinking();
+    setChatMsgs((m) => [...m, { who: "miko", text: thinking }]);
+    speakCalm(thinking);
+    setChatBusy(true);
+    scrollChat();
+    setTimeout(() => {
+      const res = mikoAsk(products, q, chatCtx.current);
+      chatCtx.current = res.ctx;
+      setChatMsgs((m) => [...m, { who: "miko", text: res.reply }]);
+      speakCalm(res.speak);
+      setChatBusy(false);
+      scrollChat();
+    }, 850);
+  };
 
   // Sembunyikan menu tab bawah saat di kios Cek Harga (pelanggan tak bisa pindah layar).
   useFocusEffect(
@@ -330,6 +378,12 @@ export default function CekHargaScreen() {
               </View>
             </View>
 
+            {/* Tombol besar: pelanggan bisa ngobrol/tanya harga langsung ke Miko */}
+            <Pressable style={styles.askBtn} onPress={openChat} testID="tanya-miko">
+              <Ionicons name="chatbubbles" size={24} color={colors.onBrandPrimary} />
+              <Text style={styles.askTxt}>TANYA MIKO</Text>
+            </Pressable>
+
             <View style={styles.scanNote}>
               <Ionicons name="information-circle-outline" size={16} color={colors.brand} style={{ marginTop: 1 }} />
               <Text style={styles.scanNoteTxt}>
@@ -339,6 +393,63 @@ export default function CekHargaScreen() {
           </View>
         )}
       </View>
+
+      {/* Panel Ngobrol dengan Miko (asisten harga). Ketik di preview; di HP pakai suara. */}
+      <Modal visible={chatOpen} transparent animationType="slide" onRequestClose={closeChat}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.chatBackdrop}
+        >
+          <View style={[styles.chatSheet, { paddingBottom: insets.bottom + 10 }]}>
+            <View style={styles.chatHead}>
+              <View style={styles.chatMikoDot}>
+                <Ionicons name="happy" size={22} color={colors.brand} />
+              </View>
+              <Text style={styles.chatTitle}>Ngobrol dengan Miko</Text>
+              <Pressable onPress={closeChat} style={styles.chatClose} testID="miko-chat-close" hitSlop={10}>
+                <Ionicons name="close" size={24} color={colors.onSurface} />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              ref={chatScrollRef}
+              style={styles.chatLog}
+              contentContainerStyle={{ padding: spacing.md, gap: 8 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {chatMsgs.map((m, i) => (
+                <View key={i} style={[styles.bubble, m.who === "miko" ? styles.bubbleMiko : styles.bubbleCust]}>
+                  <Text style={m.who === "miko" ? styles.bubbleMikoTxt : styles.bubbleCustTxt}>{m.text}</Text>
+                </View>
+              ))}
+              {chatBusy && (
+                <View style={[styles.bubble, styles.bubbleMiko]}>
+                  <ActivityIndicator color={colors.brand} />
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.chatInputRow}>
+              <TextInput
+                style={styles.chatInput}
+                value={chatInput}
+                onChangeText={setChatInput}
+                placeholder="Ketik pertanyaan… (di HP nanti pakai suara)"
+                placeholderTextColor={colors.muted}
+                onSubmitEditing={() => askMiko(chatInput)}
+                returnKeyType="send"
+                blurOnSubmit={false}
+                testID="miko-chat-input"
+              />
+              <Pressable style={styles.chatSend} onPress={() => askMiko(chatInput)} testID="miko-chat-send">
+                <Ionicons name="send" size={20} color={colors.onBrandPrimary} />
+              </Pressable>
+            </View>
+            <Text style={styles.chatHint}>{`Contoh: "harga Soklin berapa?" · "stok beras" · "ada yang lebih murah?"`}</Text>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -369,6 +480,29 @@ const styles = StyleSheet.create({
   scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 28, letterSpacing: 2, textAlign: "center" },
   scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
+
+  // Tombol "TANYA MIKO"
+  askBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minWidth: 240, paddingHorizontal: spacing.xl, paddingVertical: 16, borderRadius: 26, backgroundColor: colors.brand, borderBottomWidth: 6, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  askTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 24, letterSpacing: 2 },
+
+  // Panel Ngobrol dengan Miko
+  chatBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
+  chatSheet: { backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "82%", minHeight: "58%", paddingTop: spacing.md },
+  chatHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  chatMikoDot: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  chatTitle: { flex: 1, fontFamily: font.bold, fontSize: fontSize.xl, color: colors.onSurface },
+  chatClose: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary },
+  chatLog: { flex: 1 },
+  bubble: { maxWidth: "82%", paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: 18 },
+  bubbleMiko: { alignSelf: "flex-start", backgroundColor: colors.brandTertiary, borderTopLeftRadius: 4 },
+  bubbleCust: { alignSelf: "flex-end", backgroundColor: colors.brand, borderTopRightRadius: 4 },
+  bubbleMikoTxt: { color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base, lineHeight: 21 },
+  bubbleCustTxt: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.base, lineHeight: 21 },
+  chatInputRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  chatInput: { flex: 1, height: 50, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
+  chatSend: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  chatHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, textAlign: "center", paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+
   camOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000", zIndex: 20 },
   camFrame: { position: "absolute", top: "30%", left: "12%", right: "12%", height: "26%", borderWidth: 3, borderColor: "#7CFC00", borderRadius: 16 },
   camHint: { position: "absolute", alignSelf: "center", color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.lg, textShadowColor: "#000", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },

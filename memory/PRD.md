@@ -376,3 +376,15 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - FIX (backend/server.py): server kini mencap `srv_at` (jam SERVER) pada SETIAP tulisan (push products/transactions/settings). `/sync/pull` memakai `srv_at` sebagai cursor: `since==0` → kirim SEMUA (bootstrap HP baru, migrasi-aman untuk data lama tanpa srv_at); `since>0` → hanya `srv_at > since`. `updated_at` (jam HP) tetap dipakai HANYA untuk LWW konten (siapa terbaru menang). `push` mengembalikan `now = srv`.
 - DIVERIFIKASI (localhost): simulasi jam HP1 mundur 60 dtk → produk baru TETAP sampai ke HP2 (sebelumnya pasti hilang). Bootstrap store lama (2261 produk tanpa srv_at) since=0 → 2261 terkirim; incremental since=now → 0 (tanpa duplikasi/spam).
 - PENTING: perbaikan ada di BACKEND → user WAJIB REDEPLOY (Publish) agar aktif di produksi. Tanpa perubahan kode frontend.
+
+## Session Log (fork, PRODUCTION) — MIKO ASISTEN SUARA (Tahap 1: otak percakapan OFFLINE)
+- Permintaan user: di kios Cek Harga, Miko jadi asisten yang bisa diajak bicara pelanggan ("Miko, harga Soklin berapa?" → jawab; lalu "ada yang lebih murah?" tanpa sebut nama lagi). Wajib OFFLINE, tanpa cloud/AI, pakai DATA KASIR yang ada. Jujur soal komponen yang belum tersedia.
+- KEPUTUSAN & KEJUJURAN TEKNIS (disampaikan ke user):
+  - Tahap 1 (SELESAI, bisa dites preview): OTAK percakapan murni JS/offline.
+  - Tahap 2 (butuh native build/EAS, tak bisa di preview): STT offline `react-native-vosk` + model Indonesia (~50MB) + tombol "tekan-bicara".
+  - Tahap 3 (opsional, ADA SYARAT): wake word "Miko" via Picovoice Porcupine — butuh AccessKey, keyword gratis kedaluwarsa ~30 hari, & internet sesekali utk validasi lisensi (jadi TIDAK 100% offline). Alternatif andal: tombol "Tanya Miko" (tekan-bicara), full offline.
+- IMPLEMENTASI Tahap 1:
+  - BARU `src/mikoChat.ts`: `mikoAsk(products, text, ctx)` + `mikoThinking()`. Deteksi intent Indonesia (harga/stok/lebih murah/lebih mahal/sapaan/terima kasih/bantuan), fuzzy match nama produk ke DATA LOKAL (skor token + bonus substring + prioritas induk; tie-break: nama terpendek lalu termurah). KONTEKS 30 dtk (barang & daftar match terakhir) → follow-up tanpa sebut nama. Jawaban natural + `terbilang()` untuk TTS, `rupiah()` untuk layar. Sertakan grosir termurah bila ada.
+  - `app/(tabs)/cek-harga.tsx`: tombol besar "TANYA MIKO" di kios + Modal "Ngobrol dengan Miko" (bubble chat, input teks utk uji preview + hint; di HP nanti disambung suara). Alur: kirim → Miko "cek dulu" (mikoThinking, TTS) → 850ms → jawaban (TTS speakCalm) → auto-scroll. FITUR SCAN & harga lama TIDAK diubah.
+- DIVERIFIKASI (screenshot preview): "harga gula" → "Gula Pasir 1kg harganya Rp 15.000"; "stok beras" → jumlah stok; "ada yang lebih murah?" → ingat konteks, temukan alternatif termurah + hitung hemat. Lint clean (1 warning lama tak berbahaya).
+- CATATAN: suara TTS hanya bunyi di HP/build. Tahap 2/3 (suara masuk & wake word) menunggu keputusan user + native build. Perubahan ini FRONTEND saja → aktif di produksi setelah user REDEPLOY.
