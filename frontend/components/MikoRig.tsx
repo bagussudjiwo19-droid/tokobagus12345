@@ -244,8 +244,9 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
       let i = Math.floor(Math.random() * KIOSK_SAY.length);
       if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
       kioskI.current = i;
+      // Balon tampil 6 dtk, lalu jeda 4 dtk sebelum balon berikutnya (siklus 10 dtk).
       bubble(KIOSK_SAY[i], 6000);
-    }, 12000);
+    }, 10000);
     const exprId = setInterval(() => {
       if (talkingRef.current) return;
       // Hanya berganti "bahasa wajah" saat sedang santai/idle (bukan state percakapan).
