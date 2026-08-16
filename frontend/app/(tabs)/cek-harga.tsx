@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +12,7 @@ import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { speakCalm, terbilang } from "@/src/voice";
-import { mikoAsk, mikoThinking, collectFacts, type ChatCtx } from "@/src/mikoChat";
+import { mikoAsk, mikoThinking, collectFacts, searchProductsByName, type ChatCtx } from "@/src/mikoChat";
 import { askMikoOnline, type MikoTurn } from "@/src/mikoAI";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -109,6 +109,12 @@ export default function CekHargaScreen() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [countdown, setCountdown] = useState(0);
+  // --- Mode KETIK: cari nama → kartu produk → pilih varian (offline) ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[] | null>(null);
+  const [varProduct, setVarProduct] = useState<Product | null>(null);
+  const searchRef = useRef<TextInput>(null);
+  const selTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,6 +132,24 @@ export default function CekHargaScreen() {
   const chatCtx = useRef<ChatCtx>({});
   const chatScrollRef = useRef<ScrollView>(null);
   const sessionId = useRef<string>(`miko-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const autoCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAutoClose = () => {
+    if (autoCloseRef.current) {
+      clearTimeout(autoCloseRef.current);
+      autoCloseRef.current = null;
+    }
+  };
+  // Setelah Miko selesai menjawab / panel dibuka: 10 dtk tanpa aktivitas → tutup lembut.
+  const armAutoClose = () => {
+    clearAutoClose();
+    autoCloseRef.current = setTimeout(() => {
+      autoCloseRef.current = null;
+      closeChat();
+    }, 10000);
+  };
+
+  useEffect(() => () => clearAutoClose(), []);
 
   const openChat = () => {
     clearTimers();
@@ -139,8 +163,10 @@ export default function CekHargaScreen() {
     setChatInput("");
     setChatOpen(true);
     speakCalm(greet);
+    armAutoClose();
   };
   const closeChat = () => {
+    clearAutoClose();
     setChatOpen(false);
     setTimeout(() => inputRef.current?.focus(), 150);
   };
@@ -152,6 +178,7 @@ export default function CekHargaScreen() {
   const askMiko = async (raw: string) => {
     const q = (raw || "").trim();
     if (!q || chatBusy) return;
+    clearAutoClose(); // pelanggan bertanya lagi → batalkan timer tutup
     setChatInput("");
     const priorHistory: MikoTurn[] = chatMsgs.map((m) => ({ role: m.who === "miko" ? "miko" : "user", text: m.text }));
     setChatMsgs((m) => [...m, { who: "cust", text: q }]);
@@ -185,6 +212,7 @@ export default function CekHargaScreen() {
     } finally {
       setChatBusy(false);
       scrollChat();
+      armAutoClose(); // Miko selesai menjawab → mulai hitung 10 dtk untuk tutup otomatis
     }
   };
 
@@ -231,14 +259,78 @@ export default function CekHargaScreen() {
   const clearTimers = () => {
     if (resetTimer.current) { clearTimeout(resetTimer.current); resetTimer.current = null; }
     if (tickTimer.current) { clearInterval(tickTimer.current); tickTimer.current = null; }
+    if (selTimer.current) { clearTimeout(selTimer.current); selTimer.current = null; }
   };
 
   const backToScan = useCallback(() => {
     clearTimers();
     setResult(null);
+    setSearchResults(null);
+    setVarProduct(null);
+    setSearchQuery("");
     setCountdown(0);
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
+
+  // Timer diam untuk layar pilihan (kartu produk / varian): 15 dtk tanpa aktivitas → kembali ke awal.
+  const armSelTimer = () => {
+    clearTimers();
+    setCountdown(RESET_MS / 1000);
+    tickTimer.current = setInterval(() => setCountdown((n) => (n > 1 ? n - 1 : 0)), 1000);
+    selTimer.current = setTimeout(() => backToScan(), RESET_MS);
+  };
+
+  // Tampilkan varian bila LEBIH DARI SATU; 1 varian → langsung hasil; tanpa varian → langsung hasil.
+  const pickProduct = (p: Product) => {
+    const vars = p.variations || [];
+    if (vars.length > 1) {
+      setSearchResults(null);
+      setVarProduct(p);
+      armSelTimer();
+      setTimeout(() => inputRef.current?.focus(), 60);
+    } else if (vars.length === 1) {
+      setSearchResults(null);
+      setVarProduct(null);
+      showResult(p, vars[0]);
+    } else {
+      setSearchResults(null);
+      setVarProduct(null);
+      showResult(p, null);
+    }
+  };
+
+  const pickVariation = (p: Product, v: Variation) => {
+    setVarProduct(null);
+    showResult(p, v);
+  };
+
+  // Pencarian KETIK (offline, dari DB Kasir lokal). Enter → cari nama.
+  const doTextSearch = (raw: string) => {
+    const q = (raw || "").trim();
+    if (!q) return;
+    clearTimers();
+    Keyboard.dismiss();
+    const found = searchProductsByName(products, q);
+    setSearchQuery("");
+    if (found.length === 0) {
+      setSearchResults(null);
+      setVarProduct(null);
+      const msg = `Hmm, Miko belum menemukan "${q}", Kak. Coba ketik nama lain, atau tanya kasir Vita dan Sasa ya.`;
+      mikoBus.emit({ type: "say", text: msg, pose: "surprised" });
+      speakCalm(msg);
+      setTimeout(() => inputRef.current?.focus(), 80);
+      return;
+    }
+    if (found.length === 1) {
+      pickProduct(found[0]);
+      return;
+    }
+    setVarProduct(null);
+    setResult(null);
+    setSearchResults(found);
+    armSelTimer();
+    setTimeout(() => inputRef.current?.focus(), 60);
+  };
 
   // Show a product + sell price, keep it for 15s, then reset to scan mode.
   const showResult = useCallback((product: Product, variation: Variation | null) => {
@@ -295,6 +387,9 @@ export default function CekHargaScreen() {
     inputRef.current?.clear();
     if (!c) { inputRef.current?.focus(); return; }
     clearTimers();
+    setSearchResults(null);
+    setVarProduct(null);
+    setSearchQuery("");
     try {
       const product = await api.getByBarcode(c);
       const variation = product.variations?.find((v) => v.barcode === c) || null;
@@ -387,11 +482,93 @@ export default function CekHargaScreen() {
             </View>
           </View>
           </ScrollView>
+        ) : varProduct ? (
+          // PILIH VARIAN: tombol besar tiap ukuran/varian (offline)
+          <View style={styles.pickWrap}>
+            <View style={styles.pickHeader}>
+              <Pressable onPress={backToScan} style={styles.pickBack} testID="pick-back" hitSlop={8}>
+                <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pickTitle} numberOfLines={1}>{varProduct.name}</Text>
+                <Text style={styles.pickSub}>Pilih ukuran / varian</Text>
+              </View>
+            </View>
+            <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {varProduct.variations.map((v) => {
+                const price = v.inherit_tiers ? varProduct.sell_price : v.sell_price;
+                return (
+                  <Pressable key={v.id} style={styles.pickCard} onPress={() => pickVariation(varProduct, v)} testID={`var-${v.id}`}>
+                    <Text style={styles.pickCardName} numberOfLines={2}>{v.name}</Text>
+                    <Text style={styles.pickCardPrice}>{rupiah(price)}</Text>
+                    <Ionicons name="chevron-forward" size={24} color={colors.brand} />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.countdownRow}>
+              <Ionicons name="time-outline" size={16} color={colors.muted} />
+              <Text style={styles.countdownTxt}>Kembali otomatis dalam {countdown}s</Text>
+            </View>
+          </View>
+        ) : searchResults ? (
+          // PILIH BARANG: beberapa hasil pencarian ketik → kartu besar
+          <View style={styles.pickWrap}>
+            <View style={styles.pickHeader}>
+              <Pressable onPress={backToScan} style={styles.pickBack} testID="pick-back" hitSlop={8}>
+                <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pickTitle}>Pilih Barang</Text>
+                <Text style={styles.pickSub}>{searchResults.length} barang ditemukan</Text>
+              </View>
+            </View>
+            <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {searchResults.map((p) => {
+                const vars = p.variations || [];
+                const hasMulti = vars.length > 1;
+                const single = vars.length === 1 ? vars[0] : null;
+                const price = single ? (single.inherit_tiers ? p.sell_price : single.sell_price) : p.sell_price;
+                return (
+                  <Pressable key={p.id} style={styles.pickCard} onPress={() => pickProduct(p)} testID={`prod-${p.id}`}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.pickCardName} numberOfLines={2}>{p.name}</Text>
+                      <Text style={styles.pickCardSub}>{hasMulti ? `${vars.length} pilihan ukuran` : rupiah(price)}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={colors.brand} />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.countdownRow}>
+              <Ionicons name="time-outline" size={16} color={colors.muted} />
+              <Text style={styles.countdownTxt}>Kembali otomatis dalam {countdown}s</Text>
+            </View>
+          </View>
         ) : (
           // Tampilan kios: layar penuh, hanya tombol Scan Barcode di tengah. Bawah kosong.
           <View style={styles.kioskIdle}>
             <Text style={styles.kioskTitle}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
             <Text style={styles.kioskSub}>Cek Harga Mandiri</Text>
+
+            {/* Cari dengan ketik: nama barang lalu Enter (offline) */}
+            <View style={styles.searchRow}>
+              <Ionicons name="search" size={20} color={colors.muted} />
+              <TextInput
+                ref={searchRef}
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Ketik nama barang lalu Enter…"
+                placeholderTextColor={colors.muted}
+                returnKeyType="search"
+                onSubmitEditing={() => doTextSearch(searchQuery)}
+                testID="cekharga-search-input"
+              />
+              <Pressable style={styles.searchBtn} onPress={() => doTextSearch(searchQuery)} testID="cekharga-search-btn">
+                <Ionicons name="arrow-forward" size={20} color={colors.onBrandPrimary} />
+              </Pressable>
+            </View>
 
             {/* Panggung Miko: Miko berdiri di atas pedestal, menyapa pelanggan */}
             <View style={styles.stage}>
@@ -459,7 +636,10 @@ export default function CekHargaScreen() {
               <TextInput
                 style={styles.chatInput}
                 value={chatInput}
-                onChangeText={setChatInput}
+                onChangeText={(t) => {
+                  setChatInput(t);
+                  if (t) clearAutoClose(); // sedang mengetik → jangan tutup dulu
+                }}
                 placeholder="Ketik pertanyaan… (di HP nanti pakai suara)"
                 placeholderTextColor={colors.muted}
                 onSubmitEditing={() => askMiko(chatInput)}
@@ -506,7 +686,23 @@ const styles = StyleSheet.create({
   scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
 
-  // Tombol "TANYA MIKO"
+  // Kolom pencarian ketik (idle)
+  searchRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, width: "100%", maxWidth: 420, marginTop: spacing.lg, paddingLeft: spacing.md, paddingRight: 6, height: 54, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandTertiary, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
+  searchBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+
+  // Layar pilihan (kartu produk / varian)
+  pickWrap: { flex: 1, width: "100%", paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  pickHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingBottom: spacing.md },
+  pickBack: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary },
+  pickTitle: { fontFamily: font.display, fontSize: fontSize.xl, color: colors.onSurface, letterSpacing: 0.5 },
+  pickSub: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.onSurfaceSecondary, marginTop: 2 },
+  pickList: { gap: spacing.sm, paddingBottom: spacing.xl },
+  pickCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 68, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandTertiary, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  pickCardName: { flex: 1, fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
+  pickCardSub: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.onSurfaceSecondary, marginTop: 2 },
+  pickCardPrice: { fontFamily: font.display, fontSize: fontSize.lg, color: colors.brand },
+
   askBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, minWidth: 240, paddingHorizontal: spacing.xl, paddingVertical: 16, borderRadius: 26, backgroundColor: colors.brand, borderBottomWidth: 6, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
   askTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 24, letterSpacing: 2 },
 

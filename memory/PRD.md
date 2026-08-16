@@ -397,3 +397,23 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - DIVERIFIKASI: curl 4 skenario (harga real, "lebih murah" konteks, curhat hangat, TANYA EMAS tidak ngarang → arahkan ke kasir). UI preview 3 skenario (minyak real Rp18.000 + alternatif, "lebih murah" konteks, curhat capek → jawaban manusiawi). Lint clean (1 warning lama).
 - SISA (Tahap B, butuh build APK): STT offline (react-native-vosk) + tombol tekan-bicara agar input SUARA; TTS jawaban sudah pakai speakCalm (bunyi di HP). 
 - CATATAN: BACKEND + FRONTEND berubah → user WAJIB REDEPLOY (Publish) agar aktif di produksi. AI online butuh internet+server; offline otomatis fallback. Fitur Cek Harga (scan) & DB Kasir TIDAK diubah.
+
+## Session Log (fork, PRODUCTION) — AUTO-CLOSE chat + PENCARIAN KETIK Cek Harga
+### A. Auto-close panel "Ngobrol dengan Miko" (10 dtk)
+- `cek-harga.tsx`: `autoCloseRef` + `armAutoClose()` (10 dtk → closeChat) + `clearAutoClose()`. Dipasang setelah greeting & setelah tiap jawaban Miko (finally askMiko). Dibatalkan saat pelanggan mengetik (onChangeText) & saat kirim pertanyaan baru (awal askMiko). closeChat membersihkan timer. Transisi lembut via Modal slide (tema Toko Bagus). Riwayat/produk TIDAK dihapus; Miko & Cek Harga tidak dimatikan.
+
+### B. Pencarian KETIK di layar Cek Harga (OFFLINE penuh, tanpa AI online)
+- Tujuan: ketik nama → Enter → kartu produk besar → pilih → (varian bila >1) → kartu harga + Miko baca. Scan barcode tetap langsung ke hasil.
+- `src/mikoChat.ts`: export `searchProductsByName(products, query, limit=24)` (pakai findByName offline).
+- `cek-harga.tsx`:
+  - State baru: `searchQuery`, `searchResults: Product[]|null`, `varProduct: Product|null`, `selTimer`.
+  - Kolom pencarian (search bar) di layar idle (TextInput terlihat + tombol). `useHideScanKeyboard` hanya menekan keyboard saat input SCANNER fokus → kolom ketik tetap memunculkan keyboard.
+  - `doTextSearch`: cari lokal; 0 hasil → Miko bilang belum ketemu (balon+TTS), tetap idle; 1 hasil → pickProduct; >1 → tampilkan kartu produk (`searchResults`).
+  - `pickProduct`: varian >1 → tampilkan kartu varian (`varProduct`); varian ==1 → langsung showResult(p, var[0]); tanpa varian → showResult(p, null). (sesuai spec: 1 pilihan tak perlu halaman varian).
+  - `pickVariation` → showResult(p, v). showResult (LAMA, offline) menampilkan kartu harga ecer+grosir & Miko membacakan via speakPrice/TTS.
+  - Precedence render: result > varProduct > searchResults > idle(+search bar).
+  - handleScan: bersihkan searchResults/varProduct/searchQuery → scan SELALU langsung ke hasil (barcode → varian tepat via product.variations match). Barcode tak ada → NOT_FOUND lama (tanpa mengarang).
+  - Auto-reset 15 dtk (RESET_MS) untuk layar pilihan via `armSelTimer` (countdown tampil), batal saat interaksi; kembali ke idle. clearTimers kini juga membersihkan selTimer.
+  - Kartu produk/varian BESAR & mudah disentuh (minHeight 68). Hubungan Induk→Variasi→Barcode→Harga TIDAK diubah; DB Kasir tidak disentuh.
+- DIVERIFIKASI (screenshot preview): "tepung" → 24 kartu produk (nama+harga, countdown 14s); "sukses" → pilih "Sukses" → kartu varian "Goreng Rp4.000" → hasil "Sukses — Goreng Rp4.000 + grosir mulai 5 pcs Rp3.600"; "beras 5kg" → banyak kartu; tanpa hasil → kembali idle. Lint clean (1 warning lama).
+- CATATAN: TTS bunyi hanya di HP/build. FRONTEND-only (+ endpoint AI dari sesi sebelumnya) → user REDEPLOY agar aktif di produksi. Pencarian ketik & harga MURNI OFFLINE (tak pakai AI online).

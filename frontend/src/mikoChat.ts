@@ -255,6 +255,13 @@ function stockSentence(p: Product): { reply: string; speak: string } {
   return { reply: r, speak: s };
 }
 
+// Pencarian produk berdasar nama untuk mode KETIK di layar Cek Harga (offline).
+// Mengembalikan daftar produk relevan (induk/standalone) untuk ditampilkan
+// sebagai kartu besar. Tidak memilih otomatis bila hasil lebih dari satu.
+export function searchProductsByName(products: Product[], query: string, limit = 24): Product[] {
+  return findByName(products, query).slice(0, limit);
+}
+
 // Kumpulkan FAKTA produk (dari DB lokal) untuk dikirim ke AI online agar tidak
 // mengarang. Menyertakan hasil pencarian pesan sekarang + konteks terakhir.
 export type MikoFact = { name: string; price: number; stock: number; unit: string; tiers: { min_qty: number; price: number }[] };
