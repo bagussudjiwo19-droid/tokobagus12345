@@ -27,6 +27,7 @@ import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer"
 import { buildReceiptText } from "@/src/receipt";
 import { speakPaymentDone } from "@/src/voice";
 import { mikoBus } from "@/src/mikoBus";
+import { sfx } from "@/src/sfx";
 
 type Step = "cart" | "pay" | "done";
 
@@ -114,6 +115,7 @@ export default function CheckoutScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Miko: rayakan pembayaran + sebutkan kembalian (bubble).
       mikoBus.emit({ type: "pay_ok" });
+      sfx.playPaid();
       if (change > 0) mikoBus.emit({ type: "change", amount: change });
       // Suara feminin: bacakan hasil transaksi bila fitur suara aktif.
       if (settings?.voiceChange) speakPaymentDone(cash, total, change);

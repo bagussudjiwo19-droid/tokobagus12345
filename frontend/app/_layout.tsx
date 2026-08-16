@@ -93,6 +93,7 @@ export default function RootLayout() {
                   <Stack.Screen name="pengaturan-printer" options={{ presentation: "modal" }} />
                   <Stack.Screen name="kelola-stok" options={{ presentation: "modal" }} />
                   <Stack.Screen name="admin-pin" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="pengaturan-suara" options={{ presentation: "modal" }} />
                 </Stack>
                 {!(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>

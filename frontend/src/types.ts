@@ -81,6 +81,10 @@ export type Settings = {
   priceClosing?: boolean; // Cek Harga: bacakan kalimat penutup setelah baca harga
   showNote: boolean;
   showThanks: boolean;
+  sfxVolume?: "normal" | "keras" | "maks"; // tingkat volume efek suara
+  sfxOk?: string; // bunyi: barang masuk / berhasil
+  sfxFail?: string; // bunyi: gagal / tidak masuk
+  sfxPaid?: string; // bunyi: transaksi lunas
 };
 
 export type Printer = { address?: string | null; name?: string | null };

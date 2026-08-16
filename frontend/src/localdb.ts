@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: Settings = {
   showTotal: true, showCashPaid: true, showChange: true, voiceChange: true,
   readPrice: true, priceClosing: true,
   showNote: false, showThanks: true,
+  sfxVolume: "keras", sfxOk: "dingdong", sfxFail: "buzz", sfxPaid: "chaching",
 };
 
 function nowIso(): string { return new Date().toISOString(); }

@@ -471,3 +471,13 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - Pencarian produk tetap aktif di mode Rapikan; hanya menghapus yang dicentang; harga/stok/barcode/variasi produk lain tidak diubah; file backup tidak disentuh.
 - DIVERIFIKASI (screenshot preview): pilih 2 → bar "Hapus 2 Produk" & "2 dipilih"; konfirmasi tampil dgn peringatan variasi + catatan backup; Batal tetap di mode; Hapus → keluar mode + toast sisa. Lint clean.
 - CATATAN: FRONTEND-only → user REDEPLOY.
+
+## Session Log — Pengaturan "Suara Efek" (pilih bunyi + volume, untuk toko ramai)
+- Keluhan: SFX (barang masuk/gagal/lunas) kurang terdengar saat ramai.
+- BARU 9 file nada di assets/sounds/ (sfx_beep/ding/dingdong/chime/chaching/coin/blip/buzz/doublebuzz.wav) di-generate via python stdlib (amplitudo ~0.9, bersih, fade anti-klik).
+- `src/sfx.ts` ditulis ulang: registry SFX_LIBRARY (9 bunyi), VOLUME_LEVELS {normal .6, keras .85, maks 1.0}, loadConfig() baca Settings (sfxVolume/sfxOk/sfxFail/sfxPaid). API: playOk/playFail/playPaid + preview(id,level) untuk tombol "Coba" + reload(). Default: keras + dingdong/buzz/chaching (sudah lebih keras & tegas dari sebelumnya).
+- `src/types.ts` + DEFAULT_SETTINGS: tambah sfxVolume/sfxOk/sfxFail/sfxPaid.
+- `toast.tsx` tetap memicu playOk (success) / playFail (error). `checkout.tsx` tambah `sfx.playPaid()` saat transaksi lunas (import sfx).
+- BARU `app/pengaturan-suara.tsx` (modal, terdaftar _layout): pilih Tingkat Volume (Normal/Keras/Maksimal) + pilih bunyi tiap kejadian (Barang Masuk/Berhasil, Gagal/Tidak Masuk, Transaksi Lunas) dari 9 opsi + tombol "Coba" (preview). Simpan otomatis ke Settings + sfx.reload(). Diakses via ikon speaker di header Riwayat (riwayat-suara).
+- DIVERIFIKASI (screenshot preview): layar tampil lengkap (volume, 3 kejadian, 9 bunyi, radio+Coba), pilih Maksimal + Koin tersimpan. SFX/preview HANYA berbunyi di HP/build (bukan web) — diberi toast pengingat.
+- CATATAN: FRONTEND-only → user REDEPLOY. Tips toko ramai: pakai volume Maksimal + naikkan volume media HP / speaker Bluetooth.
