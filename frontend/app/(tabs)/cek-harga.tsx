@@ -688,10 +688,10 @@ export default function CekHargaScreen() {
             </View>
 
             <View style={styles.scanNote}>
-              <Ionicons name="information-circle-outline" size={16} color={colors.brand} style={{ marginTop: 1 }} />
-              <Text style={styles.scanNoteTxt}>
-                Ambil scanner di bawah HP, tekan tombolnya sekali dan tunggu bunyi tanda siap. Setelah berbunyi, arahkan scanner ke barcode barang untuk mengecek harga.
-              </Text>
+              <Text style={styles.scanNoteTitle}>👋 Mau cek harga?</Text>
+              <Text style={styles.scanNoteLine}>📱 Ada barcode? Arahkan ke scanner.</Text>
+              <Text style={styles.scanNoteLine}>⌨️ Tidak ada barcode? Ketik nama barang.</Text>
+              <Text style={styles.scanNoteFoot}>Miko akan membantu menemukan harga untuk Kakak. 😊</Text>
             </View>
           </View>
         )}
@@ -882,8 +882,10 @@ const styles = StyleSheet.create({
   mikoSlot: { position: "absolute", bottom: 26, alignSelf: "center" },
   scanBigBtn: { minWidth: 240, paddingHorizontal: spacing.xl, paddingVertical: 20, borderRadius: 28, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", borderBottomWidth: 8, borderBottomColor: colors.brandSecondary, shadowColor: "#000", shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
   scanBigTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 28, letterSpacing: 2, textAlign: "center" },
-  scanNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, maxWidth: 300, marginTop: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
-  scanNoteTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 17, textAlign: "left" },
+  scanNote: { alignSelf: "stretch", gap: 8, maxWidth: 440, marginTop: spacing.xl, paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.brandTertiary },
+  scanNoteTitle: { color: colors.brand, fontFamily: font.display, fontSize: fontSize.xl, textAlign: "center", marginBottom: 2 },
+  scanNoteLine: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg, lineHeight: 26, textAlign: "center" },
+  scanNoteFoot: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, lineHeight: 22, textAlign: "center", marginTop: 4 },
 
   // Modal PIN Admin
   pinBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", padding: spacing.lg },

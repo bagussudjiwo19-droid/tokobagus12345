@@ -456,3 +456,6 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - BARU `app/admin-pin.tsx` (modal, terdaftar di `_layout.tsx`): Ubah/atur PIN Admin. Bila PIN ada → minta PIN lama dulu, lalu PIN baru + konfirmasi. Diakses via ikon gembok baru di header Riwayat (`riwayat-admin-pin`).
 - DIVERIFIKASI (screenshot preview, 1 sesi): buat PIN 1234 → masuk kios; back → modal peringatan+PIN; PIN salah(9999) → tetap di kios; Batal → tetap; PIN benar(1234) → keluar ke Transaksi; setelah dibuat tak minta buat lagi (dalam sesi yang sama). Catatan: tiap panggilan screenshot = browser/localStorage baru → modal buat muncul lagi (artefak web saja; di HP SecureStore permanen). Lint clean (2 warning lama tak berbahaya).
 - CATATAN: BackHandler Android hanya efektif di APK (bukan preview web). FRONTEND-only → user REDEPLOY & build APK untuk uji penuh (termasuk gesture/tombol back Android). Fitur Kasir/Cek Harga/scan/pencarian/varian/suara Miko/Import-Restore/DB TIDAK diubah.
+
+## Session Log — Ganti note petunjuk Cek Harga
+- `cek-harga.tsx` scanNote diganti jadi 4 baris besar & ramah (persis permintaan): "👋 Mau cek harga?" / "📱 Ada barcode? Arahkan ke scanner." / "⌨️ Tidak ada barcode? Ketik nama barang." / "Miko akan membantu menemukan harga untuk Kakak. 😊". Style dibesarkan (title xl, baris lg, tengah). Diverifikasi screenshot. FRONTEND-only → redeploy.
