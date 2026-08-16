@@ -26,6 +26,9 @@ const F: Record<string, any> = {
   surprised: require("../assets/miko_rig/surprised.png"),
   point: require("../assets/miko_rig/point.png"),
   sales: require("../assets/miko_rig/sales.png"),
+  mischief: require("../assets/miko_rig/mischief.png"),
+  sleepy: require("../assets/miko_rig/sleepy.png"),
+  warm: require("../assets/miko_rig/warm.png"),
 };
 
 // Frame istirahat (diam) untuk tiap state.
@@ -33,6 +36,7 @@ const REST: Record<MikoState, string> = {
   IDLE: "base", TALK: "base", THINKING: "thinking", HAPPY: "happy",
   CONFUSED: "confused", SAD: "sad", SURPRISED: "surprised", LAUGH: "laugh",
   POINT: "point", SALES_EXPLAIN: "sales",
+  MISCHIEF: "mischief", SLEEPY: "sleepy", WARM: "warm",
 };
 
 // Urutan buka-tutup mulut saat bicara (mulut netral, ramah, tetap on-model).
@@ -52,12 +56,21 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
   const talkingRef = useRef(false);
   const frameRef = useRef(REST[initial]);
   const setF = (f: string) => { frameRef.current = f; setFrame(f); };
+  // Ganti frame ISTIRAHAT (ekspresi) dengan transisi lembut: redup → tukar → terang.
+  const transitionTo = (f: string) => {
+    if (frameRef.current === f) return;
+    Animated.timing(fade, { toValue: 0.2, duration: 110, useNativeDriver: true }).start(() => {
+      setF(f);
+      Animated.timing(fade, { toValue: 1, duration: 190, useNativeDriver: true }).start();
+    });
+  };
 
   // Transform (semua native driver → mulus & ringan).
   const bob = useRef(new Animated.Value(0)).current;   // napas naik-turun
   const tilt = useRef(new Animated.Value(0)).current;  // angguk/miring kepala
   const sway = useRef(new Animated.Value(0)).current;   // geser kiri-kanan (sales)
   const pop = useRef(new Animated.Value(1)).current;    // pop kaget / masuk
+  const fade = useRef(new Animated.Value(1)).current;   // transisi halus antar-ekspresi
   const lift = useRef(new Animated.Value(0)).current;   // mundur/naik (kaget)
   const bubbleA = useRef(new Animated.Value(0)).current;
 
@@ -147,7 +160,7 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
       Animated.spring(pop, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
     }
     applyMotion(s);
-    if (!talkingRef.current) setF(REST[s]);
+    if (!talkingRef.current) transitionTo(REST[s]);
   };
 
   // -------- Bicara: mulut bergerak + aksen ekspresi --------
@@ -204,7 +217,11 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
       if (e.type === "speak_end") { stopTalk(); return; }
       if (e.type === "say") { bubble(e.text); if (e.pose === "surprised") goState("SURPRISED"); return; }
       if (e.type === "price_found") { goState("POINT"); return; }
-      if (e.type === "not_found") { goState("CONFUSED"); return; }
+      if (e.type === "not_found") {
+        goState("SAD");
+        pushT(setTimeout(() => { if (!talkingRef.current) goState("WARM"); }, 1600));
+        return;
+      }
     });
     return () => {
       off();
@@ -231,12 +248,15 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
     }, 12000);
     const exprId = setInterval(() => {
       if (talkingRef.current) return;
-      // sesekali senyum ceria lalu kembali idle
-      if (stateRef.current === "IDLE" && Math.random() < 0.5) {
-        goState("HAPPY");
-        pushT(setTimeout(() => { if (!talkingRef.current) goState("IDLE"); }, 1600));
-      }
-    }, 7000);
+      // Hanya berganti "bahasa wajah" saat sedang santai/idle (bukan state percakapan).
+      const idleish: MikoState[] = ["IDLE", "WARM", "HAPPY", "THINKING", "MISCHIEF", "SLEEPY"];
+      if (!idleish.includes(stateRef.current)) return;
+      // Pilih ekspresi idle berikutnya (acak, tidak sama dgn sekarang). Mengantuk & usil jarang.
+      const pool: MikoState[] = ["IDLE", "WARM", "HAPPY", "WARM", "THINKING", "IDLE", "MISCHIEF", "WARM", "SLEEPY", "HAPPY"];
+      let next = pool[Math.floor(Math.random() * pool.length)];
+      if (next === stateRef.current) next = "IDLE";
+      goState(next);
+    }, 4500);
     return () => { clearInterval(sayId); clearInterval(exprId); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBubble, ambient]);
@@ -269,6 +289,7 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
       <Pressable onPress={onTap} hitSlop={14} testID="miko-rig">
         <Animated.View
           style={{
+            opacity: fade,
             transform: [
               { translateX: swayX },
               { translateY: Animated.add(bobY, liftY) },

@@ -43,6 +43,9 @@ FRAMES = {
     "surprised": "Redraw " + IDENTITY + " Expression: surprised - very wide big eyes, small round open 'o' mouth, paws up near cheeks, leaning back a little. " + BG,
     "point":     "Redraw " + IDENTITY + " Pose: happily POINTING to the side with the right paw/arm extended toward something, cheerful open smile, looking that direction. " + BG,
     "sales":     "Redraw " + IDENTITY + " Pose: friendly salesperson presenting - both arms/paws open and spread outward in a welcoming 'ta-da / here you go' gesture, confident warm smile. " + BG,
+    "mischief":  "Redraw " + IDENTITY + " Expression: playful mischievous - ONE eye winking (closed), a sly cheeky closed smirk/grin, slight raised eyebrow, one paw near the mouth as if giggling secretly. " + BG,
+    "sleepy":    "Redraw " + IDENTITY + " Expression: sleepy and drowsy - half-closed droopy relaxed eyes, a tiny small yawn mouth, one paw gently rubbing one eye, calm cozy look. " + BG,
+    "warm":      "Redraw " + IDENTITY + " Expression: warm and affectionate - gentle happy closed eyes curved upward, a big warm loving smile, extra rosy blush cheeks, both paws softly near the chest, cozy friendly feel. " + BG,
 }
 
 

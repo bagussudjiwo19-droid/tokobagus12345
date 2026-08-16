@@ -24,7 +24,8 @@ export type MikoEvent =
 // State animasi karakter Miko (rig 2.5D) untuk kios Cek Harga.
 export type MikoState =
   | "IDLE" | "TALK" | "THINKING" | "HAPPY" | "CONFUSED"
-  | "SAD" | "SURPRISED" | "LAUGH" | "POINT" | "SALES_EXPLAIN";
+  | "SAD" | "SURPRISED" | "LAUGH" | "POINT" | "SALES_EXPLAIN"
+  | "MISCHIEF" | "SLEEPY" | "WARM";
 
 type Listener = (e: MikoEvent) => void;
 const listeners = new Set<Listener>();

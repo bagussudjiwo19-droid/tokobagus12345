@@ -1,5 +1,19 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — EKSPRESI MIKO lebih hidup + Miko "sales" di layar pilihan
+- 3 frame ekspresi BARU (gaya sama, di-edit dari base.png via Nano Banana): `mischief.png` (usil/kedip+smirk), `sleepy.png` (mengantuk mata setengah), `warm.png` (ramah/hangat 🥰). Total 15 frame rig. Skrip `/app/scripts/gen_miko_rig.py` (+ bg flood-fill transparan).
+- `src/mikoBus.ts`: MikoState tambah MISCHIEF, SLEEPY, WARM.
+- `components/MikoRig.tsx`:
+  - REST map + F sources utk 3 frame baru.
+  - TRANSISI HALUS antar-ekspresi: `transitionTo()` redup(opacity→0.2,110ms)→tukar frame→terang(→1,190ms) + pop scale; dipakai di goState (blink/mulut tetap swap instan). Opacity `fade` dipasang di Animated.View.
+  - IDLE "bahasa wajah": exprId tiap 4.5s memilih acak dari pool (IDLE/WARM/HAPPY/THINKING/MISCHIEF/SLEEPY; mengantuk & usil jarang) dgn transisi halus — Miko tak lagi berwajah sama terus.
+  - `not_found` → SAD sebentar (1.6s) lalu WARM (kecewa lalu ramah lagi).
+- `app/(tabs)/cek-harga.tsx`:
+  - Layar "Pilih Barang" (searchResults) & "Pilih Varian" (varProduct): tambah `<MikoRig size=92 ambient=false initial=THINKING>` di header. useEffect saat layar pilihan aktif: emit THINKING (melihat) lalu POINT (menunjuk daftar) setelah 1.1s → terasa dilayani sales.
+  - `salesToState`: intent 'none' → CONFUSED (tidak paham → bingung).
+- DIVERIFIKASI (screenshot preview): Pilih Barang → Miko menunjuk daftar; Pilih Varian → Miko menunjuk; layar hasil → Miko menunjuk harga; idle render OK (ekspresi berputar). Lint clean. CATATAN: animasi mulus & suara paling terlihat di HP/BUILD APK; frontend-only → REDEPLOY.
+
+
 ## Session Log (fork) — GANTI EFEK SUARA jadi 11 "Suara Miko" lembut (sesuai mockup user)
 - User kirim mockup layar "Suara Efek": daftar bunyi Miko dgn ikon warna + deskripsi + centang + tombol Coba, pemisah grup positif/subtil. Minta ganti efek suara lama (keras: beep/buzz/coin/chaching/ding/dll) → suara Miko lembut.
 - ASET baru `assets/sounds/miko_*.wav` (11) disintesis stdlib (sinus + harmonik + envelope halus, peak 0.5, no click). Skrip `/app/scripts/gen_miko_sfx.py`. Daftar: sparkle (2-3 nada naik), bell (bel hangat), magic (chime berkilau), happy (3 nada ceria), pop (pop+chime), premium (chime elegan) [POSITIF]; oops (2 nada turun), warning (rendah halus), tryagain (nada menurun), blip (blip lembut), hmm (nada berpikir) [SUBTIL].

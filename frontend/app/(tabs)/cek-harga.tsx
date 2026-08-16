@@ -109,6 +109,7 @@ function salesToState(intent: string): MikoState {
     case "greet": case "thanks": return "HAPPY";
     case "decline": return "IDLE";
     case "price": case "stock": return "POINT";
+    case "none": return "CONFUSED";
     default: return "HAPPY";
   }
 }
@@ -176,6 +177,16 @@ export default function CekHargaScreen() {
   };
 
   useEffect(() => () => clearAutoClose(), []);
+
+  // Layar "beberapa pilihan" (Pilih Barang / Pilih Varian): Miko MELIHAT dulu
+  // (berpikir) lalu MENUNJUK daftar → terasa dilayani sales sungguhan.
+  useEffect(() => {
+    if ((searchResults && searchResults.length) || varProduct) {
+      mikoBus.emit({ type: "miko_state", state: "THINKING" });
+      const t = setTimeout(() => mikoBus.emit({ type: "miko_state", state: "POINT" }), 1100);
+      return () => clearTimeout(t);
+    }
+  }, [searchResults, varProduct]);
 
   const openChat = () => {
     clearTimers();
@@ -593,6 +604,9 @@ export default function CekHargaScreen() {
                 <Text style={styles.pickTitle} numberOfLines={1}>{varProduct.name}</Text>
                 <Text style={styles.pickSub}>Pilih ukuran / varian</Text>
               </View>
+              <View style={styles.pickMiko}>
+                <MikoRig size={92} ambient={false} initial="THINKING" />
+              </View>
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {varProduct.variations.map((v) => {
@@ -621,6 +635,9 @@ export default function CekHargaScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.pickTitle}>Pilih Barang</Text>
                 <Text style={styles.pickSub}>{searchResults.length} barang ditemukan</Text>
+              </View>
+              <View style={styles.pickMiko}>
+                <MikoRig size={92} ambient={false} initial="THINKING" />
               </View>
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -959,6 +976,7 @@ const styles = StyleSheet.create({
   chatLog: { flex: 1 },
   chatMikoStage: { alignItems: "center", justifyContent: "flex-end", height: 140, marginTop: 4 },
   resultMiko: { alignItems: "center", justifyContent: "flex-end", height: 122, marginBottom: 2 },
+  pickMiko: { width: 92, height: 96, alignItems: "center", justifyContent: "flex-end" },
   bubble: { maxWidth: "82%", paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: 18 },
   bubbleMiko: { alignSelf: "flex-start", backgroundColor: colors.brandTertiary, borderTopLeftRadius: 4 },
   bubbleCust: { alignSelf: "flex-end", backgroundColor: colors.brand, borderTopRightRadius: 4 },
