@@ -369,3 +369,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - KESIMPULAN: kode & server benar. Penyebab "Offline" di HP user = APK menembak backend URL yang TIDAK terjangkau (URL preview berubah setelah fork / preview tidur saat workspace idle). Cloud Sync hanya andal bila backend DI-DEPLOY (Publish) → dapat URL produksi stabil & selalu online, lalu APK di-build ulang.
 - PERBAIKAN KODE (robustness 4G lemah): `src/sync.ts` push kini BERTAHAP (chunk 150 item/request, timeout 20 dtk/request; settings dititip di request pertama) via `pushDirty()` → hindari 1 request 958KB timeout di 4G lemah. Cursor K_LAST_PUSH hanya maju setelah semua chunk sukses. Pull tetap 1 GET. Lint clean, diverifikasi round-trip di preview.
 - CATATAN untuk agent berikutnya: Cloud Sync = butuh backend deployed. Arahkan user ke tombol Publish + build ulang APK bila ingin sinkron antar-HP jalan permanen.
+
+## Session Log (fork, PRODUCTION) — FIX: produk baru dari HP1 tidak muncul di HP lain
+- Keluhan: setelah deploy, tambah produk di HP1 → di HP lain "produk tidak ditemukan".
+- ROOT CAUSE: cursor sinkron PULL memakai jam SERVER (pull.now), tetapi produk disimpan dengan `updated_at` = jam HP pengirim. Bila jam HP1 sedikit di belakang jam server, `updated_at` produk baru < cursor HP2 → produk difilter keluar di `/sync/pull` → tak pernah sampai (permanen).
+- FIX (backend/server.py): server kini mencap `srv_at` (jam SERVER) pada SETIAP tulisan (push products/transactions/settings). `/sync/pull` memakai `srv_at` sebagai cursor: `since==0` → kirim SEMUA (bootstrap HP baru, migrasi-aman untuk data lama tanpa srv_at); `since>0` → hanya `srv_at > since`. `updated_at` (jam HP) tetap dipakai HANYA untuk LWW konten (siapa terbaru menang). `push` mengembalikan `now = srv`.
+- DIVERIFIKASI (localhost): simulasi jam HP1 mundur 60 dtk → produk baru TETAP sampai ke HP2 (sebelumnya pasti hilang). Bootstrap store lama (2261 produk tanpa srv_at) since=0 → 2261 terkirim; incremental since=now → 0 (tanpa duplikasi/spam).
+- PENTING: perbaikan ada di BACKEND → user WAJIB REDEPLOY (Publish) agar aktif di produksi. Tanpa perubahan kode frontend.

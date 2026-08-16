@@ -555,11 +555,20 @@ def _ms() -> int:
 
 @api_router.get("/sync/pull")
 async def sync_pull(store: str, since: int = 0):
-    prods = await db.s_products.find({"store": store, "updated_at": {"$gt": since}}).to_list(1000000)
-    txs = await db.s_transactions.find({"store": store, "updated_at": {"$gt": since}}).to_list(1000000)
+    # PENTING: cursor sinkron memakai srv_at (jam SERVER saat data ditulis),
+    # bukan updated_at (jam HP pengirim). Ini mencegah produk "terlewat" akibat
+    # beda jam antar-HP. since==0 = ambil SEMUA (bootstrap HP baru); since>0 =
+    # hanya yang ditulis server setelah cursor terakhir.
+    pq = {"store": store}
+    tq = {"store": store}
+    if since > 0:
+        pq["srv_at"] = {"$gt": since}
+        tq["srv_at"] = {"$gt": since}
+    prods = await db.s_products.find(pq).to_list(1000000)
+    txs = await db.s_transactions.find(tq).to_list(1000000)
     sett = await db.s_settings.find_one({"store": store})
     settings = None
-    if sett and int(sett.get("updated_at", 0)) > since:
+    if sett and (since == 0 or int(sett.get("srv_at", 0)) > since):
         settings = {"doc": sett.get("doc"), "updated_at": int(sett.get("updated_at", 0))}
     return {
         "now": _ms(),
@@ -574,6 +583,7 @@ async def sync_push(body: dict = Body(...)):
     store = body.get("store")
     if not store:
         raise HTTPException(status_code=400, detail="Kode Toko wajib diisi")
+    srv = _ms()  # stempel jam SERVER untuk semua data yang benar-benar ditulis
     for p in (body.get("products") or []):
         pid = p.get("id")
         if not pid:
@@ -584,7 +594,7 @@ async def sync_push(body: dict = Body(...)):
             continue  # server punya versi lebih baru → jangan ditimpa
         await db.s_products.update_one(
             {"store": store, "id": pid},
-            {"$set": {"store": store, "id": pid, "doc": p.get("doc"), "updated_at": upd, "deleted": bool(p.get("deleted", False))}},
+            {"$set": {"store": store, "id": pid, "doc": p.get("doc"), "updated_at": upd, "srv_at": srv, "deleted": bool(p.get("deleted", False))}},
             upsert=True,
         )
     for t in (body.get("transactions") or []):
@@ -597,7 +607,7 @@ async def sync_push(body: dict = Body(...)):
             continue
         await db.s_transactions.update_one(
             {"store": store, "id": tid},
-            {"$set": {"store": store, "id": tid, "doc": t.get("doc"), "updated_at": upd}},
+            {"$set": {"store": store, "id": tid, "doc": t.get("doc"), "updated_at": upd, "srv_at": srv}},
             upsert=True,
         )
     sett = body.get("settings")
@@ -607,10 +617,10 @@ async def sync_push(body: dict = Body(...)):
         if not (existing and int(existing.get("updated_at", 0)) > upd):
             await db.s_settings.update_one(
                 {"store": store},
-                {"$set": {"store": store, "doc": sett.get("doc"), "updated_at": upd}},
+                {"$set": {"store": store, "doc": sett.get("doc"), "updated_at": upd, "srv_at": srv}},
                 upsert=True,
             )
-    return {"ok": True, "now": _ms()}
+    return {"ok": True, "now": srv}
 
 
 app.include_router(api_router)
