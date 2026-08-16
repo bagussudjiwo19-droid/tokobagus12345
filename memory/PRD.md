@@ -429,3 +429,16 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - Kartu produk di chat (chatCard) → tombol "Lihat" → closeChat + `pickProduct(card)` → hasil lengkap (nama/varian/harga/grosir) di layar utama (reuse showResult, offline).
 - DIVERIFIKASI (screenshot preview): "harga kopi" → "Kopi Sachet Rp2.000. Oh iya, ada Gula Pasir 1kg juga. Mau Miko tampilkan?" → "boleh" → KARTU Gula Pasir muncul di chat. "harga minyak goreng"→"lebih murah"→TAWARAN→"tidak usah"→"Baik, Kak" (no card, tak diulang). "lebih murah lagi"→tawaran beda→"boleh"→kartu→TAP→hasil "sasa pisang goreng Rp3.000" di layar utama. Lint clean (1 warning lama).
 - CATATAN: Sales Mode 100% OFFLINE (rule-based, DB lokal). AI online HANYA untuk obrolan bebas (butuh internet, fallback offline). FRONTEND-only → user REDEPLOY. Fitur Kasir/Cek Harga/scan/varian/stok/import TIDAK diubah. Aturan COMPLEMENTS mudah ditambah tanpa ubah sistem inti.
+
+## Session Log (fork, PRODUCTION) — FIX BUG PENCARIAN (relevansi) + layar "Belum Ketemu"
+- BUG: ketik "terigu" memunculkan produk tak relevan (R3, R5, hs, giv, pln, dst). ROOT CAUSE di `findByName` (mikoChat.ts): baris `if (!p.parent_id) score += 0.2` memberi skor ke SEMUA produk induk walau tak cocok → `filter(score>0)` meloloskan semua.
+- FIX `src/mikoChat.ts`:
+  - Bonus induk kini HANYA bila sudah ada kecocokan nyata: `if (score > 0 && !p.parent_id) score += 0.2`.
+  - Pencocokan kini terhadap `haystack(p)` = nama produk + nama SEMUA variasinya (dukung "induk/variasi mengandung kata").
+  - Fuzzy DIKETATKAN: substring token match sebagai utama; Levenshtein hanya FALLBACK saat hasil ketat KOSONG, khusus token panjang (>=4) dengan jarak edit <=1 (mis. "trigu"→"terigu"). Tidak lagi mencocokkan kode/angka acak.
+  - `searchProductsByName` tetap pakai findByName (kini ketat).
+- `app/(tabs)/cek-harga.tsx`:
+  - Tak ada hasil → TIDAK menampilkan seluruh DB. Muncul layar "Belum Ketemu" + pesan Miko + tombol "Coba Cari Lagi" (backToScan) & "Tampilkan Semua Produk" (`showAllProducts`: semua produk urut nama, dibatasi 200 demi performa). State `noResultQuery`. Auto-reset 15 dtk.
+  - FIX overlap: tombol keluar kios (kiosk-back, absolute kiri-atas) DISEMBUNYIKAN saat layar pilihan/belum-ketemu aktif (searchResults||varProduct||noResultQuery) agar tak menumpuk tombol back header (pick-back). 
+- DIVERIFIKASI (screenshot preview): "terigu"→2 produk terigu saja; "gula"→9 produk gula relevan; "qwertyxx"→layar Belum Ketemu + 2 tombol; "Tampilkan Semua Produk"→200 produk urut. Data DB TIDAK diubah (hanya algoritma filter). Lint clean (1 warning lama).
+- CATATAN: FRONTEND-only → user REDEPLOY. Relasi Induk→Variasi→Harga tetap utuh.

@@ -50,8 +50,31 @@ function speakName(name: string): string {
   return (name || "").replace(/—/g, " ").replace(/\s+/g, " ").trim();
 }
 
-// Cari produk berdasar nama (fuzzy sederhana, offline). Skor dari jumlah token
-// query yang muncul di nama produk + bonus bila seluruh query menempel.
+// Jarak Levenshtein (untuk fallback typo kecil, mis. "trigu" → "terigu").
+function lev(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]; dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+
+// Teks yang bisa dicari untuk sebuah produk: nama + nama semua variasinya.
+function haystack(p: Product): string {
+  const vars = (p.variations || []).map((v) => v.name).join(" ");
+  return norm(`${p.name} ${vars}`);
+}
+
+// Cari produk berdasar nama (COCOK KETAT, offline). Skor dari jumlah token query
+// yang benar-benar muncul di nama produk / nama variasinya. TIDAK mengembalikan
+// produk yang tak berhubungan. Fallback typo hanya dipakai bila hasil ketat kosong.
 function findByName(products: Product[], q: string): Product[] {
   const nq = norm(q);
   if (!nq) return [];
@@ -61,14 +84,15 @@ function findByName(products: Product[], q: string): Product[] {
 
   const scored = products
     .map((p) => {
-      const np = norm(p.name);
-      const npNoSpace = np.replace(/\s+/g, "");
+      const hay = haystack(p);
+      const hayNoSpace = hay.replace(/\s+/g, "");
       let score = 0;
-      for (const t of qTokens) if (np.includes(t)) score += 1;
-      if (nqNoSpace.length >= 3 && npNoSpace.includes(nqNoSpace)) score += 2;
-      if (np === nq) score += 4;
-      // sedikit prioritas untuk induk (bukan variasi) agar jawaban lebih umum
-      if (!p.parent_id) score += 0.2;
+      // Tiap token query harus BENAR-BENAR muncul (substring) di nama/variasi.
+      for (const t of qTokens) if (hay.includes(t)) score += 1;
+      if (nqNoSpace.length >= 3 && hayNoSpace.includes(nqNoSpace)) score += 2;
+      if (hay === nq) score += 4;
+      // Bonus induk HANYA bila sudah ada kecocokan nyata (jangan loloskan yang tak cocok).
+      if (score > 0 && !p.parent_id) score += 0.2;
       return { p, score };
     })
     .filter((x) => x.score > 0)
@@ -79,7 +103,25 @@ function findByName(products: Product[], q: string): Product[] {
         a.p.sell_price - b.p.sell_price,
     );
 
-  return scored.map((x) => x.p);
+  if (scored.length > 0) return scored.map((x) => x.p);
+
+  // FALLBACK typo ringan: hanya untuk token panjang (>=4) dengan jarak edit <= 1.
+  const qLong = qTokens.filter((t) => t.length >= 4);
+  if (qLong.length === 0) return [];
+  const fuzzy = products
+    .map((p) => {
+      const pTokens = haystack(p).split(" ").filter((t) => t.length >= 3);
+      let best = 99;
+      for (const qt of qLong) for (const pt of pTokens) {
+        const d = lev(qt, pt);
+        if (d < best) best = d;
+      }
+      return { p, d: best };
+    })
+    .filter((x) => x.d <= 1)
+    .sort((a, b) => a.d - b.d || norm(a.p.name).length - norm(b.p.name).length);
+
+  return fuzzy.map((x) => x.p);
 }
 
 // Buang kata pemicu/pengisi agar tersisa dugaan NAMA barang.

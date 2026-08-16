@@ -113,6 +113,7 @@ export default function CekHargaScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[] | null>(null);
   const [varProduct, setVarProduct] = useState<Product | null>(null);
+  const [noResultQuery, setNoResultQuery] = useState<string | null>(null);
   const searchRef = useRef<TextInput>(null);
   const selTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -275,6 +276,7 @@ export default function CekHargaScreen() {
     setResult(null);
     setSearchResults(null);
     setVarProduct(null);
+    setNoResultQuery(null);
     setSearchQuery("");
     setCountdown(0);
     setTimeout(() => inputRef.current?.focus(), 80);
@@ -323,19 +325,34 @@ export default function CekHargaScreen() {
     if (found.length === 0) {
       setSearchResults(null);
       setVarProduct(null);
-      const msg = `Hmm, Miko belum menemukan "${q}", Kak. Coba ketik nama lain, atau tanya kasir Vita dan Sasa ya.`;
+      setNoResultQuery(q);
+      const msg = `Miko belum menemukan barang "${q}", Kak. Mau coba lagi, atau lihat semua produk?`;
       mikoBus.emit({ type: "say", text: msg, pose: "surprised" });
       speakCalm(msg);
+      armSelTimer();
       setTimeout(() => inputRef.current?.focus(), 80);
       return;
     }
     if (found.length === 1) {
+      setNoResultQuery(null);
       pickProduct(found[0]);
       return;
     }
     setVarProduct(null);
     setResult(null);
+    setNoResultQuery(null);
     setSearchResults(found);
+    armSelTimer();
+    setTimeout(() => inputRef.current?.focus(), 60);
+  };
+
+  // Escape hatch: tampilkan semua produk (dibatasi & urut nama) — hanya bila diminta.
+  const showAllProducts = () => {
+    const all = [...products].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 200);
+    setNoResultQuery(null);
+    setVarProduct(null);
+    setResult(null);
+    setSearchResults(all);
     armSelTimer();
     setTimeout(() => inputRef.current?.focus(), 60);
   };
@@ -397,6 +414,7 @@ export default function CekHargaScreen() {
     clearTimers();
     setSearchResults(null);
     setVarProduct(null);
+    setNoResultQuery(null);
     setSearchQuery("");
     try {
       const product = await api.getByBarcode(c);
@@ -426,10 +444,13 @@ export default function CekHargaScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
-      {/* Panah kembali kecil di pojok kiri atas (untuk kasir keluar dari kios) */}
-      <Pressable style={[styles.backBtn, { top: insets.top + 6 }]} onPress={onBack} testID="kiosk-back" hitSlop={10}>
-        <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
-      </Pressable>
+      {/* Panah kembali kecil di pojok kiri atas (untuk kasir keluar dari kios).
+          Disembunyikan saat layar PILIHAN aktif agar tak menumpuk tombol back header. */}
+      {!(searchResults || varProduct || noResultQuery) && (
+        <Pressable style={[styles.backBtn, { top: insets.top + 6 }]} onPress={onBack} testID="kiosk-back" hitSlop={10}>
+          <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
+        </Pressable>
+      )}
 
       {/* Input scanner Bluetooth tersembunyi — tetap aktif tanpa keyboard HP */}
       <TextInput
@@ -548,6 +569,35 @@ export default function CekHargaScreen() {
                 );
               })}
             </ScrollView>
+            <View style={styles.countdownRow}>
+              <Ionicons name="time-outline" size={16} color={colors.muted} />
+              <Text style={styles.countdownTxt}>Kembali otomatis dalam {countdown}s</Text>
+            </View>
+          </View>
+        ) : noResultQuery ? (
+          // BELUM KETEMU: pesan + opsi (jangan tampilkan seluruh DB otomatis)
+          <View style={styles.pickWrap}>
+            <View style={styles.pickHeader}>
+              <Pressable onPress={backToScan} style={styles.pickBack} testID="pick-back" hitSlop={8}>
+                <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pickTitle}>Belum Ketemu</Text>
+                <Text style={styles.pickSub} numberOfLines={1}>&quot;{noResultQuery}&quot; tidak ditemukan</Text>
+              </View>
+            </View>
+            <View style={styles.nrBody}>
+              <Ionicons name="search-outline" size={48} color={colors.brandTertiary} />
+              <Text style={styles.nrMsg}>Miko belum menemukan barang &quot;{noResultQuery}&quot;, Kak.</Text>
+              <Pressable style={styles.nrBtnPrimary} onPress={backToScan} testID="nr-retry">
+                <Ionicons name="create-outline" size={20} color={colors.onBrandPrimary} />
+                <Text style={styles.nrBtnPrimaryTxt}>Coba Cari Lagi</Text>
+              </Pressable>
+              <Pressable style={styles.nrBtnSecondary} onPress={showAllProducts} testID="nr-showall">
+                <Ionicons name="grid-outline" size={20} color={colors.brand} />
+                <Text style={styles.nrBtnSecondaryTxt}>Tampilkan Semua Produk</Text>
+              </Pressable>
+            </View>
             <View style={styles.countdownRow}>
               <Ionicons name="time-outline" size={16} color={colors.muted} />
               <Text style={styles.countdownTxt}>Kembali otomatis dalam {countdown}s</Text>
@@ -756,6 +806,13 @@ const styles = StyleSheet.create({
   chatCardPrice: { fontFamily: font.display, fontSize: fontSize.lg, color: colors.brand, marginTop: 2 },
   chatCardBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.brand },
   chatCardBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.sm },
+  // Layar "belum ketemu"
+  nrBody: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },
+  nrMsg: { textAlign: "center", fontFamily: font.medium, fontSize: fontSize.lg, color: colors.onSurface, marginBottom: spacing.sm },
+  nrBtnPrimary: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, width: "100%", maxWidth: 320, height: 54, borderRadius: radius.pill, backgroundColor: colors.brand },
+  nrBtnPrimaryTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
+  nrBtnSecondary: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, width: "100%", maxWidth: 320, height: 54, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brand },
+  nrBtnSecondaryTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   chatInputRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   chatInput: { flex: 1, height: 50, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.base },
   chatSend: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
