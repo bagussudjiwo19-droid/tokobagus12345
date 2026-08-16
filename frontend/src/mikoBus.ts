@@ -16,7 +16,15 @@ export type MikoEvent =
   | { type: "product_deleted" }
   | { type: "say"; text: string; pose?: string }
   | { type: "backup_reminder" }
+  | { type: "speak_start"; ms?: number }
+  | { type: "speak_end" }
+  | { type: "miko_state"; state: MikoState }
   | { type: "scan_ready" };
+
+// State animasi karakter Miko (rig 2.5D) untuk kios Cek Harga.
+export type MikoState =
+  | "IDLE" | "TALK" | "THINKING" | "HAPPY" | "CONFUSED"
+  | "SAD" | "SURPRISED" | "LAUGH" | "POINT" | "SALES_EXPLAIN";
 
 type Listener = (e: MikoEvent) => void;
 const listeners = new Set<Listener>();

@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { api } from "@/src/api";
-import { mikoBus } from "@/src/mikoBus";
+import { mikoBus, type MikoState } from "@/src/mikoBus";
 import { useData } from "@/src/data";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
@@ -18,7 +18,7 @@ import { askMikoOnline, type MikoTurn } from "@/src/mikoAI";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
-import Miko from "@/components/Miko";
+import MikoRig from "@/components/MikoRig";
 
 const RESET_MS = 15000;
 
@@ -101,6 +101,18 @@ const NOT_FOUND: string[] = [
 ];
 
 type ScanResult = { name: string; price: number; unit: string; tiers: Tier[] };
+
+// Petakan intent jawaban Miko (offline sales) → state animasi rig 2.5D.
+function salesToState(intent: string): MikoState {
+  switch (intent) {
+    case "offer": case "show": case "help": return "SALES_EXPLAIN";
+    case "greet": case "thanks": return "HAPPY";
+    case "decline": return "IDLE";
+    case "price": case "stock": return "POINT";
+    default: return "HAPPY";
+  }
+}
+
 
 export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
@@ -198,6 +210,7 @@ export default function CekHargaScreen() {
     setChatMsgs((m) => [...m, { who: "cust", text: q }]);
     const thinking = mikoThinking();
     setChatMsgs((m) => [...m, { who: "miko", text: thinking }]);
+    mikoBus.emit({ type: "miko_state", state: "THINKING" });
     speakCalm(thinking);
     setChatBusy(true);
     scrollChat();
@@ -209,6 +222,7 @@ export default function CekHargaScreen() {
     if (sales.intent !== "chitchat") {
       // Pertanyaan produk / sales → jawab dari DB lokal (jalan online & offline).
       setChatMsgs((m) => [...m, { who: "miko", text: sales.reply, card: sales.card || null }]);
+      mikoBus.emit({ type: "miko_state", state: salesToState(sales.intent) });
       speakCalm(cleanTTS(sales.speak));
       setChatBusy(false);
       scrollChat();
@@ -227,9 +241,11 @@ export default function CekHargaScreen() {
         shopName: settings?.shopName || "TOKO BAGUS",
       });
       setChatMsgs((m) => [...m, { who: "miko", text: reply }]);
+      mikoBus.emit({ type: "miko_state", state: "HAPPY" });
       speakCalm(cleanTTS(reply));
     } catch {
       setChatMsgs((m) => [...m, { who: "miko", text: sales.reply }]);
+      mikoBus.emit({ type: "miko_state", state: "HAPPY" });
       speakCalm(cleanTTS(sales.speak));
     } finally {
       setChatBusy(false);
@@ -292,6 +308,7 @@ export default function CekHargaScreen() {
     setNoResultQuery(null);
     setSearchQuery("");
     setCountdown(0);
+    mikoBus.emit({ type: "miko_state", state: "IDLE" });
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
@@ -382,7 +399,9 @@ export default function CekHargaScreen() {
     setResult({ name, price, unit: product.unit, tiers });
     Haptics.selectionAsync();
     mikoBus.emit({ type: "price_found" });
-    speakPrice(name, price, product.unit, tiers);
+    // Tunda sedikit agar rig di layar hasil sempat ter-mount & menangkap sinyal
+    // bicara → mulut Miko bergerak selaras saat membacakan harga.
+    setTimeout(() => speakPrice(name, price, product.unit, tiers), 90);
     setCountdown(RESET_MS / 1000);
     tickTimer.current = setInterval(() => {
       setCountdown((n) => (n > 1 ? n - 1 : 0));
@@ -517,6 +536,9 @@ export default function CekHargaScreen() {
       <View style={styles.body}>
         {result ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultScroll}>
+          <View style={styles.resultMiko}>
+            <MikoRig size={116} ambient={false} initial="POINT" />
+          </View>
           <View style={styles.resultCard} testID="cekharga-result">
             <Text style={styles.shopName}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
             <View style={styles.labelRow}>
@@ -683,7 +705,7 @@ export default function CekHargaScreen() {
               <View style={styles.pedestal} />
               <View style={styles.pedestalTop} />
               <View style={styles.mikoSlot}>
-                <Miko mode="stage" />
+                <MikoRig />
               </View>
             </View>
 
@@ -712,6 +734,10 @@ export default function CekHargaScreen() {
               <Pressable onPress={closeChat} style={styles.chatClose} testID="miko-chat-close" hitSlop={10}>
                 <Ionicons name="close" size={24} color={colors.onSurface} />
               </Pressable>
+            </View>
+
+            <View style={styles.chatMikoStage}>
+              <MikoRig size={132} ambient={false} />
             </View>
 
             <ScrollView
@@ -931,6 +957,8 @@ const styles = StyleSheet.create({
   chatTitle: { flex: 1, fontFamily: font.bold, fontSize: fontSize.xl, color: colors.onSurface },
   chatClose: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary },
   chatLog: { flex: 1 },
+  chatMikoStage: { alignItems: "center", justifyContent: "flex-end", height: 140, marginTop: 4 },
+  resultMiko: { alignItems: "center", justifyContent: "flex-end", height: 122, marginBottom: 2 },
   bubble: { maxWidth: "82%", paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: 18 },
   bubbleMiko: { alignSelf: "flex-start", backgroundColor: colors.brandTertiary, borderTopLeftRadius: 4 },
   bubbleCust: { alignSelf: "flex-end", backgroundColor: colors.brand, borderTopRightRadius: 4 },

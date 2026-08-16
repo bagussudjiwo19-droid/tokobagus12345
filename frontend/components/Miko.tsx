@@ -138,7 +138,7 @@ const CHEER_MULTI: Line[] = [
   { t: "Iya iya, Miko dengar kok!", p: "happy" }, { t: "Cie kangen Miko ya? 😸", p: "wink" },
 ];
 // Kios: saat pelanggan MEMENCET Miko di panggung — reaksi lucu & ramah.
-const KIOSK_TAP: Line[] = [
+export const KIOSK_TAP: Line[] = [
   // Miko senang
   { t: "Yeay! Miko disentuh! 😆", p: "happy" },
   { t: "Hai, Kak! Miko senang kamu datang.", p: "wave" },
@@ -278,7 +278,7 @@ const CUTE_POSES = [
 
 // Sapaan PELANGGAN untuk kios Cek Harga (layar penuh di dinding). Ditampilkan
 // acak & bergantian di balon teks Miko selama menganggur. Dari daftar user.
-const KIOSK_SAY: string[] = [
+export const KIOSK_SAY: string[] = [
   "Halo, Kak! Selamat datang di Toko Bagus 😊",
   "Hai, Kak! Miko siap menemani belanja hari ini.",
   "Selamat datang, Kak! Mau cari harga barang?",
