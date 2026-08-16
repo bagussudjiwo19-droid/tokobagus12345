@@ -1,5 +1,14 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — GANTI EFEK SUARA jadi 11 "Suara Miko" lembut (sesuai mockup user)
+- User kirim mockup layar "Suara Efek": daftar bunyi Miko dgn ikon warna + deskripsi + centang + tombol Coba, pemisah grup positif/subtil. Minta ganti efek suara lama (keras: beep/buzz/coin/chaching/ding/dll) → suara Miko lembut.
+- ASET baru `assets/sounds/miko_*.wav` (11) disintesis stdlib (sinus + harmonik + envelope halus, peak 0.5, no click). Skrip `/app/scripts/gen_miko_sfx.py`. Daftar: sparkle (2-3 nada naik), bell (bel hangat), magic (chime berkilau), happy (3 nada ceria), pop (pop+chime), premium (chime elegan) [POSITIF]; oops (2 nada turun), warning (rendah halus), tryagain (nada menurun), blip (blip lembut), hmm (nada berpikir) [SUBTIL].
+- `src/sfx.ts` DITULIS ULANG library: SfxId 11 baru + SfxMeta {id,label,emoji,desc,icon,bg,fg,group} + SOURCES map. Default: ok=sparkle, fail=oops, paid=premium. loadConfig tetap guard id invalid → fallback default (aman utk settings lama yg simpan id lama). Volume Normal/Keras/Maks tetap.
+- `app/pengaturan-suara.tsx`: baris pemilih dirombak sesuai mockup — centang (checkmark-circle) + chip ikon berwarna (bg/fg) + nama+emoji + deskripsi + tombol Coba; divider antar grup (positif↔subtil); `cur` divalidasi thd SFX_LIBRARY (kalau id lama tak valid → pakai default sehingga selalu ada yg tercentang). Struktur 3 kejadian (Berhasil/Gagal/Lunas) dipertahankan.
+- `src/localdb.ts` DEFAULT_SETTINGS sfx id diperbarui (sparkle/oops/premium).
+- DIVERIFIKASI (screenshot preview): layar Suara Efek tampil sesuai mockup (Sparkle tercentang, chip warna, deskripsi, Coba, divider). Lint clean. Aset wav lama (sfx_*/tik/tok) tak lagi di-require → tidak ikut bundle. CATATAN: suara hanya berbunyi di HP/BUILD APK; frontend-only → user REDEPLOY.
+
+
 ## Session Log (fork) — MIKO RIG 2.5D (karakter hidup, sinkron TTS) — Jalur B
 - Permintaan user: naikkan Miko dari pergantian pose ke ANIMASI KARAKTER 2.5D (kedip, mulut gerak saat bicara, kepala/tangan/badan bergerak, banyak ekspresi, state machine, sinkron TTS). Jalur B disetujui (tanpa animator, aset di-generate AI, identitas Miko dipertahankan).
 - ASET (baru) `assets/miko_rig/` 12 frame konsisten via Nano Banana (`gemini-3.1-flash-image-preview`, EMERGENT_LLM_KEY), di-edit dari `mascot/miko_happy.png` sbg referensi agar identitas (pita, apron, bunga, ekor, warna) terjaga: base, blink, talk_mid, talk_open, happy, laugh, thinking, confused, sad, surprised, point, sales. Latar putih dibersihkan jadi transparan (flood-fill dari tepi) + autocrop + resize sisi 512. Skrip: `/app/scripts/gen_miko_rig.py`, `/app/scripts/miko_rig_bg.py`.

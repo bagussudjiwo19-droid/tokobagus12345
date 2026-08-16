@@ -72,7 +72,10 @@ export default function PengaturanSuaraScreen() {
 
         {/* Pilihan bunyi tiap kejadian */}
         {EVENTS.map((ev) => {
-          const cur = (s?.[ev.key] as SfxId) || "beep";
+          const def: SfxId = ev.key === "sfxOk" ? "sparkle" : ev.key === "sfxFail" ? "oops" : "premium";
+          const raw = s?.[ev.key] as SfxId | undefined;
+          const cur: SfxId = raw && SFX_LIBRARY.some((x) => x.id === raw) ? raw : def;
+          let lastGroup: string | null = null;
           return (
             <View key={ev.key} style={styles.block}>
               <View style={styles.blockHead}>
@@ -84,20 +87,31 @@ export default function PengaturanSuaraScreen() {
               </View>
               {SFX_LIBRARY.map((snd) => {
                 const active = cur === snd.id;
+                const showDivider = lastGroup !== null && lastGroup !== snd.group;
+                lastGroup = snd.group;
                 return (
-                  <Pressable key={snd.id} style={[styles.sndRow, active && styles.sndRowActive]} onPress={() => update({ [ev.key]: snd.id } as any)} testID={`${ev.key}-${snd.id}`}>
-                    <Ionicons name={active ? "radio-button-on" : "radio-button-off"} size={20} color={active ? colors.brand : colors.muted} />
-                    <Text style={[styles.sndLabel, active && { color: colors.brand, fontFamily: font.bold }]}>{snd.label}</Text>
-                    <Pressable
-                      style={styles.playBtn}
-                      onPress={() => { sfx.preview(snd.id, vol); toast.show("Bunyi hanya terdengar di HP", "info"); }}
-                      testID={`play-${ev.key}-${snd.id}`}
-                      hitSlop={8}
-                    >
-                      <Ionicons name="play" size={16} color={colors.onBrandPrimary} />
-                      <Text style={styles.playTxt}>Coba</Text>
+                  <React.Fragment key={snd.id}>
+                    {showDivider && <View style={styles.groupDivider} />}
+                    <Pressable style={[styles.sndRow, active && styles.sndRowActive]} onPress={() => update({ [ev.key]: snd.id } as any)} testID={`${ev.key}-${snd.id}`}>
+                      <Ionicons name={active ? "checkmark-circle" : "ellipse-outline"} size={22} color={active ? colors.brand : colors.border} />
+                      <View style={[styles.sndIcon, { backgroundColor: snd.bg }]}>
+                        <Ionicons name={snd.icon as any} size={20} color={snd.fg} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.sndLabel, active && { color: colors.brand }]}>{snd.label} {snd.emoji}</Text>
+                        <Text style={styles.sndDesc}>{snd.desc}</Text>
+                      </View>
+                      <Pressable
+                        style={styles.playBtn}
+                        onPress={() => { sfx.preview(snd.id, vol); toast.show("Bunyi hanya terdengar di HP", "info"); }}
+                        testID={`play-${ev.key}-${snd.id}`}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="play" size={15} color={colors.onBrandPrimary} />
+                        <Text style={styles.playTxt}>Coba</Text>
+                      </Pressable>
                     </Pressable>
-                  </Pressable>
+                  </React.Fragment>
                 );
               })}
             </View>
@@ -125,9 +139,12 @@ const styles = StyleSheet.create({
   blockHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
   blockTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
   blockDesc: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.muted, marginTop: 1 },
-  sndRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 10, paddingHorizontal: spacing.sm, borderRadius: radius.md },
+  sndRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 9, paddingHorizontal: spacing.sm, borderRadius: radius.md },
   sndRowActive: { backgroundColor: colors.surfaceTertiary },
-  sndLabel: { flex: 1, fontFamily: font.medium, fontSize: fontSize.base, color: colors.onSurface },
+  sndIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  sndLabel: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  sndDesc: { fontFamily: font.regular, fontSize: fontSize.xs, color: colors.muted, marginTop: 1 },
+  groupDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm, marginHorizontal: spacing.sm },
   playBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.brand, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radius.pill },
   playTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.sm },
 });

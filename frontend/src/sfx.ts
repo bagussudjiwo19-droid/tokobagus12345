@@ -11,31 +11,41 @@ import { api } from "./api";
 // ============================================================================
 
 export type SfxId =
-  | "beep" | "ding" | "dingdong" | "chime" | "chaching" | "coin" | "buzz" | "doublebuzz" | "blip";
+  | "sparkle" | "bell" | "magic" | "happy" | "pop" | "premium"
+  | "oops" | "warning" | "tryagain" | "blip" | "hmm";
 
-// Daftar pilihan bunyi (label untuk ditampilkan di pengaturan).
-export const SFX_LIBRARY: { id: SfxId; label: string }[] = [
-  { id: "beep", label: "Beep Tegas" },
-  { id: "ding", label: "Ding Lonceng" },
-  { id: "dingdong", label: "Ding-Dong" },
-  { id: "chime", label: "Chime Naik" },
-  { id: "chaching", label: "Cha-Ching Kasir" },
-  { id: "coin", label: "Koin" },
-  { id: "blip", label: "Blip Halus" },
-  { id: "buzz", label: "Buzz Rendah" },
-  { id: "doublebuzz", label: "Buzz Dobel" },
+// Daftar pilihan bunyi Miko (lembut & menyenangkan). Ditampilkan di menu
+// "Suara Efek": ikon berwarna + nama + deskripsi + tombol Coba.
+export type SfxMeta = {
+  id: SfxId; label: string; emoji: string; desc: string;
+  icon: string; bg: string; fg: string; group: "positif" | "subtil";
+};
+export const SFX_LIBRARY: SfxMeta[] = [
+  { id: "sparkle",  label: "Miko Sparkle",        emoji: "✨", desc: "2-3 nada lembut, naik di akhir", icon: "sparkles",        bg: "#FFE6EC", fg: "#F59FB4", group: "positif" },
+  { id: "bell",     label: "Miko Bell",           emoji: "🔔", desc: "Satu bunyi bel hangat",         icon: "notifications",   bg: "#FFF2D6", fg: "#F5B301", group: "positif" },
+  { id: "magic",    label: "Miko Magic",          emoji: "✨", desc: "Chime kecil berkilauan",        icon: "sparkles",        bg: "#DCEBFF", fg: "#4FA3F7", group: "positif" },
+  { id: "happy",    label: "Miko Happy",          emoji: "😊", desc: "3 nada pendek ceria",           icon: "happy",           bg: "#FFE0E8", fg: "#FF7BA3", group: "positif" },
+  { id: "pop",      label: "Miko Pop",            emoji: "💕", desc: "Pop lembut + chime kecil",      icon: "heart",           bg: "#FFDCEC", fg: "#FF5FA2", group: "positif" },
+  { id: "premium",  label: "Miko Premium",        emoji: "💎", desc: "Chime bersih dan elegan",       icon: "diamond",         bg: "#EADCFF", fg: "#9B6BF5", group: "positif" },
+  { id: "oops",     label: "Miko Oops",           emoji: "🌱", desc: "Dua nada lembut, turun di akhir", icon: "leaf",          bg: "#DCF5E4", fg: "#3FB966", group: "subtil" },
+  { id: "warning",  label: "Miko Gentle Warning", emoji: "⚠️", desc: "Pendek, rendah, dan halus",     icon: "warning",         bg: "#FBECCF", fg: "#E6A100", group: "subtil" },
+  { id: "tryagain", label: "Miko Try Again",      emoji: "↩️", desc: "Nada pendek menurun",           icon: "arrow-undo",      bg: "#E6DEFB", fg: "#8B6BE0", group: "subtil" },
+  { id: "blip",     label: "Miko Soft Blip",      emoji: "🔵", desc: "Blip lembut",                   icon: "ellipse",         bg: "#E6E0FA", fg: "#7A6BD8", group: "subtil" },
+  { id: "hmm",      label: "Miko Hmm",            emoji: "🤔", desc: "Nada kecil seperti berpikir",   icon: "chatbubble-ellipses", bg: "#EDE4FB", fg: "#9070D8", group: "subtil" },
 ];
 
 const SOURCES: Record<SfxId, any> = {
-  beep: require("../assets/sounds/sfx_beep.wav"),
-  ding: require("../assets/sounds/sfx_ding.wav"),
-  dingdong: require("../assets/sounds/sfx_dingdong.wav"),
-  chime: require("../assets/sounds/sfx_chime.wav"),
-  chaching: require("../assets/sounds/sfx_chaching.wav"),
-  coin: require("../assets/sounds/sfx_coin.wav"),
-  buzz: require("../assets/sounds/sfx_buzz.wav"),
-  doublebuzz: require("../assets/sounds/sfx_doublebuzz.wav"),
-  blip: require("../assets/sounds/sfx_blip.wav"),
+  sparkle: require("../assets/sounds/miko_sparkle.wav"),
+  bell: require("../assets/sounds/miko_bell.wav"),
+  magic: require("../assets/sounds/miko_magic.wav"),
+  happy: require("../assets/sounds/miko_happy.wav"),
+  pop: require("../assets/sounds/miko_pop.wav"),
+  premium: require("../assets/sounds/miko_premium.wav"),
+  oops: require("../assets/sounds/miko_oops.wav"),
+  warning: require("../assets/sounds/miko_warning.wav"),
+  tryagain: require("../assets/sounds/miko_tryagain.wav"),
+  blip: require("../assets/sounds/miko_blip.wav"),
+  hmm: require("../assets/sounds/miko_hmm.wav"),
 };
 
 // Tingkat volume → nilai 0..1.
@@ -44,9 +54,9 @@ export const VOLUME_LEVELS: Record<string, number> = { normal: 0.6, keras: 0.85,
 const players: Partial<Record<SfxId, AudioPlayer>> = {};
 let ready = false;
 let volume = VOLUME_LEVELS.keras;
-let okId: SfxId = "dingdong";
-let failId: SfxId = "buzz";
-let paidId: SfxId = "chaching";
+let okId: SfxId = "sparkle";
+let failId: SfxId = "oops";
+let paidId: SfxId = "premium";
 
 function ensure() {
   if (ready) return;
