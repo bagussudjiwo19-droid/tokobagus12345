@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "exported_at": "2026-08-15T20:45:00.000Z",
+  "products": [
+    {
+      "id": "p-001",
+      "name": "Beras Pandan Wangi 5kg",
+      "barcode": "8991002101010",
+      "sell_price": 68000,
+      "buy_price": 62000,
+      "stock": 24,
+      "unit": "sak",
+      "category": "Sembako",
+      "parent_id": null,
+      "inherit_tiers": false,
+      "tiers": [
+        { "min_qty": 3, "price": 66000 },
+        { "min_qty": 10, "price": 64000 }
+      ],
+      "variations": []
+    },
+    {
+      "id": "p-002",
+      "name": "Minyak Goreng 1L",
+      "barcode": "8992222303030",
+      "sell_price": 18000,
+      "buy_price": 16500,
+      "stock": 50,
+      "unit": "pcs",
+      "category": "Sembako",
+      "parent_id": null,
+      "inherit_tiers": false,
+      "tiers": [
+        { "min_qty": 12, "price": 17000 }
+      ],
+      "variations": []
+    },
+    {
+      "id": "p-003",
+      "name": "Gula Pasir",
+      "barcode": "8993333404040",
+      "sell_price": 15000,
+      "buy_price": 13500,
+      "stock": 30,
+      "unit": "kg",
+      "category": "Sembako",
+      "parent_id": null,
+      "inherit_tiers": false,
+      "tiers": [],
+      "variations": []
+    },
+    {
+      "id": "p-004",
+      "name": "Kopi Sachet",
+      "barcode": null,
+      "sell_price": 2000,
+      "buy_price": 1500,
+      "stock": 120,
+      "unit": "pcs",
+      "category": "Minuman",
+      "parent_id": null,
+      "inherit_tiers": true,
+      "tiers": [
+        { "min_qty": 10, "price": 1800 }
+      ],
+      "variations": [
+        { "id": "v-004a", "name": "Kopi Hitam", "barcode": "8994444505050", "sell_price": 2000, "inherit_tiers": true },
+        { "id": "v-004b", "name": "Kopi Susu", "barcode": "8994444505067", "sell_price": 2500, "inherit_tiers": false }
+      ]
+    }
+  ],
+  "transactions": [],
+  "settings": {
+    "shopName": "TOKO BAGUS",
+    "readPrice": true,
+    "priceClosing": true
+  }
+}
