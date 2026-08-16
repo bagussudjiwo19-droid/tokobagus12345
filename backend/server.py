@@ -623,6 +623,121 @@ async def sync_push(body: dict = Body(...)):
     return {"ok": True, "now": srv}
 
 
+# ----------------------------- MIKO CHAT (AI online) --------------------------
+# Asisten percakapan Miko. Fakta produk (harga/stok) DIKIRIM dari HP (DB lokal
+# Kasir) lalu disuntik ke prompt → model DILARANG mengarang angka. Offline →
+# HP otomatis memakai mesin offline (tanpa endpoint ini).
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+MIKO_MODEL = ("gemini", "gemini-3-flash-preview")
+
+
+class MikoFactTier(BaseModel):
+    min_qty: float = 0
+    price: float = 0
+
+
+class MikoFact(BaseModel):
+    name: str
+    price: float = 0
+    stock: float = 0
+    unit: Optional[str] = "pcs"
+    tiers: List[MikoFactTier] = []
+
+
+class MikoTurn(BaseModel):
+    role: str  # "user" | "miko"
+    text: str
+
+
+class MikoChatIn(BaseModel):
+    session_id: str
+    message: str
+    facts: List[MikoFact] = []
+    history: List[MikoTurn] = []
+    shop_name: Optional[str] = None
+
+
+def _fmt_rp(n: float) -> str:
+    try:
+        return "Rp" + format(int(round(n)), ",d").replace(",", ".")
+    except Exception:
+        return f"Rp{n}"
+
+
+def _build_facts_text(facts: List[MikoFact]) -> str:
+    if not facts:
+        return "(Tidak ada data produk yang cocok untuk pesan ini.)"
+    lines = []
+    for f in facts[:12]:
+        parts = [f"- {f.name}: harga {_fmt_rp(f.price)}"]
+        try:
+            st = int(round(f.stock))
+        except Exception:
+            st = 0
+        parts.append(f"stok {st} {f.unit or 'pcs'}")
+        tiers = [t for t in (f.tiers or []) if t.price and t.price > 0]
+        tiers.sort(key=lambda t: t.min_qty)
+        if tiers:
+            gr = "; ".join([f"mulai {int(t.min_qty)} = {_fmt_rp(t.price)}" for t in tiers])
+            parts.append(f"grosir: {gr}")
+        lines.append(", ".join(parts))
+    return "\n".join(lines)
+
+
+def _miko_system(shop_name: Optional[str], facts: List[MikoFact]) -> str:
+    toko = shop_name or "Toko Bagus"
+    return (
+        f"Kamu adalah Miko, kucing asisten toko yang lucu di {toko}. Kamu berbicara dengan PELANGGAN "
+        "di layar cek harga yang menempel di dinding toko.\n\n"
+        "KEPRIBADIAN: ramah, lembut, tenang, perhatian, kadang usil dan lucu, bisa tertawa, "
+        "bisa ikut sedih/senang, dan bisa diajak curhat ringan. Bicara santai khas Indonesia sehari-hari, "
+        "panggil pelanggan 'Kak'. Variasikan gaya bicaramu—JANGAN memakai pola kalimat yang selalu sama.\n\n"
+        "GAYA JAWABAN: SINGKAT dan alami (1-2 kalimat, maksimal 3) karena jawabanmu akan dibacakan dengan suara. "
+        "Jangan bertele-tele. Hindari emoji berlebihan (boleh tanpa emoji). Selalu Bahasa Indonesia.\n\n"
+        "ATURAN DATA (SANGAT PENTING): Untuk pertanyaan harga, stok, atau produk, kamu HANYA boleh memakai angka "
+        "dari 'DATA PRODUK' di bawah. DILARANG KERAS mengarang atau menebak harga/stok. "
+        "Jika pelanggan menanyakan harga/stok tetapi barangnya TIDAK ada di DATA PRODUK, katakan dengan sopan "
+        "kamu belum menemukannya, dan sarankan pelanggan scan barcode barangnya atau bertanya ke kasir (Vita atau Sasa). "
+        "Jika pelanggan bilang 'yang lebih murah' atau 'yang lain', pilih dari DATA PRODUK yang harganya lebih murah/berbeda. "
+        "Sebutkan harga dalam rupiah yang wajar (mis. 'dua belas ribu rupiah' atau 'Rp12.000').\n\n"
+        "JANGAN pernah menyebut bahwa kamu AI, bot, atau model bahasa. Kamu adalah Miko.\n"
+        "Untuk obrolan santai, bercanda, atau curhat, tanggapi dengan hangat dan manusiawi, tidak seperti mesin kasir.\n\n"
+        "DATA PRODUK (sumber kebenaran, dari database kasir):\n" + _build_facts_text(facts)
+    )
+
+
+@api_router.post("/miko/chat")
+async def miko_chat(payload: MikoChatIn):
+    key = os.environ.get("EMERGENT_LLM_KEY")
+    if not key:
+        raise HTTPException(status_code=503, detail="LLM key belum diatur")
+
+    # Rangkai konteks percakapan sebelumnya + pesan sekarang jadi satu teks.
+    convo = ""
+    for t in payload.history[-6:]:
+        who = "Pelanggan" if t.role == "user" else "Miko"
+        convo += f"{who}: {t.text}\n"
+    user_text = (
+        (f"[Percakapan sebelumnya]\n{convo}\n" if convo else "")
+        + f"[Pesan pelanggan sekarang]\nPelanggan: {payload.message}\n\nJawab sebagai Miko:"
+    )
+
+    chat = LlmChat(
+        api_key=key,
+        session_id=payload.session_id,
+        system_message=_miko_system(payload.shop_name, payload.facts),
+    ).with_model(*MIKO_MODEL)
+
+    try:
+        reply = await chat.send_message(UserMessage(text=user_text))
+    except Exception as e:
+        logger.error(f"miko_chat error: {e}")
+        raise HTTPException(status_code=502, detail="AI sedang sibuk")
+
+    return {"reply": (reply or "").strip()}
+
+
 app.include_router(api_router)
 
 app.add_middleware(

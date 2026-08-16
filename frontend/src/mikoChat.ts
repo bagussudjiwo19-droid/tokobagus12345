@@ -255,7 +255,34 @@ function stockSentence(p: Product): { reply: string; speak: string } {
   return { reply: r, speak: s };
 }
 
-// Kalimat "sebentar, Miko cek dulu" (dibacakan sebelum jawaban, biar natural).
+// Kumpulkan FAKTA produk (dari DB lokal) untuk dikirim ke AI online agar tidak
+// mengarang. Menyertakan hasil pencarian pesan sekarang + konteks terakhir.
+export type MikoFact = { name: string; price: number; stock: number; unit: string; tiers: { min_qty: number; price: number }[] };
+
+function toFact(p: Product): MikoFact {
+  const tiers = (p.tiers || []).filter((t) => t && t.price > 0).map((t) => ({ min_qty: t.min_qty, price: t.price }));
+  return { name: p.name, price: p.sell_price, stock: Math.max(0, Math.floor(p.stock || 0)), unit: p.unit || "pcs", tiers };
+}
+
+export function collectFacts(products: Product[], textRaw: string, prev: ChatCtx): { facts: MikoFact[]; best: Product | null; matches: Product[] } {
+  const now = Date.now();
+  const ctxValid = !!prev.at && now - prev.at < CTX_MS && !!prev.lastProduct;
+  const nameQ = extractName(norm(textRaw).replace(/\bmiko\b/g, " ").trim());
+  let matches = nameQ ? findByName(products, nameQ) : [];
+  if (matches.length === 0 && ctxValid && prev.lastName) matches = findByName(products, prev.lastName);
+
+  const pool: Product[] = [];
+  const seen = new Set<string>();
+  const add = (p?: Product | null) => { if (p && !seen.has(p.id)) { seen.add(p.id); pool.push(p); } };
+  matches.slice(0, 8).forEach(add);
+  (prev.lastMatches || []).slice(0, 8).forEach(add);
+  if (ctxValid) add(prev.lastProduct);
+
+  const best = matches[0] || (ctxValid ? prev.lastProduct! : null);
+  return { facts: pool.slice(0, 12).map(toFact), best, matches: matches.slice(0, 12) };
+}
+
+
 export function mikoThinking(): string {
   return pick([
     "Sebentar ya, Kak, Miko cek dulu.",

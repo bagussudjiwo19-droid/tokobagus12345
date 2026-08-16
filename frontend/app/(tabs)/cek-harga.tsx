@@ -12,7 +12,8 @@ import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { speakCalm, terbilang } from "@/src/voice";
-import { mikoAsk, mikoThinking, type ChatCtx } from "@/src/mikoChat";
+import { mikoAsk, mikoThinking, collectFacts, type ChatCtx } from "@/src/mikoChat";
+import { askMikoOnline, type MikoTurn } from "@/src/mikoAI";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation, Tier, Settings } from "@/src/types";
@@ -124,11 +125,13 @@ export default function CekHargaScreen() {
   const [chatBusy, setChatBusy] = useState(false);
   const chatCtx = useRef<ChatCtx>({});
   const chatScrollRef = useRef<ScrollView>(null);
+  const sessionId = useRef<string>(`miko-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
 
   const openChat = () => {
     clearTimers();
     setResult(null);
     setCountdown(0);
+    sessionId.current = `miko-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
     const greet = "Halo, Kak! Miko siap bantu cek harga. Tanya saja, misalnya, harga Soklin berapa?";
     chatCtx.current = {};
     setChatMsgs([{ who: "miko", text: greet }]);
@@ -143,24 +146,46 @@ export default function CekHargaScreen() {
   };
   const scrollChat = () => setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 60);
 
-  const askMiko = (raw: string) => {
+  // Buang emoji agar tidak ikut terbaca aneh oleh TTS.
+  const cleanTTS = (s: string) => s.replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu, "").replace(/\s+/g, " ").trim();
+
+  const askMiko = async (raw: string) => {
     const q = (raw || "").trim();
     if (!q || chatBusy) return;
     setChatInput("");
+    const priorHistory: MikoTurn[] = chatMsgs.map((m) => ({ role: m.who === "miko" ? "miko" : "user", text: m.text }));
     setChatMsgs((m) => [...m, { who: "cust", text: q }]);
     const thinking = mikoThinking();
     setChatMsgs((m) => [...m, { who: "miko", text: thinking }]);
     speakCalm(thinking);
     setChatBusy(true);
     scrollChat();
-    setTimeout(() => {
+
+    // Fakta produk dari DB lokal (anti-ngarang) + perbarui konteks untuk follow-up.
+    const { facts, best, matches } = collectFacts(products, q, chatCtx.current);
+    if (best) chatCtx.current = { lastProduct: best, lastMatches: matches, lastName: q, at: Date.now() };
+
+    try {
+      // ONLINE dulu: AI percakapan penuh (butuh internet + server).
+      const reply = await askMikoOnline({
+        sessionId: sessionId.current,
+        message: q,
+        facts,
+        history: priorHistory.slice(-6),
+        shopName: settings?.shopName || "TOKO BAGUS",
+      });
+      setChatMsgs((m) => [...m, { who: "miko", text: reply }]);
+      speakCalm(cleanTTS(reply));
+    } catch {
+      // OFFLINE / server mati → mesin percakapan offline (terbatas).
       const res = mikoAsk(products, q, chatCtx.current);
       chatCtx.current = res.ctx;
       setChatMsgs((m) => [...m, { who: "miko", text: res.reply }]);
-      speakCalm(res.speak);
+      speakCalm(cleanTTS(res.speak));
+    } finally {
       setChatBusy(false);
       scrollChat();
-    }, 850);
+    }
   };
 
   // Sembunyikan menu tab bawah saat di kios Cek Harga (pelanggan tak bisa pindah layar).
