@@ -417,6 +417,7 @@ function ActionBtn({ icon, label, onPress, testID }: { icon: any; label: string;
 function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const [expr, setExpr] = useState("");
+  const scrollRef = useRef<ScrollView>(null);
 
   const tap = () => Haptics.selectionAsync().catch(() => {});
   const OPS = "+-×÷";
@@ -577,7 +578,15 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
             </Pressable>
           </View>
           <View style={styles.calcDisplayBox}>
-            <Text style={styles.calcDisplay} numberOfLines={2} adjustsFontSizeToFit testID="calc-display">{fmtExpr(expr)}</Text>
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.calcScrollContent}
+              onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
+            >
+              <Text style={styles.calcDisplay} numberOfLines={1} testID="calc-display">{fmtExpr(expr)}</Text>
+            </ScrollView>
             <Text style={styles.calcResult} numberOfLines={1} testID="calc-result">{liveResult}</Text>
           </View>
           <View style={styles.calcGrid}>
@@ -692,6 +701,7 @@ const styles = StyleSheet.create({
   calcHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
   calcTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 92, justifyContent: "center" },
+  calcScrollContent: { flexGrow: 1, justifyContent: "flex-end", alignItems: "center" },
   calcResult: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "right", minHeight: 26 },
   calcDisplay: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right" },
   calcGrid: { gap: spacing.sm },

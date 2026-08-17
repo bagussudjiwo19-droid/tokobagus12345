@@ -41,6 +41,10 @@ export default function TransaksiScreen() {
   const toast = useToast();
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
+  const refocusScanner = useCallback(() => {
+    setTimeout(() => inputRef.current?.focus(), 60);
+    setTimeout(() => inputRef.current?.focus(), 320);
+  }, []);
   const scrollRef = useRef<ScrollView>(null);
   const prevLen = useRef(0);
   const [lastKey, setLastKey] = useState<string | null>(null);
@@ -73,6 +77,7 @@ export default function TransaksiScreen() {
     cart.addProduct(p, null);
     Haptics.selectionAsync();
     toast.show(`${p.name} ditambahkan`, "success");
+    refocusScanner();
   };
 
   const onPickVariation = (p: Product, v: Variation) => {
@@ -80,7 +85,13 @@ export default function TransaksiScreen() {
     setVariantFor(null);
     Haptics.selectionAsync();
     toast.show(`${p.name} — ${v.name} ditambahkan`, "success");
+    refocusScanner();
   };
+
+  // Kembalikan fokus ke kolom scanner setelah interaksi Pintasan/popup, agar
+  // scanner Bluetooth tetap aktif tanpa perlu diaktifkan ulang. Dua percobaan
+  // (segera + setelah animasi modal) supaya andal walau ada re-render.
+  const closeVariant = () => { setVariantFor(null); refocusScanner(); };
 
   // 1. Auto scan mode: keep the hardware-scanner input focused whenever the
   // Transaksi tab is focused, so scanning works immediately without tapping.
@@ -341,8 +352,8 @@ export default function TransaksiScreen() {
       </View>
 
       {/* Popup Pilih Variasi (untuk tombol Pintasan Produk) — tetap di halaman Transaksi */}
-      <Modal visible={!!variantFor} transparent animationType="fade" onRequestClose={() => setVariantFor(null)}>
-        <Pressable style={styles.vBackdrop} onPress={() => setVariantFor(null)} testID="variasi-backdrop" />
+      <Modal visible={!!variantFor} transparent animationType="fade" onRequestClose={closeVariant}>
+        <Pressable style={styles.vBackdrop} onPress={closeVariant} testID="variasi-backdrop" />
         <View style={styles.vCenter} pointerEvents="box-none">
           <View style={styles.vCard}>
             <Text style={styles.vTitle} numberOfLines={1}>Pilih Variasi {variantFor?.name}</Text>

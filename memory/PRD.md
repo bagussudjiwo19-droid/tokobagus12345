@@ -1,6 +1,10 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — KALKULATOR: display ekspresi penuh + hasil live (gaya contoh)
+## Session Log (fork) — FIX SCANNER konflik Pintasan + FIX display kalkulator (angka terpotong)
+- BUG SCANNER: setelah fitur 10 Pintasan Produk, menekan chip Pintasan mem-BLUR TextInput scanner tersembunyi (`scan-mode-input`, showSoftInputOnFocus=false, penerima HID Bluetooth) dan tidak pernah difokuskan ulang → scanner mati sampai pindah tab. FIX di `app/(tabs)/index.tsx`: tambah `refocusScanner()` (2x: 60ms & 320ms untuk lolos animasi/re-render) dipanggil di `onQuickTap` (cabang non-variasi), `onPickVariation`, dan `closeVariant` (backdrop + onRequestClose popup variasi). Tidak mengubah logika scanner/useBarcodeScan/keranjang/DB. Verified e2e web: setelah tap chip, document.activeElement TETAP "scan-mode-input" (2x tap), produk masuk (qty 2). Scanner asli hanya jalan di device build.
+- FIX KALKULATOR: display ekspresi panjang membungkus & MEMOTONG angka mid-nominal (mis "…+3" pindah baris jadi ".000"). FIX: display kini `ScrollView` horizontal (satu baris, `numberOfLines={1}`, auto `scrollToEnd` via onContentSizeChange, contentContainerStyle flexGrow+justify flex-end) → angka utuh, geser ke kanan seperti kalkulator umum. Style baru `calcScrollContent`. Verified: 7.000+2.000+3.000 tampil 1 baris tanpa terpotong, "= 12.000".
+
+
 - `app/checkout.tsx` CalculatorModal DIROMBAK dari immediate-execution → model EKSPRESI PENUH. State tunggal `expr` (raw string, operator +-×÷). Display atas menampilkan seluruh ekspresi terformat gaya ID (ribuan ".", desimal ",") mis. "8.000+6.000+3.500+9.000"; baris bawah "= 26.500" (hasil live, muted) muncul otomatis saat ada operator & valid. Tekan `=` → collapse jadi hasil.
 - Evaluator sendiri (tanpa eval): tokenize regex, 2-pass (× ÷ dulu, lalu + -), pembagian 0 → "Error". Handlers: inputDigit (anti leading-zero via lastNum), input00, inputDot (desimal "."), setOperator (ganti operator jika beruntun, trim "." di ujung), percent (bagi 100 token terakhir), backspace, clear. Tombol TIDAK berubah (0,00,.,= tetap; % C ⌫ ÷ × − +). Verified e2e: 8000+6000+3500+9000 → display benar + "= 26.500", setelah = → "26.500".
 - Ganti style calcExpr→calcResult (muted), display numberOfLines 2 adjustsFontSizeToFit. Lint clean (1 warning pre-existing line 147).
