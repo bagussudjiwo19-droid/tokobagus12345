@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — TAMBAH ITEM: pilih "Transaksi Saat Ini" (sementara) vs "Simpan Permanen"
+- Permintaan user: tombol "Tambah Item" di Transaksi kini buka layar Tambah Produk dgn 2 pilihan simpan. (1) "Transaksi Saat Ini": hanya Nama Barang + Harga Jual → langsung masuk keranjang sbg item sementara (TIDAK masuk DB Produk, tidak muncul di menu Produk, tidak jadi produk permanen saat transaksi selesai/batal). (2) "Simpan Permanen": form Tambah Produk lengkap seperti biasa → tersimpan ke DB Produk.
+- `app/(tabs)/index.tsx`: kedua tombol "Tambah Item" (empty state & list state, testID item-manual-button) rute diganti `/item-manual` → `/produk-form?fromCart=1`. (item-manual.tsx dibiarkan sbg route yatim, tak dipakai.)
+- `app/produk-form.tsx`: import useCart. Param `fromCart` → `cameFromCart` (fromCart==="1" && !id). State `saveMode: "temp"|"permanent"` (default temp). `isTemp = cameFromCart && temp`. Toggle "Cara Simpan" [Transaksi Saat Ini | Simpan Permanen] (testID form-savemode-temp/permanent) muncul hanya saat cameFromCart + hint kontekstual. Saat isTemp: render HANYA field Nama Barang + Harga Jual (form-name, form-sell); seluruh form lengkap dibungkus `{!isTemp && (<>…</>)}`. Footer: isTemp → tombol "Simpan untuk Transaksi Saat Ini" (ikon cart) → `saveTemp()` = validasi nama+harga>0 → `cart.addManual(name, price, 1)` + toast "(transaksi ini)" + back. Non-temp → save() biasa (buat produk permanen). Harga Biasa/Grosir/Variasi/Ikut Induk tidak diubah.
+- DIVERIFIKASI (screenshot e2e): Transaksi → Tambah Item → layar "Tambah Produk" + toggle Cara Simpan (default Transaksi Saat Ini, hanya Nama Barang + Harga Jual, hint "tidak disimpan ke data Produk"). Isi "Kantong Plastik" Rp1.000 → Simpan → masuk Daftar Belanja (Rp 1.000 x1) + toast "(transaksi ini)"; TIDAK masuk DB. Toggle "Simpan Permanen" → form lengkap (Kategori/Satuan/Barcode/Jenis Harga 4 chip/Harga Beli-Jual/Variasi) + tombol "Simpan Produk". Lint clean (hanya 2 warning duplicate-import pre-existing di index.tsx). Frontend-only → user REDEPLOY.
+
+
+
 ## Session Log (fork) — Ikon "Tambah Variasi" di keranjang = shortcut ke Edit Produk
 - Permintaan user: ikon Tambah Variasi di tiap item keranjang (jangan ubah ikon/tampilan) kini LANGSUNG buka Edit Produk untuk barang itu (bukan variasi-cepat, bukan buat produk baru). Data produk otomatis termuat; Simpan → tersimpan ke DB.
 - `app/(tabs)/index.tsx`: onPress ikon (testID cart-variasi-{key}) diganti dari `router.push("/variasi-cepat", {id})` → `router.push("/produk-form", {id: l.product_id})`. Tidak ubah ikon (git-branch-outline), style (iconMini), atau logika lain. produk-form memuat produk by id (editing) & simpan via api.updateProduct + reload.

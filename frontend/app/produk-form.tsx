@@ -6,6 +6,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboa
 import { Ionicons } from "@expo/vector-icons";
 
 import { useData } from "@/src/data";
+import { useCart } from "@/src/cart";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
@@ -21,10 +22,18 @@ const newId = () => `v-${Date.now()}-${vid++}`;
 export default function ProdukFormScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, fromCart } = useLocalSearchParams<{ id?: string; fromCart?: string }>();
   const { products, reload } = useData();
+  const cart = useCart();
   const unlimited = useUnlimitedStock();
   const toast = useToast();
+
+  // Dibuka dari tombol "Tambah Item" di Transaksi → tampilkan pilihan simpan:
+  // "Transaksi Saat Ini" (item sementara → keranjang, tidak masuk DB) atau
+  // "Simpan Permanen" (form produk lengkap seperti biasa → masuk DB Produk).
+  const cameFromCart = fromCart === "1" && !id;
+  const [saveMode, setSaveMode] = useState<"temp" | "permanent">("temp");
+  const isTemp = cameFromCart && saveMode === "temp";
 
   const editing = useMemo(() => products.find((p) => p.id === id), [products, id]);
   // Variasi = produk anak yang tertaut ke induk ini (parent_id === induk).
@@ -56,6 +65,16 @@ export default function ProdukFormScreen() {
   );
 
   const num = (s: string) => Number((s || "0").replace(/[^\d.]/g, "")) || 0;
+
+  // Simpan item HANYA untuk transaksi berjalan (tidak masuk DB Produk).
+  const saveTemp = () => {
+    if (!name.trim()) { toast.show("Nama barang wajib diisi", "error"); return; }
+    const price = num(sellPrice);
+    if (price <= 0) { toast.show("Harga jual harus lebih dari 0", "error"); return; }
+    cart.addManual(name.trim(), price, 1);
+    toast.show(`${name.trim()} ditambahkan (transaksi ini)`, "success");
+    router.back();
+  };
 
   const save = async () => {
     if (!name.trim()) {
@@ -228,8 +247,33 @@ export default function ProdukFormScreen() {
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Field label="Nama Produk" value={name} onChange={setName} placeholder="mis. Gula Pasir 1kg" testID="form-name" />
+        {/* Dari "Tambah Item" (Transaksi): pilih cara simpan. */}
+        {cameFromCart && (
+          <>
+            <Text style={styles.label}>Cara Simpan</Text>
+            <View style={[styles.unitRow, { flexWrap: "wrap", rowGap: spacing.sm }]}>
+              <Pressable onPress={() => setSaveMode("temp")} style={[styles.unitChip, saveMode === "temp" && styles.unitChipActive]} testID="form-savemode-temp">
+                <Text style={[styles.unitTxt, saveMode === "temp" && styles.unitTxtActive]}>Transaksi Saat Ini</Text>
+              </Pressable>
+              <Pressable onPress={() => setSaveMode("permanent")} style={[styles.unitChip, saveMode === "permanent" && styles.unitChipActive]} testID="form-savemode-permanent">
+                <Text style={[styles.unitTxt, saveMode === "permanent" && styles.unitTxtActive]}>Simpan Permanen</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.hint}>
+              {isTemp
+                ? "Hanya untuk transaksi ini. Tidak disimpan ke data Produk."
+                : "Disimpan permanen ke data Produk & bisa dipakai transaksi berikutnya."}
+            </Text>
+          </>
+        )}
 
+        <Field label={isTemp ? "Nama Barang" : "Nama Produk"} value={name} onChange={setName} placeholder="mis. Kantong Plastik" testID="form-name" />
+
+        {isTemp && (
+          <Field label="Harga Jual" value={sellPrice} onChange={setSellPrice} keyboardType="numeric" prefix="Rp" testID="form-sell" />
+        )}
+
+        {!isTemp && (<>
         <View style={styles.row2}>
           <View style={{ flex: 1 }}>
             <Field label="Kategori" value={category} onChange={setCategory} placeholder="mis. Sembako" testID="form-category" />
@@ -367,13 +411,14 @@ export default function ProdukFormScreen() {
         {priceType === "ikut" && (
           renderBarcodeSection("Variasi / Barcode", "Hanya daftar barcode produk induk (tanpa nama/harga). Scan barcode mana pun → LANGSUNG masuk keranjang pakai Harga Jual Induk. Ubah harga induk → semua barcode otomatis ikut.")
         )}
+        </>)}
       </KeyboardAwareScrollView>
 
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Pressable testID="form-save" onPress={save} disabled={saving} style={[styles.saveBtn, saving && { opacity: 0.5 }]}>
-            <Ionicons name="save" size={20} color={colors.onBrandPrimary} />
-            <Text style={styles.saveTxt}>{editing ? "Simpan Perubahan" : "Simpan Produk"}</Text>
+          <Pressable testID="form-save" onPress={isTemp ? saveTemp : save} disabled={saving} style={[styles.saveBtn, saving && { opacity: 0.5 }]}>
+            <Ionicons name={isTemp ? "cart" : "save"} size={20} color={colors.onBrandPrimary} />
+            <Text style={styles.saveTxt}>{isTemp ? "Simpan untuk Transaksi Saat Ini" : (editing ? "Simpan Perubahan" : "Simpan Produk")}</Text>
           </Pressable>
         </View>
       </KeyboardStickyView>

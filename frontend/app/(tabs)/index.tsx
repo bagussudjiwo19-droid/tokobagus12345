@@ -270,7 +270,7 @@ export default function TransaksiScreen() {
           <Text style={styles.emptyTitle}>Belum ada barang</Text>
           <Text style={styles.emptyDesc}>Scan barcode dengan scanner Bluetooth, atau gunakan tombol di bawah untuk mulai transaksi.</Text>
           <View style={[styles.addBar, { marginHorizontal: 0, marginTop: spacing.xl }]}>
-            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
+            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/produk-form?fromCart=1")}>
               <View style={styles.addIconCircle}><Ionicons name="add" size={18} color={colors.brand} /></View>
               <Text style={styles.addBtnPrimaryTxt}>Tambah Item</Text>
             </Pressable>
@@ -350,7 +350,7 @@ export default function TransaksiScreen() {
 
           {/* Tombol aksi di BAWAH barang terbaru */}
           <View style={styles.addBar}>
-            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/item-manual")}>
+            <Pressable style={[styles.addBtnBig, styles.addBtnPrimary]} testID="item-manual-button" onPress={() => router.push("/produk-form?fromCart=1")}>
               <View style={styles.addIconCircle}><Ionicons name="add" size={18} color={colors.brand} /></View>
               <Text style={styles.addBtnPrimaryTxt}>Tambah Item</Text>
             </Pressable>
