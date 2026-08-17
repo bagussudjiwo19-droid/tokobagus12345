@@ -72,6 +72,26 @@ export default function PengaturanSuaraScreen() {
           />
         </View>
 
+        {/* Mode Unlimited: sembunyikan stok & peringatan stok */}
+        <View style={styles.mikoRow}>
+          <View style={styles.mikoLeft}>
+            <View style={styles.mikoIcon}>
+              <Ionicons name="infinite-outline" size={22} color={colors.brand} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.mikoTitle}>Mode Unlimited (Tanpa Stok)</Text>
+              <Text style={styles.mikoDesc}>Sembunyikan angka stok & semua peringatan stok. Cocok bila Kakak tidak menghitung stok.</Text>
+            </View>
+          </View>
+          <Switch
+            testID="toggle-unlimited"
+            value={!!(s?.unlimitedStock ?? true)}
+            onValueChange={(val) => update({ unlimitedStock: val })}
+            trackColor={{ true: colors.brand, false: colors.surfaceTertiary }}
+            thumbColor="#fff"
+          />
+        </View>
+
         <View style={styles.infoBox}>
           <Ionicons name="volume-high-outline" size={22} color={colors.brand} />
           <Text style={styles.infoTxt}>Pilih bunyi & volume sesuai selera. Untuk toko ramai, pakai volume Maksimal. Suara hanya berbunyi di HP (bukan preview).</Text>

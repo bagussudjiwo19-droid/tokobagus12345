@@ -46,6 +46,7 @@ const DEFAULT_SETTINGS: Settings = {
   sfxVolume: "keras", sfxOk: "sparkle", sfxFail: "oops", sfxPaid: "premium",
   quickSlots: [],
   hideMiko: false,
+  unlimitedStock: true,
 };
 
 function nowIso(): string { return new Date().toISOString(); }
@@ -382,6 +383,7 @@ export const local = {
     settingsUpdatedAt = Date.now();
     await putKv("settings", settings);
     await putKv("settings_updated_at", settingsUpdatedAt);
+    notifyChange();
     return clone(settings);
   },
 

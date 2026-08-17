@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 
 import { useData } from "@/src/data";
+import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
@@ -31,13 +32,14 @@ import type { Product, Printer } from "@/src/types";
 const PRODUK_ROW_H = 96; // tinggi kartu (84) + jarak (12) → getItemLayout scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
-  item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle,
-}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; onPrint: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void }) {
+  item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle, unlimited,
+}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; onPrint: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void; unlimited?: boolean }) {
   const nestedCount = item.variations.length;
   const totalVar = nestedCount + childCount;
   const hasVar = totalVar > 0;
   const stock = nestedCount > 0 ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
-  const low = !hasVar && stock <= 5;
+  const low = !unlimited && !hasVar && stock <= 5;
+  const metaStock = unlimited ? "" : ` · Stok ${stock} ${item.unit}`;
   return (
     <Pressable
       style={[styles.card, selectMode && checked && styles.cardChecked]}
@@ -64,7 +66,7 @@ const ProdukRow = React.memo(function ProdukRow({
           )}
         </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
-          {item.barcode || "-"} · Stok {stock} {item.unit}{hasVar ? ` · ${totalVar} variasi` : ""}
+          {item.barcode || "-"}{metaStock}{hasVar ? ` · ${totalVar} variasi` : ""}
         </Text>
       </View>
       <View style={styles.pricePill}>
@@ -89,6 +91,7 @@ export default function ProdukScreen() {
   const router = useRouter();
   const toast = useToast();
   const { products, loading, reload } = useData();
+  const unlimited = useUnlimitedStock();
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [menuProduct, setMenuProduct] = useState<Product | null>(null);
@@ -296,9 +299,10 @@ export default function ProdukScreen() {
         selectMode={selectMode}
         checked={selected.has(item.id)}
         onToggle={toggleSelect}
+        unlimited={unlimited}
       />
     ),
-    [openEdit, openMenu, openPrint, childrenByParent, selectMode, selected, toggleSelect],
+    [openEdit, openMenu, openPrint, childrenByParent, selectMode, selected, toggleSelect, unlimited],
   );
 
   return (
@@ -374,7 +378,7 @@ export default function ProdukScreen() {
             <Text style={styles.scanCardLabel}>HASIL SCAN</Text>
             <Text style={styles.scanCardName} numberOfLines={1}>{scanResult.name}</Text>
             <Text style={styles.scanCardMeta} numberOfLines={1}>
-              {scanResult.barcode || "-"} · Stok {scanResult.variations.length ? scanResult.variations.reduce((s, v) => s + (v.stock || 0), 0) : scanResult.stock} {scanResult.unit}
+              {scanResult.barcode || "-"}{unlimited ? "" : ` · Stok ${scanResult.variations.length ? scanResult.variations.reduce((s, v) => s + (v.stock || 0), 0) : scanResult.stock} ${scanResult.unit}`}
             </Text>
           </View>
           <Text style={styles.scanCardPrice}>{scanResult.variations.length ? "Bervariasi" : rupiah(scanResult.sell_price)}</Text>

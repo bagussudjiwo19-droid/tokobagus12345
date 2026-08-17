@@ -6,6 +6,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboa
 import { Ionicons } from "@expo/vector-icons";
 
 import { useData } from "@/src/data";
+import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
@@ -22,6 +23,7 @@ export default function ProdukFormScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { products, reload } = useData();
+  const unlimited = useUnlimitedStock();
   const toast = useToast();
 
   const editing = useMemo(() => products.find((p) => p.id === id), [products, id]);
@@ -184,7 +186,7 @@ export default function ProdukFormScreen() {
           </View>
         </View>
 
-        {!hasVar && (
+        {!hasVar && !unlimited && (
           <Field label="Stok" value={stock} onChange={setStock} keyboardType="numeric" testID="form-stock" />
         )}
 
@@ -233,7 +235,7 @@ export default function ProdukFormScreen() {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.childName} numberOfLines={1}>{c.name}</Text>
-                  <Text style={styles.childMeta} numberOfLines={1}>{c.barcode || "Tanpa barcode"} · Stok {c.stock} {c.unit}</Text>
+                  <Text style={styles.childMeta} numberOfLines={1}>{c.barcode || "Tanpa barcode"}{unlimited ? "" : ` · Stok ${c.stock} ${c.unit}`}</Text>
                   <Text style={styles.childMeta} numberOfLines={1}>Jual {rupiah(c.sell_price)} · Beli {rupiah(c.buy_price)}</Text>
                 </View>
                 <Pressable

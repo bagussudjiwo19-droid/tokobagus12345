@@ -1,6 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — FIX SCANNER konflik Pintasan + FIX display kalkulator (angka terpotong)
+## Session Log (fork) — TAHAP 1 SELESAI: Mode Unlimited (tanpa stok)
+- Setting baru `unlimitedStock?: boolean` (types.ts) default `true` (localdb DEFAULT_SETTINGS). Hook global `src/useUnlimitedStock.ts` (baca settings + reaktif via onLocalChange). `saveSettings` di localdb kini panggil `notifyChange()` agar toggle langsung menyebar ke semua layar.
+- Bila AKTIF (default): sembunyikan angka stok & peringatan stok di: katalog Produk (kartu + badge low + baris meta + kartu hasil scan), keranjang Transaksi (blok peringatan stok menipis di-skip), form Produk (field Stok disembunyikan, meta anak tanpa stok). Toggle "Mode Unlimited (Tanpa Stok)" ditambah di `pengaturan-suara.tsx`.
+- Verified screenshot: katalog Produk tidak menampilkan "Stok" per item. Lint clean.
+- BELUM: Tahap 2 (Anak Ikut Induk auto-sync harga), Tahap 3 (scan → popup pilih semua opsi keluarga di transaksi + tampil semua di dinding), Tahap 4 (tombol "Tambah Variasi" dari hasil pencarian saat transaksi).
+- CATATAN DESAIN Tahap 2/3: struktur "variasi = produk anak (parent_id)" SUDAH ADA. variasi-cepat sudah prefill harga induk + toggle inherit_tiers. Rencana: (a) child `inherit_tiers===true` → runtime pakai sell_price+tiers induk (auto-sync 2a); (b) helper getFamily(root+children); scan barcode apa pun di keluarga → transaksi buka popup pilih anak, dinding tampil semua. User mau "setiap barcode → selalu pilih variasi".
+
+
 - BUG SCANNER: setelah fitur 10 Pintasan Produk, menekan chip Pintasan mem-BLUR TextInput scanner tersembunyi (`scan-mode-input`, showSoftInputOnFocus=false, penerima HID Bluetooth) dan tidak pernah difokuskan ulang → scanner mati sampai pindah tab. FIX di `app/(tabs)/index.tsx`: tambah `refocusScanner()` (2x: 60ms & 320ms untuk lolos animasi/re-render) dipanggil di `onQuickTap` (cabang non-variasi), `onPickVariation`, dan `closeVariant` (backdrop + onRequestClose popup variasi). Tidak mengubah logika scanner/useBarcodeScan/keranjang/DB. Verified e2e web: setelah tap chip, document.activeElement TETAP "scan-mode-input" (2x tap), produk masuk (qty 2). Scanner asli hanya jalan di device build.
 - FIX KALKULATOR: display ekspresi panjang membungkus & MEMOTONG angka mid-nominal (mis "…+3" pindah baris jadi ".000"). FIX: display kini `ScrollView` horizontal (satu baris, `numberOfLines={1}`, auto `scrollToEnd` via onContentSizeChange, contentContainerStyle flexGrow+justify flex-end) → angka utuh, geser ke kanan seperti kalkulator umum. Style baru `calcScrollContent`. Verified: 7.000+2.000+3.000 tampil 1 baris tanpa terpotong, "= 12.000".
 

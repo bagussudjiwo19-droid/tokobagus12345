@@ -20,6 +20,7 @@ import { useCart } from "@/src/cart";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -38,6 +39,7 @@ export default function TransaksiScreen() {
   const router = useRouter();
   const cart = useCart();
   const { products, reload } = useData();
+  const unlimited = useUnlimitedStock();
   const toast = useToast();
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
@@ -283,6 +285,7 @@ export default function TransaksiScreen() {
 
               {/* Peringatan stok menipis / kurang untuk barang katalog */}
               {(() => {
+                if (unlimited) return null;
                 if (!l.product_id) return null;
                 const p = products.find((x) => x.id === l.product_id);
                 if (!p) return null;
