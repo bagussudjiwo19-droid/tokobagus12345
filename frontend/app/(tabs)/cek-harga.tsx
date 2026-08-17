@@ -514,9 +514,7 @@ export default function CekHargaScreen() {
     setSearchQuery("");
     try {
       const product = await api.getByBarcode(c);
-      const variation = product.variations?.find((v) => v.barcode === c) || null;
-      if (variation) { showResult(product, variation); return; }
-      // Keluarga: bila punya anak / variasi nested → tampilkan semua pilihan di dinding.
+      // Keluarga: bila punya anak / variasi → tampilkan SEMUA pilihan di dinding.
       const { root, children } = familyOptions(product, products);
       const vars = root.variations || [];
       if (children.length + vars.length > 1) {

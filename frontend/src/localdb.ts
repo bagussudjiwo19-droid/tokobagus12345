@@ -189,7 +189,8 @@ export const local = {
     await ensureInit();
     const s = (q || "").toLowerCase();
     const arr = Array.from(products.values()).filter((p) =>
-      (p.name || "").toLowerCase().includes(s) || (p.barcode || "").toLowerCase().includes(s),
+      (p.name || "").toLowerCase().includes(s) || (p.barcode || "").toLowerCase().includes(s) ||
+      (p.barcodes || []).some((b) => (b || "").toLowerCase().includes(s)),
     );
     arr.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     return arr.map(clone);
@@ -200,6 +201,12 @@ export const local = {
     let found: Product | undefined;
     for (const p of products.values()) {
       if (p.barcode && p.barcode === code) { found = p; break; }
+    }
+    // Barcode tambahan (banyak barcode → produk yang sama).
+    if (!found) {
+      for (const p of products.values()) {
+        if ((p.barcodes || []).some((b) => b === code)) { found = p; break; }
+      }
     }
     if (!found) {
       for (const p of products.values()) {
@@ -220,6 +227,7 @@ export const local = {
       category: data.category ?? "",
       unit: data.unit ?? "pcs",
       barcode: data.barcode ?? null,
+      barcodes: Array.isArray(data.barcodes) ? data.barcodes.filter((b: string) => !!b && b.trim()).map((b: string) => b.trim()) : [],
       parent_id: data.parent_id ?? null,
       buy_price: data.buy_price ?? 0,
       sell_price: data.sell_price ?? 0,
@@ -446,6 +454,7 @@ export const local = {
       p.category = p.category ?? "";
       p.parent_id = p.parent_id ?? null;
       p.barcode = p.barcode ?? null;
+      p.barcodes = Array.isArray(p.barcodes) ? p.barcodes.filter((b: any) => !!b) : [];
       p.inherit_tiers = !!p.inherit_tiers;
       newProducts.set(p.id, p as Product); // id kembar → otomatis ditimpa (tidak ganda)
     }

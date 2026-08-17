@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only test for the new 'Variasi / Barcode' section on /produk-form and multi-barcode -> single variation-picker flow on Transaksi. All 3 acceptance criteria PASS: (1) In 'Variasi' mode both sections render — 'Daftar Harga Variasi' (with form-add-variation) AND a separate 'Variasi / Barcode' section (with form-add-barcode + form-barcode-input-N, placeholder 'Masukkan Barcode'). Tapping 'Tambah Barcode' adds new form-barcode-input-N rows. (2) End-to-end creation succeeded: product 'Soklin' saved with 3 variations (1 pcs=1000 / 1 renteng=10000 / 2 renteng=9000) and 3 barcodes (123456, 789012, 345678). Toast 'Produk ditambahkan' shown. (3) In Transaksi/scan flow, each of the 3 different barcodes typed into scan-mode-input followed by Enter opens the SAME 'Pilih Variasi Soklin' popup showing exactly the same 3 variations, confirming Many Barcodes -> 1 Product -> 1 Variation List. Picking a variation adds it to the cart (toast 'Soklin — 1 pcs ditambahkan'). Unknown barcode still shows 'Barcode ... belum terdaftar'. No red-screen or JS errors seen. Minor react-native-web deprecation warnings (shadow*, textShadow*, props.pointerEvents) but not blocking. Deprecated packages: none detected in the touched files.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "produk-form (Variasi mode)", "issues": ["Miko mascot floating bubble sometimes visually overlaps the 'Tambah Variasi Harga' / 'Tambah Barcode' buttons on 390x844 viewport. Buttons still function via touch, but the mascot bubble can obscure the section header — consider moving Miko higher or adding margin when the Variasi section is expanded."]}
+    ],
+    "react_native_issues": [
+      {"component": "StyleSheet shadow props", "issue": "react-native-web console warning: 'shadow*' style props are deprecated. Use 'boxShadow'. Present in multiple StyleSheet.create() blocks (e.g. scanModeBox / addBtnPrimary / payBar in /app/frontend/app/(tabs)/index.tsx)."},
+      {"component": "StyleSheet textShadow props", "issue": "react-native-web console warning: 'textShadow*' style props are deprecated. Use 'textShadow'."},
+      {"component": "pointerEvents prop", "issue": "react-native-web console warning: props.pointerEvents is deprecated. Use style.pointerEvents. Reference: /app/frontend/app/(tabs)/index.tsx (vCenter View uses pointerEvents='box-none' as a prop)."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_14.json"],
+  "action_items": [
+    "Optional polish: silence RN-web deprecation warnings by migrating shadow*/textShadow* to boxShadow/textShadow and using style.pointerEvents instead of the prop.",
+    "Optional UX: prevent Miko mascot bubble from overlapping the newly added 'Variasi / Barcode' section actions on smaller viewports."
+  ],
+  "critical_code_review_comments": [
+    "produk-form.tsx: extraBarcodes is only persisted when priceType === 'variasi' (payload.barcodes = [] otherwise). Correct behavior — verified.",
+    "localdb.ts: getByBarcode now correctly checks p.barcode, p.barcodes[], and variation.barcode in that order — verified end-to-end via 3 distinct barcodes all resolving to the same product.",
+    "index.tsx (Transaksi): submitBarcode always opens the variant popup when the resolved product has children or variations, regardless of which barcode matched — this is exactly the required behavior (barcode is NOT bound to a specific variation).",
+    "produk-form.tsx: extraBarcodes state initializer keeps at least one empty row (['']) so form-barcode-input-0 is always present in Variasi mode, matching the spec."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped by request)", "frontend": "100% (3/3 acceptance criteria)"},
+  "seed_data_creation": "Created a 'Soklin' product at runtime via the UI with 3 variations and 3 barcodes (123456, 789012, 345678). Web preview uses in-memory DB; data is non-persistent across full page reloads (expected).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Web preview uses in-memory DB. To keep created products alive between screens, navigate IN-APP (bottom-tab click -> produk-add-button -> produk-form) rather than using page.goto between screens — page.goto reloads the Expo bundle and reseeds the in-memory DB. React Native <Pressable> onPress sometimes doesn't fire from Playwright locator.click(force=True) on this app; using locator.dispatch_event('click') is more reliable for the 'Tambah Variasi Harga' / 'Tambah Barcode' / 'Simpan' buttons. Variant popup pills use testID pattern variasi-{variationId}; children (parent_id) use testID variasi-child-{childId}.",
+  "rca_of_issue": "N/A — feature works as specified."
+}

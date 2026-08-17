@@ -1,6 +1,22 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — VARIASI INLINE: Nama+Harga Jual per baris + "Harga sama dengan di atas"
+## Session Log (fork) — MULTI-BARCODE: banyak barcode → 1 produk → 1 daftar variasi
+- Permintaan user: mode Variasi kini punya bagian TERPISAH "Variasi / Barcode" di bawah "Daftar Harga Variasi". Bagian ini HANYA berisi kolom Barcode (tanpa nama/harga) + tombol "Tambah Barcode". Banyak barcode berbeda → semua membuka DAFTAR VARIASI YANG SAMA (bukan 1 barcode = 1 variasi). Teks hint lama "Cukup 1 barcode…" dihapus/diganti.
+- `types.ts`: Product tambah `barcodes?: string[]` (barcode tambahan).
+- `localdb.ts`: `getByBarcode` cocokkan `p.barcode` ATAU `p.barcodes[]` ATAU `variation.barcode`. `createProduct` simpan `barcodes` (trim + filter kosong). `searchProducts` ikut cari di `barcodes[]`. `importBackup` normalisasi `barcodes` array. SQLite simpan full JSON doc → persist otomatis. Sync backend simpan `doc` opaque → barcodes ikut tersinkron tanpa ubah server.py.
+- `produk-form.tsx`: state `extraBarcodes: string[]` (init dari editing.barcodes, default [""]). Bagian baru "Variasi / Barcode" (testID form-add-barcode, form-barcode-input-N, form-barcode-remove-N) hanya di mode Variasi. Payload simpan `barcodes` (dedupe Set) hanya saat priceType==="variasi", else []. Hint baru: "Semua barcode di atas membuka daftar harga variasi yang sama."
+- Bagian Harga Biasa & Grosir TIDAK diubah. Daftar Harga Variasi (Nama + Harga Jual + Tambah Variasi Harga) TIDAK diubah.
+- DIVERIFIKASI testing_agent iteration_14 (PASS 3/3): form 2 bagian tampil; buat Soklin 3 variasi + 3 barcode (123456/789012/345678); scan tiap barcode di Transaksi → SEMUA buka popup "Pilih Variasi Soklin" berisi 3 variasi sama → pilih → masuk keranjang. Barcode tak dikenal → "belum terdaftar". Lint clean. Frontend-only → user REDEPLOY (Publish). Scanner HW hanya di build APK.
+
+
+
+## Session Log (fork) — FINAL VARIASI: 1 produk = 1 barcode = banyak variasi harga
+- Sesuai spesifikasi final user. `produk-form.tsx` mode Variasi: HAPUS bagian "Barcode Variasi" per-variasi. Variasi kini HANYA **Nama + Harga Jual** (Daftar Harga Variasi, tombol "Tambah Variasi Harga"). Barcode cukup 1 di kolom **Barcode produk** paling atas. Hint: "Cukup 1 barcode... saat discan muncul pilihan variasi". Hapus hint `hasVar` lama yang usang & import Switch tak terpakai.
+- SCAN (index.tsx submitBarcode): SELALU popup bila produk punya variasi/anak (tidak auto-add). getByBarcode (localdb) cari product.barcode & variations.barcode → kembalikan induk. Pilih di popup → masuk keranjang dgn harga variasi. (Popup path & pick→cart sudah terbukti di uji Tahap 3.)
+- CEK HARGA (cek-harga.tsx): scan/pilih produk ber-variasi → tampilkan SEMUA opsi (picker) dgn harga. Biasa→harga biasa; Grosir→tier; Variasi→semua variasi.
+- Save gating tetap: grosir→tiers saja; variasi→variations (name+sell_price, inherit_tiers false, no barcode) saja; biasa→keduanya kosong. Data lama tidak dihapus. Verified form via screenshot (Barcode 1 + 3 variasi harga, no per-var barcode field). Lint clean.
+
+
 - `produk-form.tsx` (mode Variasi, produk baru): baris variasi inline dirombak → hanya **Nama Variasi + Harga Jual + Barcode (opsional)**. Buang "Ikuti Harga Induk", Stok, TierEditor per-variasi (disederhanakan). Default variasi baru inherit_tiers:false (Harga Jual tampil).
 - Toggle per baris (idx>0) **"Harga sama dengan di atas"** (state UI `samePrev: Set<id>`). Bila ON → sembunyikan Harga Jual, tampil "Harga otomatis: Rp X. Cukup isi Barcode" (X = harga baris di atas, berantai). Cocok kasus warna beda-barcode harga sama.
 - Save (mode variasi): sell_price di-resolve — baris "ikut di atas" pakai harga baris sebelumnya (loop berantai); inherit_tiers:false, tiers:[], stock default 999. Scan barcode variasi → tambah variasi itu dgn harga hasil resolve. Verified e2e: 1pcs 1000/1 renceng 5500/2 renceng 10000 + "kemasan hitam" ikut di atas (Rp 10.000, hanya barcode ZHITAM01). Lint clean.

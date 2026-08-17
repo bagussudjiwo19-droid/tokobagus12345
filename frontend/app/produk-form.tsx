@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
@@ -43,8 +43,9 @@ export default function ProdukFormScreen() {
   const [stock, setStock] = useState(editing ? String(editing.stock ?? 0) : "999");
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
-  // ID variasi yang harganya "ikut variasi di atasnya" (UI saja).
-  const [samePrev, setSamePrev] = useState<Set<string>>(new Set());
+  const [extraBarcodes, setExtraBarcodes] = useState<string[]>(
+    Array.isArray(editing?.barcodes) && editing!.barcodes!.length > 0 ? editing!.barcodes! : [""],
+  );
   const [saving, setSaving] = useState(false);
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
   const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi">(
@@ -70,23 +71,22 @@ export default function ProdukFormScreen() {
       category: category.trim(),
       unit,
       barcode: barcode.trim() || null,
+      barcodes: priceType === "variasi"
+        ? Array.from(new Set(extraBarcodes.map((b) => b.trim()).filter(Boolean)))
+        : [],
       buy_price: num(buyPrice),
       sell_price: num(sellPrice),
       stock: num(stock),
       tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
       variations: priceType === "variasi"
-        ? variations.map((v, idx) => {
-            let effSell = Number(v.sell_price) || 0;
-            for (let j = idx; j > 0 && samePrev.has(variations[j].id); j--) effSell = Number(variations[j - 1].sell_price) || 0;
-            return {
-              ...v,
-              buy_price: Number(v.buy_price) || 0,
-              sell_price: effSell,
-              stock: Number(v.stock) || 999,
-              inherit_tiers: false,
-              tiers: [],
-            };
-          })
+        ? variations.map((v) => ({
+            ...v,
+            buy_price: Number(v.buy_price) || 0,
+            sell_price: Number(v.sell_price) || 0,
+            stock: Number(v.stock) || 999,
+            inherit_tiers: false,
+            tiers: [],
+          }))
         : [],
     };
     try {
@@ -186,12 +186,6 @@ export default function ProdukFormScreen() {
 
         <Field label="Barcode" value={barcode ?? ""} onChange={setBarcode} placeholder="Scan / ketik barcode" keyboardType="default" testID="form-barcode" />
 
-        {hasVar && (
-          <Text style={styles.hint}>
-            {`Produk punya variasi — harga jual & bertingkat induk dipakai oleh variasi yang memilih "Ikuti Induk". Cukup isi Harga Induk.`}
-          </Text>
-        )}
-
         <Text style={styles.label}>Jenis Harga</Text>
         <View style={styles.unitRow}>
           {(["biasa", "grosir", "variasi"] as const).map((v) => (
@@ -231,32 +225,24 @@ export default function ProdukFormScreen() {
         {/* Variasi: gabungan variasi lama (nested, diedit inline) + variasi baru (produk anak tertaut).
             Semua tampil di dalam induk. Tombol Tambah Variasi membuat produk anak (datar) ke induk ini. */}
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Variasi ({childVariations.length + variations.length})</Text>
-          {editing ? (
-            <Pressable
-              testID="form-add-variation"
-              onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: editing.id } })}
-              style={styles.addSmall}
-            >
-              <Ionicons name="add" size={18} color={colors.brand} />
-              <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              testID="form-add-variation"
-              onPress={() =>
-                setVariations((v) => [
-                  ...v,
-                  { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: false },
-                ])
-              }
-              style={styles.addSmall}
-            >
-              <Ionicons name="add" size={18} color={colors.brand} />
-              <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
-            </Pressable>
-          )}
+          <Text style={styles.sectionTitle}>Daftar Harga Variasi ({variations.length})</Text>
+          <Pressable
+            testID="form-add-variation"
+            onPress={() =>
+              setVariations((v) => [
+                ...v,
+                { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: false },
+              ])
+            }
+            style={styles.addSmall}
+          >
+            <Ionicons name="add" size={18} color={colors.brand} />
+            <Text style={styles.addSmallTxt}>Tambah Variasi Harga</Text>
+          </Pressable>
         </View>
+        {variations.length === 0 && childVariations.length === 0 && (
+          <Text style={styles.childHint}>Belum ada variasi. Ketuk &quot;Tambah Variasi Harga&quot; untuk mulai.</Text>
+        )}
 
         {/* Variasi baru (produk anak) — ketuk untuk mengubah data masing-masing */}
         {editing && childVariations.length > 0 && (
@@ -287,45 +273,56 @@ export default function ProdukFormScreen() {
           </View>
         )}
 
-        {/* Variasi lama (bawaan/nested) — tetap bisa diedit di sini, data tidak diubah */}
-        {variations.length > 0 && (
-          <Text style={styles.childHint}>Variasi bawaan (dalam produk) — ubah langsung di kolom di bawah.</Text>
-        )}
-        {variations.map((v, idx) => {
-          // Harga efektif: bila "ikut di atas", pakai harga baris sebelumnya (berantai).
-          let effSell = v.sell_price;
-          for (let j = idx; j > 0 && samePrev.has(variations[j].id); j--) effSell = variations[j - 1].sell_price;
-          const isSame = idx > 0 && samePrev.has(v.id);
-          return (
-          <View key={v.id} style={styles.varCard} testID={`form-variation-${idx}`}>
-            <View style={styles.varHead}>
-              <Text style={styles.varTitle}>Variasi {idx + 1}</Text>
-              <Pressable onPress={() => { setVariations((arr) => arr.filter((x) => x.id !== v.id)); setSamePrev((s) => { const n = new Set(s); n.delete(v.id); return n; }); }} testID={`form-variation-remove-${idx}`}>
-                <Ionicons name="trash-outline" size={18} color={colors.error} />
-              </Pressable>
+        {/* Bagian A: rows Nama + Harga Jual (satu-satunya sumber harga). Barcode cukup 1 di atas (kolom Barcode produk). */}
+        {variations.map((v, idx) => (
+          <View key={v.id} style={styles.varPriceRow} testID={`form-variation-${idx}`}>
+            <View style={{ flex: 1.4 }}>
+              <Field label={idx === 0 ? "Nama Variasi" : ""} value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 1 pcs" testID={`form-var-name-${idx}`} />
             </View>
-            <Field label="Nama Variasi" value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 1 renceng" testID={`form-var-name-${idx}`} />
-            {idx > 0 && (
-              <View style={styles.inheritRow}>
-                <Text style={styles.label}>Harga sama dengan di atas</Text>
-                <Switch
-                  testID={`form-var-same-${idx}`}
-                  value={isSame}
-                  onValueChange={(val) => setSamePrev((s) => { const n = new Set(s); if (val) n.add(v.id); else n.delete(v.id); return n; })}
-                  trackColor={{ true: colors.brand, false: colors.surfaceTertiary }}
-                  thumbColor="#fff"
-                />
-              </View>
-            )}
-            {isSame ? (
-              <Text style={styles.hint}>Harga otomatis: {rupiah(effSell)}. Cukup isi Barcode.</Text>
-            ) : (
-              <Field label="Harga Jual" value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
-            )}
-            <Field label="Barcode Variasi" value={v.barcode ?? ""} onChange={(t) => updateVar(setVariations, v.id, { barcode: t })} placeholder="opsional — beda tiap variasi" testID={`form-var-barcode-${idx}`} />
+            <View style={{ flex: 1 }}>
+              <Field label={idx === 0 ? "Harga Jual" : ""} value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
+            </View>
+            <Pressable onPress={() => setVariations((arr) => arr.filter((x) => x.id !== v.id))} testID={`form-variation-remove-${idx}`} style={[styles.varDelBtn, idx === 0 && { marginTop: 20 }]} hitSlop={6}>
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </Pressable>
           </View>
-          );
-        })}
+        ))}
+        {/* Bagian Variasi / Barcode: banyak barcode (tanpa nama/harga). Semua barcode ini
+            membuka daftar harga variasi yang SAMA saat discan. */}
+        <View style={[styles.sectionHead, { marginTop: spacing.lg }]}>
+          <Text style={styles.sectionTitle}>Variasi / Barcode</Text>
+          <Pressable
+            testID="form-add-barcode"
+            onPress={() => setExtraBarcodes((arr) => [...arr, ""])}
+            style={styles.addSmall}
+          >
+            <Ionicons name="add" size={18} color={colors.brand} />
+            <Text style={styles.addSmallTxt}>Tambah Barcode</Text>
+          </Pressable>
+        </View>
+        {extraBarcodes.map((b, idx) => (
+          <View key={idx} style={styles.varPriceRow} testID={`form-barcode-row-${idx}`}>
+            <View style={{ flex: 1 }}>
+              <Field
+                label=""
+                value={b}
+                onChange={(t) => setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? t : x)))}
+                placeholder="Masukkan Barcode"
+                keyboardType="default"
+                testID={`form-barcode-input-${idx}`}
+              />
+            </View>
+            <Pressable
+              onPress={() => setExtraBarcodes((arr) => (arr.length > 1 ? arr.filter((_, i) => i !== idx) : [""]))}
+              testID={`form-barcode-remove-${idx}`}
+              style={styles.varDelBtn}
+              hitSlop={6}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </Pressable>
+          </View>
+        ))}
+        <Text style={styles.childHint}>Semua barcode di atas membuka daftar harga variasi yang sama. Saat discan → muncul pilihan variasi.</Text>
         </>)}
       </KeyboardAwareScrollView>
 
@@ -364,7 +361,7 @@ function Field({
 }) {
   return (
     <View style={{ marginBottom: spacing.md }}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={styles.inputBox}>
         {prefix && <Text style={styles.prefix}>{prefix}</Text>}
         <TextInput
@@ -472,6 +469,12 @@ const styles = StyleSheet.create({
   tierInput: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 44, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
   tierDel: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   varCard: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
+  varPriceRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  varDelBtn: { width: 40, height: 46, alignItems: "center", justifyContent: "center", borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary },
+  varBcRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
+  varBcLabel: { width: 120 },
+  varBcName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
+  varBcPrice: { color: colors.brand, fontFamily: font.medium, fontSize: fontSize.sm },
   varHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
   varTitle: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   inheritRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },

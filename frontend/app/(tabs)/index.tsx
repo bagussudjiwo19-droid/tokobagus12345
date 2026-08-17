@@ -144,16 +144,7 @@ export default function TransaksiScreen() {
       if (!c) { inputRef.current?.focus(); return; }
       try {
         const product = await api.getByBarcode(c);
-        // Barcode variasi nested spesifik → langsung tambah variasi itu.
-        const inlineVar = product.variations?.find((v) => v.barcode === c) || null;
-        if (inlineVar) {
-          cart.addProduct(product, inlineVar);
-          Haptics.selectionAsync();
-          toast.show(`${product.name} — ${inlineVar.name} ditambahkan`, "success");
-          setTimeout(() => inputRef.current?.focus(), 100);
-          return;
-        }
-        // Bila produk punya keluarga (anak) atau variasi nested → munculkan popup pilih.
+        // Bila produk punya keluarga (anak) atau variasi → SELALU munculkan popup pilih.
         const { root, children } = familyOptions(product, products);
         if (children.length > 0 || (root.variations && root.variations.length > 0)) {
           setVariantFor(root);

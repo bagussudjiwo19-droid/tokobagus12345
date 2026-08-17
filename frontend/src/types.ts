@@ -17,6 +17,7 @@ export type Product = {
   category?: string;
   unit?: string;
   barcode?: string | null;
+  barcodes?: string[]; // barcode tambahan (banyak barcode → 1 produk → daftar variasi yang sama)
   parent_id?: string | null;
   buy_price: number;
   sell_price: number;
