@@ -72,7 +72,7 @@ export default function ProdukFormScreen() {
       category: category.trim(),
       unit,
       barcode: barcode.trim() || null,
-      barcodes: priceType === "variasi"
+      barcodes: (priceType === "variasi" || priceType === "grosir")
         ? Array.from(new Set(extraBarcodes.map((b) => b.trim()).filter(Boolean)))
         : [],
       buy_price: num(buyPrice),
@@ -150,7 +150,43 @@ export default function ProdukFormScreen() {
       </View>
     ));
 
-  // Hapus cepat satu variasi (produk anak) langsung dari form induk.
+  // Bagian "Variasi" berisi HANYA barcode (tanpa nama/harga). Dipakai di mode
+  // Grosir (scan → langsung masuk, harga ikut tier) & Variasi (scan → popup pilih).
+  const renderBarcodeSection = (title: string, hint: string) => (
+    <>
+      <View style={[styles.sectionHead, { marginTop: spacing.lg }]}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Pressable testID="form-add-barcode" onPress={() => setExtraBarcodes((arr) => [...arr, ""])} style={styles.addSmall}>
+          <Ionicons name="add" size={18} color={colors.brand} />
+          <Text style={styles.addSmallTxt}>Tambah Barcode</Text>
+        </Pressable>
+      </View>
+      {extraBarcodes.map((b, idx) => (
+        <View key={idx} style={styles.varPriceRow} testID={`form-barcode-row-${idx}`}>
+          <View style={{ flex: 1 }}>
+            <Field
+              label=""
+              value={b}
+              onChange={(t) => setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? t : x)))}
+              placeholder="Masukkan Barcode"
+              keyboardType="default"
+              testID={`form-barcode-input-${idx}`}
+            />
+          </View>
+          <Pressable
+            onPress={() => setExtraBarcodes((arr) => (arr.length > 1 ? arr.filter((_, i) => i !== idx) : [""]))}
+            testID={`form-barcode-remove-${idx}`}
+            style={styles.varDelBtn}
+            hitSlop={6}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.error} />
+          </Pressable>
+        </View>
+      ))}
+      <Text style={styles.childHint}>{hint}</Text>
+    </>
+  );
+
   const delChild = (c: Product) => {
     Alert.alert(
       "Hapus Variasi?",
@@ -261,9 +297,10 @@ export default function ProdukFormScreen() {
         </>)}
 
         {/* Tiered / wholesale pricing */}
-        {priceType === "grosir" && (
+        {priceType === "grosir" && (<>
           <TierEditor title="Harga Bertingkat (grosir)" tiers={tiers} onChange={setTiers} testPrefix="form-tier" />
-        )}
+          {renderBarcodeSection("Variasi", "Hanya daftar barcode untuk menemukan produk yang sama (tanpa nama/harga). Saat discan → produk LANGSUNG masuk keranjang, harga otomatis ikut Daftar Harga Grosir sesuai jumlah (tanpa popup).")}
+        </>)}
 
         {priceType === "variasi" && (<>
         {/* Variasi: gabungan variasi lama (nested, diedit inline) + variasi baru (produk anak tertaut).
@@ -319,42 +356,7 @@ export default function ProdukFormScreen() {
 
         {/* Bagian A: rows Nama + Harga Jual (satu-satunya sumber harga). Barcode cukup 1 di atas (kolom Barcode produk). */}
         {renderVarRows()}
-        {/* Bagian Variasi / Barcode: banyak barcode (tanpa nama/harga). Semua barcode ini
-            membuka daftar harga variasi yang SAMA saat discan. */}
-        <View style={[styles.sectionHead, { marginTop: spacing.lg }]}>
-          <Text style={styles.sectionTitle}>Variasi / Barcode</Text>
-          <Pressable
-            testID="form-add-barcode"
-            onPress={() => setExtraBarcodes((arr) => [...arr, ""])}
-            style={styles.addSmall}
-          >
-            <Ionicons name="add" size={18} color={colors.brand} />
-            <Text style={styles.addSmallTxt}>Tambah Barcode</Text>
-          </Pressable>
-        </View>
-        {extraBarcodes.map((b, idx) => (
-          <View key={idx} style={styles.varPriceRow} testID={`form-barcode-row-${idx}`}>
-            <View style={{ flex: 1 }}>
-              <Field
-                label=""
-                value={b}
-                onChange={(t) => setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? t : x)))}
-                placeholder="Masukkan Barcode"
-                keyboardType="default"
-                testID={`form-barcode-input-${idx}`}
-              />
-            </View>
-            <Pressable
-              onPress={() => setExtraBarcodes((arr) => (arr.length > 1 ? arr.filter((_, i) => i !== idx) : [""]))}
-              testID={`form-barcode-remove-${idx}`}
-              style={styles.varDelBtn}
-              hitSlop={6}
-            >
-              <Ionicons name="trash-outline" size={18} color={colors.error} />
-            </Pressable>
-          </View>
-        ))}
-        <Text style={styles.childHint}>Semua barcode di atas membuka daftar harga variasi yang sama. Saat discan → muncul pilihan variasi.</Text>
+        {renderBarcodeSection("Variasi / Barcode", "Semua barcode di atas membuka daftar harga variasi yang sama. Saat discan → muncul pilihan variasi.")}
         </>)}
       </KeyboardAwareScrollView>
 
