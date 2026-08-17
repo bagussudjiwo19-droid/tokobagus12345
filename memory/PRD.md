@@ -1,6 +1,10 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — TOMBOL KALKULATOR di Transaksi Berhasil
+## Session Log (fork) — KALKULATOR: tombol 00 + tampilkan operator di display
+- `app/checkout.tsx` CalculatorModal: baris bawah kini [0][00][.][=] (hapus tombol 0 lebar/`wide`+style calcKeyWide). `input00()`: bila display "0"/waiting → tetap "0", else tambah "00".
+- Baris ekspresi baru (`calc-expr`, warna brand pink) di atas display besar: menampilkan `${prev} ${op}` mis. "100 +" saat operator dipilih, sehingga jelas operasi berjalan. `exprLine` diturunkan dari state prev+op; kosong setelah `=`. Verified e2e: 100 + 25 → expr "100 +", display "25", hasil = 125. Operator +,-,×,÷ semua tampil.
+
+
 - `app/checkout.tsx` step "done": tambah baris `calcRow` (full-width) di bawah actionRow [Bagikan][Cetak Struk], tombol pink-outline "🧮 Kalkulator" (testID receipt-calc, style calcBtn = mirip actionBtn tapi selebar 2 tombol, maxWidth 320). Tombol Bagikan/Cetak Struk/Transaksi Baru/struk TIDAK diubah.
 - `CalculatorModal` (komponen di file yg sama): Modal transparent slide dari bawah (bottom sheet), overlay di ATAS halaman Transaksi Berhasil (tidak navigasi/tidak meninggalkan halaman). Kalkulator immediate-execution: digit 0-9, . , + - × ÷, =, C, ⌫, %. Operator = brandTertiary pink, = brand pink (teks putih), fn = surfaceTertiary. State: display/prev/op/waiting. Haptics selectionAsync tiap tap. Verified e2e screenshot: transaksi selesai → tombol tampil sesuai referensi → buka kalkulator → 12×3=36 benar.
 - Lint clean (hanya 1 warning pre-existing unused 'e' di line 147, bukan dari perubahan ini). Frontend-only → user Publish untuk ke HP.

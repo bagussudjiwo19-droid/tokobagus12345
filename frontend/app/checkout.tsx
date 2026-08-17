@@ -449,6 +449,12 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
     if (waiting || display === "Error") { setDisplay("0."); setWaiting(false); return; }
     if (!display.includes(".")) setDisplay((cur) => cur + ".");
   };
+  const input00 = () => {
+    tap();
+    if (display === "Error") { setDisplay("0"); setWaiting(false); return; }
+    if (waiting) { setDisplay("0"); setWaiting(false); return; }
+    setDisplay((cur) => (cur === "0" ? "0" : cur + "00"));
+  };
   const percent = () => { tap(); const cur = parseFloat(display) || 0; setDisplay(fmt(cur / 100)); setWaiting(false); };
   const setOperator = (next: string) => {
     tap();
@@ -470,13 +476,14 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
     }
   };
 
-  const Key = ({ label, onPress, kind = "num", wide, testID }: { label: string; onPress: () => void; kind?: "num" | "op" | "fn" | "eq"; wide?: boolean; testID?: string }) => (
+  const exprLine = prev !== null && op ? `${fmt(prev)} ${op}` : "";
+
+  const Key = ({ label, onPress, kind = "num", testID }: { label: string; onPress: () => void; kind?: "num" | "op" | "fn" | "eq"; testID?: string }) => (
     <Pressable
       onPress={onPress}
       testID={testID}
       style={[
         styles.calcKey,
-        wide && styles.calcKeyWide,
         kind === "op" && styles.calcKeyOp,
         kind === "fn" && styles.calcKeyFn,
         kind === "eq" && styles.calcKeyEq,
@@ -503,6 +510,7 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
             </Pressable>
           </View>
           <View style={styles.calcDisplayBox}>
+            <Text style={styles.calcExpr} numberOfLines={1} testID="calc-expr">{exprLine}</Text>
             <Text style={styles.calcDisplay} numberOfLines={1} adjustsFontSizeToFit testID="calc-display">{display}</Text>
           </View>
           <View style={styles.calcGrid}>
@@ -531,7 +539,8 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
               <Key label="+" onPress={() => setOperator("+")} kind="op" />
             </View>
             <View style={styles.calcRowKeys}>
-              <Key label="0" onPress={() => inputDigit("0")} wide />
+              <Key label="0" onPress={() => inputDigit("0")} testID="calc-0" />
+              <Key label="00" onPress={input00} testID="calc-00" />
               <Key label="." onPress={inputDot} />
               <Key label="=" onPress={equals} kind="eq" testID="calc-equals" />
             </View>
@@ -615,12 +624,12 @@ const styles = StyleSheet.create({
   calcHandle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.sm },
   calcHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
   calcTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, marginBottom: spacing.md, minHeight: 72, justifyContent: "center" },
+  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 84, justifyContent: "center" },
+  calcExpr: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "right", minHeight: 24 },
   calcDisplay: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right" },
   calcGrid: { gap: spacing.sm },
   calcRowKeys: { flexDirection: "row", gap: spacing.sm },
   calcKey: { flex: 1, height: 60, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
-  calcKeyWide: { flex: 2.15 },
   calcKeyOp: { backgroundColor: colors.brandTertiary, borderColor: colors.brandTertiary },
   calcKeyFn: { backgroundColor: colors.surfaceTertiary, borderColor: colors.surfaceTertiary },
   calcKeyEq: { backgroundColor: colors.brand, borderColor: colors.brand },
