@@ -297,7 +297,7 @@ export default function TransaksiScreen() {
                     style={styles.iconMini}
                     testID={`cart-variasi-${l.key}`}
                     hitSlop={6}
-                    onPress={() => router.push({ pathname: "/variasi-cepat", params: { id: l.product_id! } })}
+                    onPress={() => router.push({ pathname: "/produk-form", params: { id: l.product_id! } })}
                   >
                     <Ionicons name="git-branch-outline" size={16} color={colors.brand} />
                   </Pressable>

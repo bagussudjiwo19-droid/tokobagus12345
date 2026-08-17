@@ -1,5 +1,12 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Ikon "Tambah Variasi" di keranjang = shortcut ke Edit Produk
+- Permintaan user: ikon Tambah Variasi di tiap item keranjang (jangan ubah ikon/tampilan) kini LANGSUNG buka Edit Produk untuk barang itu (bukan variasi-cepat, bukan buat produk baru). Data produk otomatis termuat; Simpan → tersimpan ke DB.
+- `app/(tabs)/index.tsx`: onPress ikon (testID cart-variasi-{key}) diganti dari `router.push("/variasi-cepat", {id})` → `router.push("/produk-form", {id: l.product_id})`. Tidak ubah ikon (git-branch-outline), style (iconMini), atau logika lain. produk-form memuat produk by id (editing) & simpan via api.updateProduct + reload.
+- DIVERIFIKASI (screenshot e2e): buat "jajannnnnnn 2000" (barcode JJ1, harga 2000) → Transaksi scan JJ1 → ketuk ikon Tambah Variasi → LANGSUNG buka "Ubah Produk" dgn data lengkap (nama, barcode JJ1, Jenis Harga Biasa, Harga Jual 2000, tombol "Simpan Perubahan"). Lint clean. Frontend-only → user REDEPLOY.
+
+
+
 ## Session Log (fork) — JENIS HARGA KE-4: "IKUT INDUK" (banyak barcode → 1 harga induk flat, tanpa popup)
 - Permintaan user: tambah pilihan Jenis Harga ke-4 "Ikut Induk". Tampilkan Harga Beli Induk + Harga Jual Induk, lalu bagian "Variasi / Barcode" (HANYA barcode, tanpa nama/harga). Scan barcode mana pun → produk induk LANGSUNG masuk keranjang pakai Harga Jual Induk (tanpa popup, tanpa tier). Ubah harga induk → semua barcode ikut (harga tidak disimpan per-barcode). Biasa/Grosir/Variasi TIDAK diubah.
 - `produk-form.tsx`: priceType union tambah "ikut". Chip ke-4 "Ikut Induk" (testID form-pricetype-ikut); baris Jenis Harga diberi flexWrap+rowGap agar 4 chip rapi. Label field harga di mode ikut → "Harga Beli Induk"/"Harga Jual Induk". Blok mode ikut render `renderBarcodeSection("Variasi / Barcode", ...)` (reuse helper). Save: mode ikut → variations:[] (tak ada popup), tiers:[] (flat), barcodes[] disimpan; price_type="ikut". types.ts price_type union tambah "ikut".
