@@ -1,6 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — KALKULATOR: tombol 00 + tampilkan operator di display
+## Session Log (fork) — KALKULATOR: display ekspresi penuh + hasil live (gaya contoh)
+- `app/checkout.tsx` CalculatorModal DIROMBAK dari immediate-execution → model EKSPRESI PENUH. State tunggal `expr` (raw string, operator +-×÷). Display atas menampilkan seluruh ekspresi terformat gaya ID (ribuan ".", desimal ",") mis. "8.000+6.000+3.500+9.000"; baris bawah "= 26.500" (hasil live, muted) muncul otomatis saat ada operator & valid. Tekan `=` → collapse jadi hasil.
+- Evaluator sendiri (tanpa eval): tokenize regex, 2-pass (× ÷ dulu, lalu + -), pembagian 0 → "Error". Handlers: inputDigit (anti leading-zero via lastNum), input00, inputDot (desimal "."), setOperator (ganti operator jika beruntun, trim "." di ujung), percent (bagi 100 token terakhir), backspace, clear. Tombol TIDAK berubah (0,00,.,= tetap; % C ⌫ ÷ × − +). Verified e2e: 8000+6000+3500+9000 → display benar + "= 26.500", setelah = → "26.500".
+- Ganti style calcExpr→calcResult (muted), display numberOfLines 2 adjustsFontSizeToFit. Lint clean (1 warning pre-existing line 147).
+
+
 - `app/checkout.tsx` CalculatorModal: baris bawah kini [0][00][.][=] (hapus tombol 0 lebar/`wide`+style calcKeyWide). `input00()`: bila display "0"/waiting → tetap "0", else tambah "00".
 - Baris ekspresi baru (`calc-expr`, warna brand pink) di atas display besar: menampilkan `${prev} ${op}` mis. "100 +" saat operator dipilih, sehingga jelas operasi berjalan. `exprLine` diturunkan dari state prev+op; kosong setelah `=`. Verified e2e: 100 + 25 → expr "100 +", display "25", hasil = 125. Operator +,-,×,÷ semua tampil.
 

@@ -416,67 +416,134 @@ function ActionBtn({ icon, label, onPress, testID }: { icon: any; label: string;
 // di atas halaman Transaksi Berhasil — tidak meninggalkan halaman.
 function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
-  const [display, setDisplay] = useState("0");
-  const [prev, setPrev] = useState<number | null>(null);
-  const [op, setOp] = useState<string | null>(null);
-  const [waiting, setWaiting] = useState(false);
+  const [expr, setExpr] = useState("");
 
   const tap = () => Haptics.selectionAsync().catch(() => {});
+  const OPS = "+-×÷";
+  const isOp = (c: string) => OPS.includes(c);
 
-  const fmt = (n: number) => {
-    if (!isFinite(n)) return "Error";
-    const r = Math.round((n + Number.EPSILON) * 1e8) / 1e8;
-    return String(r);
-  };
-  const compute = (a: number, b: number, o: string) => {
-    if (o === "+") return a + b;
-    if (o === "-") return a - b;
-    if (o === "×") return a * b;
-    if (o === "÷") return b === 0 ? NaN : a / b;
-    return b;
+  // Ambil token angka terakhir (setelah operator terakhir).
+  const lastNum = (s: string) => {
+    let i = s.length - 1;
+    while (i >= 0 && !isOp(s[i])) i--;
+    return s.slice(i + 1);
   };
 
-  const clearAll = () => { tap(); setDisplay("0"); setPrev(null); setOp(null); setWaiting(false); };
-  const backspace = () => { tap(); setDisplay((d) => (d === "Error" ? "0" : d.length > 1 ? d.slice(0, -1) : "0")); };
+  // Format satu angka gaya Indonesia: ribuan "." dan desimal ",".
+  const fmtNum = (numStr: string) => {
+    const neg = numStr.startsWith("-");
+    const body = neg ? numStr.slice(1) : numStr;
+    const [ip, dp] = body.split(".");
+    const intFmt = (ip === "" ? "0" : ip).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const out = dp !== undefined ? `${intFmt},${dp}` : intFmt;
+    return (neg ? "-" : "") + out;
+  };
+
+  // Tampilkan ekspresi lengkap dgn angka terformat + operator apa adanya.
+  const fmtExpr = (s: string) => {
+    if (s === "" ) return "0";
+    if (s === "Error") return "Error";
+    const tokens = s.match(/(\d+\.?\d*|\.\d+|[+\-×÷])/g) || [];
+    return tokens.map((t) => (isOp(t) ? t : fmtNum(t))).join("");
+  };
+
+  // Hitung ekspresi (× ÷ lebih dulu, lalu + -). null jika tak valid.
+  const evalExpr = (s: string): number | null => {
+    if (!s || s === "Error") return null;
+    const tokens = (s.match(/(\d+\.?\d*|\.\d+|[+\-×÷])/g) || []).slice();
+    while (tokens.length && isOp(tokens[tokens.length - 1])) tokens.pop();
+    if (!tokens.length) return null;
+    const p1: (string | number)[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t === "×" || t === "÷") {
+        const a = Number(p1.pop());
+        const b = Number(tokens[++i]);
+        if (isNaN(b)) return null;
+        p1.push(t === "×" ? a * b : (b === 0 ? NaN : a / b));
+      } else if (t === "+" || t === "-") {
+        p1.push(t);
+      } else {
+        p1.push(Number(t));
+      }
+    }
+    let result = Number(p1[0]);
+    for (let i = 1; i < p1.length; i += 2) {
+      const o = p1[i];
+      const v = Number(p1[i + 1]);
+      if (o === "+") result += v;
+      else if (o === "-") result -= v;
+    }
+    if (!isFinite(result)) return null;
+    return Math.round((result + Number.EPSILON) * 1e8) / 1e8;
+  };
+
+  const clearAll = () => { tap(); setExpr(""); };
+  const backspace = () => { tap(); setExpr((s) => (s === "Error" ? "" : s.slice(0, -1))); };
   const inputDigit = (d: string) => {
     tap();
-    if (display === "Error") { setDisplay(d); setWaiting(false); return; }
-    if (waiting) { setDisplay(d); setWaiting(false); }
-    else setDisplay((cur) => (cur === "0" ? d : cur + d));
-  };
-  const inputDot = () => {
-    tap();
-    if (waiting || display === "Error") { setDisplay("0."); setWaiting(false); return; }
-    if (!display.includes(".")) setDisplay((cur) => cur + ".");
+    setExpr((s) => {
+      if (s === "Error") return d;
+      return lastNum(s) === "0" ? s.slice(0, -1) + d : s + d;
+    });
   };
   const input00 = () => {
     tap();
-    if (display === "Error") { setDisplay("0"); setWaiting(false); return; }
-    if (waiting) { setDisplay("0"); setWaiting(false); return; }
-    setDisplay((cur) => (cur === "0" ? "0" : cur + "00"));
+    setExpr((s) => {
+      if (s === "Error" || s === "") return "0";
+      const ln = lastNum(s);
+      if (ln === "") return s + "0";
+      if (ln === "0") return s;
+      return s + "00";
+    });
   };
-  const percent = () => { tap(); const cur = parseFloat(display) || 0; setDisplay(fmt(cur / 100)); setWaiting(false); };
-  const setOperator = (next: string) => {
+  const inputDot = () => {
     tap();
-    const cur = parseFloat(display) || 0;
-    if (prev === null) setPrev(cur);
-    else if (op && !waiting) { const r = compute(prev, cur, op); setPrev(r); setDisplay(fmt(r)); }
-    setOp(next);
-    setWaiting(true);
+    setExpr((s) => {
+      if (s === "Error") return "0.";
+      const ln = lastNum(s);
+      if (ln === "") return s + "0.";
+      if (ln.includes(".")) return s;
+      return s + ".";
+    });
+  };
+  const setOperator = (op: string) => {
+    tap();
+    setExpr((s) => {
+      if (s === "Error") return "";
+      if (s === "") return op === "-" ? "-" : s; // izinkan mulai negatif
+      let base = s;
+      if (base.endsWith(".")) base = base.slice(0, -1);
+      if (isOp(base[base.length - 1])) return base.slice(0, -1) + op; // ganti operator
+      return base + op;
+    });
+  };
+  const percent = () => {
+    tap();
+    setExpr((s) => {
+      if (s === "Error" || s === "") return s;
+      const ln = lastNum(s);
+      if (ln === "" || isOp(ln)) return s;
+      const num = Number(ln) / 100;
+      return s.slice(0, s.length - ln.length) + String(num);
+    });
   };
   const equals = () => {
     tap();
-    if (op !== null && prev !== null) {
-      const cur = parseFloat(display) || 0;
-      const r = compute(prev, cur, op);
-      setDisplay(fmt(r));
-      setPrev(null);
-      setOp(null);
-      setWaiting(true);
-    }
+    setExpr((s) => {
+      const hasOp = (s.match(/[+\-×÷]/g) || []).length > 0;
+      if (!hasOp) return s;
+      const r = evalExpr(s);
+      return r === null ? "Error" : String(r);
+    });
   };
 
-  const exprLine = prev !== null && op ? `${fmt(prev)} ${op}` : "";
+  const liveResult = (() => {
+    const hasOp = (expr.match(/[+\-×÷]/g) || []).length > 0;
+    if (!hasOp || expr === "Error") return "";
+    const r = evalExpr(expr);
+    return r === null ? "" : `= ${fmtNum(String(r))}`;
+  })();
 
   const Key = ({ label, onPress, kind = "num", testID }: { label: string; onPress: () => void; kind?: "num" | "op" | "fn" | "eq"; testID?: string }) => (
     <Pressable
@@ -510,8 +577,8 @@ function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () =
             </Pressable>
           </View>
           <View style={styles.calcDisplayBox}>
-            <Text style={styles.calcExpr} numberOfLines={1} testID="calc-expr">{exprLine}</Text>
-            <Text style={styles.calcDisplay} numberOfLines={1} adjustsFontSizeToFit testID="calc-display">{display}</Text>
+            <Text style={styles.calcDisplay} numberOfLines={2} adjustsFontSizeToFit testID="calc-display">{fmtExpr(expr)}</Text>
+            <Text style={styles.calcResult} numberOfLines={1} testID="calc-result">{liveResult}</Text>
           </View>
           <View style={styles.calcGrid}>
             <View style={styles.calcRowKeys}>
@@ -624,8 +691,8 @@ const styles = StyleSheet.create({
   calcHandle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.sm },
   calcHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
   calcTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 84, justifyContent: "center" },
-  calcExpr: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "right", minHeight: 24 },
+  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 92, justifyContent: "center" },
+  calcResult: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "right", minHeight: 26 },
   calcDisplay: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right" },
   calcGrid: { gap: spacing.sm },
   calcRowKeys: { flexDirection: "row", gap: spacing.sm },
