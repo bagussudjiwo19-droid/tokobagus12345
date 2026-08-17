@@ -1,6 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — TAHAP 2/3/4 SELESAI: Anak Ikut Induk + Scan→Pilih Semua + Tambah Variasi saat Transaksi
+## Session Log (fork) — PEMILIH JENIS HARGA (Biasa/Grosir/Variasi) di form produk
+- `produk-form.tsx`: state `priceType: "biasa"|"grosir"|"variasi"` (init dari data: ada variasi/anak → variasi; ada tiers → grosir; else biasa). Segmented chips "Jenis Harga" (testID form-pricetype-*) di atas Harga Beli/Jual. Editor TierEditor hanya muncul saat "grosir"; blok Variasi (sectionHead + child + nested) hanya muncul saat "variasi"; "biasa" → tak ada keduanya. Hint kontekstual per mode.
+- SAVE gating (salah satu saja, sesuai 2a): `tiers` disimpan hanya jika grosir (else []); `variations` disimpan hanya jika variasi (else []). Produk lama tidak diutak-atik (3a) — hanya berlaku saat produk baru/diedit & disimpan.
+- Cek Harga & Transaksi sudah otomatis: grosir → harga turun by qty + dinding tampil tier; variasi → popup pilih (transaksi) + dinding tampil semua opsi (sudah dari Tahap 2/3). Verified screenshot: Biasa=keduanya hidden, Grosir=hanya grosir, Variasi=hanya variasi. Lint clean.
+
+
 - pricing.ts: helper `familyOptions(product, all)` → {root (induk asli), children (produk parent_id===root)}; `childEffective(child, root)` → bila child.inherit_tiers pakai sell_price+tiers INDUK (auto-sync 2a), else milik sendiri.
 - TRANSAKSI (index.tsx): onQuickTap & submitBarcode kini sadar-keluarga. Scan/ketuk barcode apa pun dari keluarga (induk atau anak) → buka popup "Pilih Variasi" berisi anak (harga efektif) + variasi nested. Barcode variasi nested spesifik tetap langsung tambah. Standalone → tambah langsung (harga efektif). addChild() tambah anak dgn harga ikut induk. Verified e2e: ketuk induk → popup 2 anak @16.500 → pilih → masuk keranjang.
 - DINDING (cek-harga.tsx): handleScan & pickProduct & hasil pencarian sadar-keluarga. optCount = children+nested vars; >1 → layar "Pilih ukuran/varian" menampilkan SEMUA (anak + nested) dgn harga efektif; =1 → langsung hasil. showResultChild() render anak dgn harga/grosir efektif. Verified e2e: cari induk → layar pilih menampilkan ecer & Ecer2 @16.500.

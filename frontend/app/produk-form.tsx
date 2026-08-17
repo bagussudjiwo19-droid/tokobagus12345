@@ -44,6 +44,12 @@ export default function ProdukFormScreen() {
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
   const [saving, setSaving] = useState(false);
+  const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
+  const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi">(
+    editing
+      ? ((editing.variations?.length || hasChildNow) ? "variasi" : (editing.tiers?.length ? "grosir" : "biasa"))
+      : "biasa",
+  );
 
   const num = (s: string) => Number((s || "0").replace(/[^\d.]/g, "")) || 0;
 
@@ -65,14 +71,16 @@ export default function ProdukFormScreen() {
       buy_price: num(buyPrice),
       sell_price: num(sellPrice),
       stock: num(stock),
-      tiers: tiers.filter((t) => t.min_qty > 0),
-      variations: variations.map((v) => ({
-        ...v,
-        buy_price: Number(v.buy_price) || 0,
-        sell_price: Number(v.sell_price) || 0,
-        stock: Number(v.stock) || 0,
-        tiers: (v.tiers || []).filter((t) => t.min_qty > 0),
-      })),
+      tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
+      variations: priceType === "variasi"
+        ? variations.map((v) => ({
+            ...v,
+            buy_price: Number(v.buy_price) || 0,
+            sell_price: Number(v.sell_price) || 0,
+            stock: Number(v.stock) || 0,
+            tiers: (v.tiers || []).filter((t) => t.min_qty > 0),
+          }))
+        : [],
     };
     try {
       if (editing) {
@@ -177,6 +185,23 @@ export default function ProdukFormScreen() {
           </Text>
         )}
 
+        <Text style={styles.label}>Jenis Harga</Text>
+        <View style={styles.unitRow}>
+          {(["biasa", "grosir", "variasi"] as const).map((v) => (
+            <Pressable key={v} onPress={() => setPriceType(v)} style={[styles.unitChip, priceType === v && styles.unitChipActive]} testID={`form-pricetype-${v}`}>
+              <Text style={[styles.unitTxt, priceType === v && styles.unitTxtActive]}>
+                {v === "biasa" ? "Biasa" : v === "grosir" ? "Grosir" : "Variasi"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {priceType === "grosir" && (
+          <Text style={styles.hint}>Harga turun otomatis saat jumlah beli mencapai batas grosir.</Text>
+        )}
+        {priceType === "variasi" && (
+          <Text style={styles.hint}>Tiap variasi punya harga sendiri; muncul popup pilih saat transaksi & tampil semua di Cek Harga.</Text>
+        )}
+
         <View style={styles.row2}>
           <View style={{ flex: 1 }}>
             <Field label="Harga Beli" value={buyPrice} onChange={setBuyPrice} keyboardType="numeric" prefix="Rp" testID="form-buy" />
@@ -191,8 +216,11 @@ export default function ProdukFormScreen() {
         )}
 
         {/* Tiered / wholesale pricing */}
-        <TierEditor title="Harga Bertingkat (grosir)" tiers={tiers} onChange={setTiers} testPrefix="form-tier" />
+        {priceType === "grosir" && (
+          <TierEditor title="Harga Bertingkat (grosir)" tiers={tiers} onChange={setTiers} testPrefix="form-tier" />
+        )}
 
+        {priceType === "variasi" && (<>
         {/* Variasi: gabungan variasi lama (nested, diedit inline) + variasi baru (produk anak tertaut).
             Semua tampil di dalam induk. Tombol Tambah Variasi membuat produk anak (datar) ke induk ini. */}
         <View style={styles.sectionHead}>
@@ -296,6 +324,7 @@ export default function ProdukFormScreen() {
             )}
           </View>
         ))}
+        </>)}
       </KeyboardAwareScrollView>
 
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
