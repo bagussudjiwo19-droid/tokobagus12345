@@ -1,6 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — PEMILIH JENIS HARGA (Biasa/Grosir/Variasi) di form produk
+## Session Log (fork) — VARIASI INLINE: Nama+Harga Jual per baris + "Harga sama dengan di atas"
+- `produk-form.tsx` (mode Variasi, produk baru): baris variasi inline dirombak → hanya **Nama Variasi + Harga Jual + Barcode (opsional)**. Buang "Ikuti Harga Induk", Stok, TierEditor per-variasi (disederhanakan). Default variasi baru inherit_tiers:false (Harga Jual tampil).
+- Toggle per baris (idx>0) **"Harga sama dengan di atas"** (state UI `samePrev: Set<id>`). Bila ON → sembunyikan Harga Jual, tampil "Harga otomatis: Rp X. Cukup isi Barcode" (X = harga baris di atas, berantai). Cocok kasus warna beda-barcode harga sama.
+- Save (mode variasi): sell_price di-resolve — baris "ikut di atas" pakai harga baris sebelumnya (loop berantai); inherit_tiers:false, tiers:[], stock default 999. Scan barcode variasi → tambah variasi itu dgn harga hasil resolve. Verified e2e: 1pcs 1000/1 renceng 5500/2 renceng 10000 + "kemasan hitam" ikut di atas (Rp 10.000, hanya barcode ZHITAM01). Lint clean.
+
+
 - `produk-form.tsx`: state `priceType: "biasa"|"grosir"|"variasi"` (init dari data: ada variasi/anak → variasi; ada tiers → grosir; else biasa). Segmented chips "Jenis Harga" (testID form-pricetype-*) di atas Harga Beli/Jual. Editor TierEditor hanya muncul saat "grosir"; blok Variasi (sectionHead + child + nested) hanya muncul saat "variasi"; "biasa" → tak ada keduanya. Hint kontekstual per mode.
 - SAVE gating (salah satu saja, sesuai 2a): `tiers` disimpan hanya jika grosir (else []); `variations` disimpan hanya jika variasi (else []). Produk lama tidak diutak-atik (3a) — hanya berlaku saat produk baru/diedit & disimpan.
 - Cek Harga & Transaksi sudah otomatis: grosir → harga turun by qty + dinding tampil tier; variasi → popup pilih (transaksi) + dinding tampil semua opsi (sudah dari Tahap 2/3). Verified screenshot: Biasa=keduanya hidden, Grosir=hanya grosir, Variasi=hanya variasi. Lint clean.

@@ -43,6 +43,8 @@ export default function ProdukFormScreen() {
   const [stock, setStock] = useState(editing ? String(editing.stock ?? 0) : "999");
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
+  // ID variasi yang harganya "ikut variasi di atasnya" (UI saja).
+  const [samePrev, setSamePrev] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
   const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi">(
@@ -73,13 +75,18 @@ export default function ProdukFormScreen() {
       stock: num(stock),
       tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
       variations: priceType === "variasi"
-        ? variations.map((v) => ({
-            ...v,
-            buy_price: Number(v.buy_price) || 0,
-            sell_price: Number(v.sell_price) || 0,
-            stock: Number(v.stock) || 0,
-            tiers: (v.tiers || []).filter((t) => t.min_qty > 0),
-          }))
+        ? variations.map((v, idx) => {
+            let effSell = Number(v.sell_price) || 0;
+            for (let j = idx; j > 0 && samePrev.has(variations[j].id); j--) effSell = Number(variations[j - 1].sell_price) || 0;
+            return {
+              ...v,
+              buy_price: Number(v.buy_price) || 0,
+              sell_price: effSell,
+              stock: Number(v.stock) || 999,
+              inherit_tiers: false,
+              tiers: [],
+            };
+          })
         : [],
     };
     try {
@@ -240,7 +247,7 @@ export default function ProdukFormScreen() {
               onPress={() =>
                 setVariations((v) => [
                   ...v,
-                  { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: true },
+                  { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: false },
                 ])
               }
               style={styles.addSmall}
@@ -284,46 +291,41 @@ export default function ProdukFormScreen() {
         {variations.length > 0 && (
           <Text style={styles.childHint}>Variasi bawaan (dalam produk) — ubah langsung di kolom di bawah.</Text>
         )}
-        {variations.map((v, idx) => (
+        {variations.map((v, idx) => {
+          // Harga efektif: bila "ikut di atas", pakai harga baris sebelumnya (berantai).
+          let effSell = v.sell_price;
+          for (let j = idx; j > 0 && samePrev.has(variations[j].id); j--) effSell = variations[j - 1].sell_price;
+          const isSame = idx > 0 && samePrev.has(v.id);
+          return (
           <View key={v.id} style={styles.varCard} testID={`form-variation-${idx}`}>
             <View style={styles.varHead}>
               <Text style={styles.varTitle}>Variasi {idx + 1}</Text>
-              <Pressable onPress={() => setVariations((arr) => arr.filter((x) => x.id !== v.id))} testID={`form-variation-remove-${idx}`}>
+              <Pressable onPress={() => { setVariations((arr) => arr.filter((x) => x.id !== v.id)); setSamePrev((s) => { const n = new Set(s); n.delete(v.id); return n; }); }} testID={`form-variation-remove-${idx}`}>
                 <Ionicons name="trash-outline" size={18} color={colors.error} />
               </Pressable>
             </View>
-            <Field label="Nama Variasi" value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. Ayam Bawang" testID={`form-var-name-${idx}`} />
-            <Field label="Barcode Variasi" value={v.barcode ?? ""} onChange={(t) => updateVar(setVariations, v.id, { barcode: t })} placeholder="opsional" testID={`form-var-barcode-${idx}`} />
-            <View style={styles.inheritRow}>
-              <Text style={styles.label}>Ikuti Harga Induk</Text>
-              <Switch
-                testID={`form-var-inherit-${idx}`}
-                value={v.inherit_tiers}
-                onValueChange={(val) => updateVar(setVariations, v.id, { inherit_tiers: val })}
-                trackColor={{ true: colors.brand, false: colors.surfaceTertiary }}
-                thumbColor="#fff"
-              />
-            </View>
-            <View style={styles.row2}>
-              {!v.inherit_tiers && (
-                <View style={{ flex: 1 }}>
-                  <Field label="Harga Jual" value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Field label="Stok" value={String(v.stock || "")} onChange={(t) => updateVar(setVariations, v.id, { stock: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" testID={`form-var-stock-${idx}`} />
+            <Field label="Nama Variasi" value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 1 renceng" testID={`form-var-name-${idx}`} />
+            {idx > 0 && (
+              <View style={styles.inheritRow}>
+                <Text style={styles.label}>Harga sama dengan di atas</Text>
+                <Switch
+                  testID={`form-var-same-${idx}`}
+                  value={isSame}
+                  onValueChange={(val) => setSamePrev((s) => { const n = new Set(s); if (val) n.add(v.id); else n.delete(v.id); return n; })}
+                  trackColor={{ true: colors.brand, false: colors.surfaceTertiary }}
+                  thumbColor="#fff"
+                />
               </View>
-            </View>
-            {!v.inherit_tiers && (
-              <TierEditor
-                title="Harga Bertingkat Variasi"
-                tiers={v.tiers || []}
-                onChange={(t) => updateVar(setVariations, v.id, { tiers: t })}
-                testPrefix={`form-var-tier-${idx}`}
-              />
             )}
+            {isSame ? (
+              <Text style={styles.hint}>Harga otomatis: {rupiah(effSell)}. Cukup isi Barcode.</Text>
+            ) : (
+              <Field label="Harga Jual" value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
+            )}
+            <Field label="Barcode Variasi" value={v.barcode ?? ""} onChange={(t) => updateVar(setVariations, v.id, { barcode: t })} placeholder="opsional — beda tiap variasi" testID={`form-var-barcode-${idx}`} />
           </View>
-        ))}
+          );
+        })}
         </>)}
       </KeyboardAwareScrollView>
 
