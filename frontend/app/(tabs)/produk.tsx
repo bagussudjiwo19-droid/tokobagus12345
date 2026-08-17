@@ -23,14 +23,16 @@ import { mikoBus } from "@/src/mikoBus";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
+import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
+import { buildBarcodeLabels } from "@/src/receipt";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
-import type { Product } from "@/src/types";
+import type { Product, Printer } from "@/src/types";
 
 const PRODUK_ROW_H = 96; // tinggi kartu (84) + jarak (12) → getItemLayout scroll cepat
 
 const ProdukRow = React.memo(function ProdukRow({
-  item, childCount, onEdit, onMenu, selectMode, checked, onToggle,
-}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void }) {
+  item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle,
+}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; onPrint: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void }) {
   const nestedCount = item.variations.length;
   const totalVar = nestedCount + childCount;
   const hasVar = totalVar > 0;
@@ -69,9 +71,14 @@ const ProdukRow = React.memo(function ProdukRow({
         <Text style={styles.pricePillTxt}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
       </View>
       {!selectMode && (
-        <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
-        </Pressable>
+        <>
+          <Pressable onPress={() => onPrint(item)} style={styles.printBtn} testID={`produk-print-${item.id}`} hitSlop={6}>
+            <Ionicons name="print-outline" size={20} color={colors.brand} />
+          </Pressable>
+          <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
+          </Pressable>
+        </>
       )}
     </Pressable>
   );
@@ -85,6 +92,11 @@ export default function ProdukScreen() {
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [menuProduct, setMenuProduct] = useState<Product | null>(null);
+  // Cetak Barcode
+  const [printProduct, setPrintProduct] = useState<Product | null>(null);
+  const [printQty, setPrintQty] = useState(1);
+  const [printer, setPrinter] = useState<Printer | null>(null);
+  const [printing, setPrinting] = useState(false);
   const [scanResult, setScanResult] = useState<Product | null>(null);
   const [manualMode, setManualMode] = useState(false);
   // --- Mode Rapikan (multi-select hapus) ---
@@ -250,6 +262,29 @@ export default function ProdukScreen() {
     }
   };
 
+  const openPrint = useCallback((p: Product) => {
+    setPrintProduct(p);
+    setPrintQty(1);
+    api.getPrinter().then(setPrinter).catch(() => setPrinter(null));
+  }, []);
+
+  const doPrint = async () => {
+    if (!printProduct) return;
+    if (!isBluetoothAvailable()) { toast.show(NATIVE_ONLY_MSG, "info"); return; }
+    if (!printer?.address) { toast.show("Pilih printer Bluetooth dulu", "error"); return; }
+    setPrinting(true);
+    try {
+      await printText(printer.address, buildBarcodeLabels(printProduct.name, printProduct.barcode, printQty));
+      toast.show(`Barcode dicetak (${printQty})`, "success");
+      setPrintProduct(null);
+    } catch (e: any) {
+      toast.show(e?.message || "Gagal mencetak barcode", "error");
+    } finally { setPrinting(false); }
+  };
+
+  // Muat printer tersimpan setiap layar difokus (mis. setelah kembali dari Pilih Printer).
+  useFocusEffect(useCallback(() => { api.getPrinter().then(setPrinter).catch(() => {}); }, []));
+
   const renderRow = useCallback(
     ({ item }: { item: Product }) => (
       <ProdukRow
@@ -257,12 +292,13 @@ export default function ProdukScreen() {
         childCount={(childrenByParent.get(item.id) || []).length}
         onEdit={openEdit}
         onMenu={openMenu}
+        onPrint={openPrint}
         selectMode={selectMode}
         checked={selected.has(item.id)}
         onToggle={toggleSelect}
       />
     ),
-    [openEdit, openMenu, childrenByParent, selectMode, selected, toggleSelect],
+    [openEdit, openMenu, openPrint, childrenByParent, selectMode, selected, toggleSelect],
   );
 
   return (
@@ -421,6 +457,44 @@ export default function ProdukScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Cetak Barcode */}
+      <Modal visible={!!printProduct} transparent animationType="fade" onRequestClose={() => setPrintProduct(null)}>
+        <Pressable style={styles.confirmBackdrop} onPress={() => setPrintProduct(null)}>
+          <Pressable style={styles.printCard} onPress={() => {}}>
+            <View style={styles.printHead}>
+              <View style={styles.printIcon}><Ionicons name="print" size={20} color={colors.brand} /></View>
+              <Text style={styles.printTitle}>Cetak Barcode</Text>
+            </View>
+            <View style={styles.printInfo}>
+              <Text style={styles.printInfoRow} numberOfLines={1}>Produk : <Text style={styles.printInfoVal}>{printProduct?.name}</Text></Text>
+              <Text style={styles.printInfoRow} numberOfLines={1}>Barcode : <Text style={styles.printInfoVal}>{printProduct?.barcode || "(tanpa barcode)"}</Text></Text>
+            </View>
+
+            <View style={styles.qtyRow}>
+              <Text style={styles.qtyLabel}>Jumlah</Text>
+              <View style={styles.qtyBox}>
+                <Pressable style={styles.qtyBtn} onPress={() => setPrintQty((q) => Math.max(1, q - 1))} testID="print-qty-dec"><Ionicons name="remove" size={18} color={colors.brand} /></Pressable>
+                <Text style={styles.qtyVal} testID="print-qty-val">{printQty}</Text>
+                <Pressable style={styles.qtyBtn} onPress={() => setPrintQty((q) => Math.min(50, q + 1))} testID="print-qty-inc"><Ionicons name="add" size={18} color={colors.brand} /></Pressable>
+              </View>
+            </View>
+
+            <Pressable style={styles.printerPick} onPress={() => router.push("/pengaturan-printer")} testID="print-pick-printer">
+              <Ionicons name="bluetooth" size={16} color={colors.brand} />
+              <Text style={styles.printerPickTxt} numberOfLines={1}>{printer?.name ? printer.name : "Pilih Printer"}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </Pressable>
+
+            <View style={styles.printActions}>
+              <Pressable style={styles.printCancel} onPress={() => setPrintProduct(null)} testID="print-cancel"><Text style={styles.printCancelTxt}>Batal</Text></Pressable>
+              <Pressable style={styles.printGo} onPress={doPrint} disabled={printing} testID="print-go">
+                {printing ? <ActivityIndicator color={colors.onBrandPrimary} /> : <><Ionicons name="print" size={16} color={colors.onBrandPrimary} /><Text style={styles.printGoTxt}>Cetak</Text></>}
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -484,6 +558,26 @@ const styles = StyleSheet.create({
   pricePill: { backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
   pricePillTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   menuBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+  printBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+  printCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surfaceSecondary, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderStrong, padding: spacing.lg },
+  printHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
+  printIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  printTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
+  printInfo: { backgroundColor: colors.surfaceTertiary, borderRadius: radius.md, padding: spacing.md, gap: 4, marginBottom: spacing.md },
+  printInfoRow: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.muted },
+  printInfoVal: { fontFamily: font.bold, color: colors.onSurface },
+  qtyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
+  qtyLabel: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  qtyBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: 4, paddingVertical: 2 },
+  qtyBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary },
+  qtyVal: { minWidth: 30, textAlign: "center", fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  printerPick: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, marginBottom: spacing.md },
+  printerPickTxt: { flex: 1, fontFamily: font.bold, fontSize: fontSize.base, color: colors.brand },
+  printActions: { flexDirection: "row", gap: spacing.sm },
+  printCancel: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  printCancelTxt: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  printGo: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", paddingVertical: spacing.md, borderRadius: radius.md, backgroundColor: colors.brand },
+  printGoTxt: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onBrandPrimary },
   sep: { height: spacing.md },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80, gap: spacing.md },
   dim: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.lg },

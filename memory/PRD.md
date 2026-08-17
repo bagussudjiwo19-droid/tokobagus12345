@@ -1,6 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — FITUR: 10 Tombol Pintasan Produk (menu Transaksi)
+## Session Log (fork) — FITUR: Icon Cetak Barcode di kartu Produk
+- Kartu produk (produk.tsx `ProdukRow`): tambah ikon printer pink kecil (Ionicons print-outline, 20px, style `printBtn` 34×34) di antara price pill/"Bervariasi" dan tombol ⋮ (hanya mode normal, bukan selectMode). Tidak menambah tinggi kartu.
+- Ketuk ikon → Modal "Cetak Barcode" (RN Modal, tema pink): tampil Produk (nama), Barcode, stepper Jumlah (1–50), tombol "Pilih Printer" (router.push `/pengaturan-printer`, menampilkan nama printer tersimpan), tombol Cetak & Batal.
+- Cetak: `printText(printer.address, buildBarcodeLabels(name, barcode, qty))`. Helper BARU `buildBarcodeLabels()` di `src/receipt.ts` → ESC/POS: nama (tengah, tebal) + barcode CODE128 (GS k 73, code set {B) + angka HRI, diulang qty kali. Guard `isBluetoothAvailable()` (web → toast NATIVE_ONLY_MSG). Printer dimuat via `api.getPrinter()` di `useFocusEffect` (auto refresh setelah kembali dari Pilih Printer).
+- Tidak mengubah layout/fitur produk lain. types import Printer ditambah di produk.tsx.
+- DIVERIFIKASI (screenshot preview): ikon tampil di tiap kartu; popup muncul dgn Produk/Barcode/Jumlah/Pilih Printer(RPP02N)/Cetak. Lint clean. Cetak barcode NATIVE-ONLY (butuh HP + build). Frontend-only → user REDEPLOY.
+
+
 - Chip pintasan di HEADER Transaksi (2 baris × 5, kecil ~28px, font 10, bingkai pink, bg surfaceTertiary, nama dipotong "…"; tidak digeser — sesuai permintaan user). Slot kosong TIDAK ditampilkan. Ikon ⚙️ "Atur Pintasan" di kanan header. Tombol Cari Barang & Tambah Item TIDAK diubah.
 - Simpan sebagai `Settings.quickSlots: (string|null)[]` (ID produk, panjang 10) → ikut sinkron via mekanisme Settings yang sudah ada (tidak buat sistem baru). Default `[]` (kosong; user isi sendiri). types.ts + localdb DEFAULT_SETTINGS diperbarui.
 - Ketuk chip: produk TANPA variasi → `cart.addProduct(p,null)` langsung (sama seperti scanner) + toast; produk DENGAN variasi (`p.variations.length>0`) → Modal "Pilih Variasi" muncul DI halaman Transaksi (tanpa pindah halaman), pilih 1 → `cart.addProduct(p,v)` + popup tutup. Harga & nama SELALU dari `products` (DB terbaru); produk terhapus → slot otomatis dianggap kosong (tak error).

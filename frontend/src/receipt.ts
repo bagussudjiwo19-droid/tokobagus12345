@@ -115,3 +115,31 @@ export function buildReceiptText(tx: Transaction, s: Settings): string {
   out.push("\n\n\n");
   return out.join("\n");
 }
+
+
+const GS = "\x1D";
+
+// Bangun perintah ESC/POS untuk mencetak label BARCODE produk sebanyak `qty`.
+// Tiap label: nama produk (tengah, tebal) + barcode CODE128 + angka barcode.
+export function buildBarcodeLabels(name: string, barcode: string | null | undefined, qty: number): string {
+  const n = Math.max(1, Math.min(50, Math.floor(qty || 1)));
+  const bc = (barcode || "").trim();
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    out += C_CENTER + C_BIG_BOLD + name.slice(0, CW) + "\n" + C_NORMAL;
+    if (bc) {
+      out += GS + "\x48\x02";                       // HRI teks di bawah barcode
+      out += GS + "\x66\x00";                       // font HRI A
+      out += GS + "\x68" + String.fromCharCode(70); // tinggi barcode
+      out += GS + "\x77" + String.fromCharCode(2);  // lebar modul
+      const data = "{B" + bc;                        // CODE128 code set B
+      out += GS + "\x6B\x49" + String.fromCharCode(data.length) + data;
+      out += "\n";
+    } else {
+      out += "(tanpa barcode)\n";
+    }
+    out += C_LEFT + "\n";
+  }
+  out += "\n\n";
+  return out;
+}
