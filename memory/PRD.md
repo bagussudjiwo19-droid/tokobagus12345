@@ -1,6 +1,12 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — EKSPRESI MIKO lebih hidup + Miko "sales" di layar pilihan
+## Session Log (fork) — KOREOGRAFI Miko (kurangi pose menunjuk berlebih)
+- Keluhan: di layar hasil Miko terlalu sering menahan pose MENUNJUK. Target: menunjuk hanya saat benar-benar menunjuk; selebihnya gerak natural bervariasi.
+- `components/MikoRig.tsx`: tambah prop `story?: Step[]` (urutan {state,hold}) + `rest?: MikoState`. Efek koreografi memainkan urutan lalu `storyDoneRef=true` & settle ke `rest`. `stopTalk` kini kembali ke `rest` (mis. WARM) saat story selesai (bukan menahan POINT). Aksen saat bicara kini DINAMIS (baca stateRef terkini) → mengikuti perpindahan koreografi (menunjuk→menjelaskan) sambil mulut bergerak. Variasi "bahasa wajah" (WARM/HAPPY/IDLE/THINKING/MISCHIEF/SLEEPY) kini juga jalan untuk rig non-ambient SETELAH story selesai (tak pernah menunjuk di fase ini).
+- `app/(tabs)/cek-harga.tsx`: STORY_RESULT = HAPPY(0.85s)→POINT(1.2s)→SALES_EXPLAIN(1.5s)→rest WARM; STORY_PICK = THINKING(1s)→POINT(1s)→SALES_EXPLAIN(1.5s)→rest WARM. Rig hasil & 2 layar pilihan pakai `story` + `rest="WARM"`; efek THINKING→POINT lama dihapus.
+- DIVERIFIKASI (screenshot preview): layar hasil pada ~3.8s menampilkan pose WARM/ramah (bukan menunjuk). Lint clean. Frontend-only → perlu REDEPLOY (Publish) agar aktif di produksi.
+
+
 - 3 frame ekspresi BARU (gaya sama, di-edit dari base.png via Nano Banana): `mischief.png` (usil/kedip+smirk), `sleepy.png` (mengantuk mata setengah), `warm.png` (ramah/hangat 🥰). Total 15 frame rig. Skrip `/app/scripts/gen_miko_rig.py` (+ bg flood-fill transparan).
 - `src/mikoBus.ts`: MikoState tambah MISCHIEF, SLEEPY, WARM.
 - `components/MikoRig.tsx`:

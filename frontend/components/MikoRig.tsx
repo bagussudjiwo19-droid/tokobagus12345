@@ -44,9 +44,14 @@ const FLAP = ["base", "talk_mid", "talk_open", "talk_mid"];
 
 const RIG_RATIO = 168 / 216;
 
-export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }: { size?: number; ambient?: boolean; initial?: MikoState }) {
+export type Step = { state: MikoState; hold: number };
+
+export default function MikoRig({ size = 216, ambient = true, initial = "IDLE", story, rest = "IDLE" }: { size?: number; ambient?: boolean; initial?: MikoState; story?: Step[]; rest?: MikoState }) {
   const imgH = size;
   const imgW = Math.round(size * RIG_RATIO);
+  const restRef = useRef<MikoState>(rest);
+  restRef.current = rest;
+  const storyDoneRef = useRef<boolean>(!story || story.length === 0);
   const [frame, setFrame] = useState<string>(REST[initial]);
   const [msg, setMsg] = useState("");
   const [showBubble, setShowBubble] = useState(false);
@@ -175,15 +180,14 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
       i = (i + 1) % FLAP.length;
       setF(FLAP[i]);
     }, 150);
-    // Sisipkan pose ekspresi (aksen) sesekali agar terasa "bercerita".
-    const s = stateRef.current;
-    const accent = REST[s] === "base" ? "happy" : REST[s];
-    const accentEvery = s === "LAUGH" ? 900 : 1500;
+    // Sisipkan pose ekspresi (aksen) MENGIKUTI state terkini (dinamis) agar saat
+    // koreografi berpindah (mis. menunjuk → menjelaskan) aksen ikut berubah.
     accentTimer.current = setInterval(() => {
-      const hold = s === "LAUGH" ? 500 : 380;
-      accentUntil = Date.now() + hold;
+      const cs = stateRef.current;
+      const accent = REST[cs] === "base" ? "happy" : REST[cs];
+      accentUntil = Date.now() + (cs === "LAUGH" ? 500 : 380);
       setF(accent);
-    }, accentEvery);
+    }, 1400);
     // Pengaman: hentikan otomatis bila onDone tak terpanggil (mis. web).
     if (talkSafety.current) clearTimeout(talkSafety.current);
     talkSafety.current = setTimeout(() => stopTalk(), (ms || 4000) + 600);
@@ -194,7 +198,12 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
     if (flapTimer.current) { clearInterval(flapTimer.current); flapTimer.current = null; }
     if (accentTimer.current) { clearInterval(accentTimer.current); accentTimer.current = null; }
     if (talkSafety.current) { clearTimeout(talkSafety.current); talkSafety.current = null; }
-    setF(REST[stateRef.current]);
+    // Setelah selesai bicara: bila cerita (choreo) sudah selesai → kembali ke
+    // ekspresi ISTIRAHAT (mis. WARM/ramah), bukan menahan pose menunjuk.
+    const target = storyDoneRef.current ? restRef.current : stateRef.current;
+    stateRef.current = target;
+    applyMotion(target);
+    transitionTo(REST[target]);
     scheduleBlink();
   };
 
@@ -235,30 +244,59 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE" }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -------- Obrolan ambient kios (teks saja) + ganti ekspresi lembut --------
+  // -------- Koreografi (cerita gerak) opsional: mainkan urutan state lalu
+  //          settle ke ekspresi istirahat. "Menunjuk" hanya bagian dari cerita,
+  //          bukan pose yang ditahan terus. --------
+  useEffect(() => {
+    if (!story || story.length === 0) { storyDoneRef.current = true; return; }
+    storyDoneRef.current = false;
+    let idx = 0; let cancelled = false;
+    const tos: ReturnType<typeof setTimeout>[] = [];
+    const run = () => {
+      if (cancelled) return;
+      const step = story[idx];
+      goState(step.state);
+      idx++;
+      if (idx < story.length) {
+        tos.push(setTimeout(run, step.hold));
+      } else {
+        tos.push(setTimeout(() => { storyDoneRef.current = true; goState(restRef.current); }, step.hold));
+      }
+    };
+    run();
+    return () => { cancelled = true; tos.forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [story]);
+
+  // -------- Obrolan ambient kios (teks) + variasi "bahasa wajah" --------
   const kioskI = useRef(-1);
   useEffect(() => {
-    if (!ambient) return;
-    const sayId = setInterval(() => {
-      if (talkingRef.current || showBubble) return;
-      let i = Math.floor(Math.random() * KIOSK_SAY.length);
-      if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
-      kioskI.current = i;
-      // Balon tampil 6 dtk, lalu jeda 4 dtk sebelum balon berikutnya (siklus 10 dtk).
-      bubble(KIOSK_SAY[i], 6000);
-    }, 10000);
+    const cleanups: (() => void)[] = [];
+    if (ambient) {
+      const sayId = setInterval(() => {
+        if (talkingRef.current || showBubble) return;
+        let i = Math.floor(Math.random() * KIOSK_SAY.length);
+        if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
+        kioskI.current = i;
+        // Balon tampil 6 dtk, lalu jeda 4 dtk sebelum balon berikutnya (siklus 10 dtk).
+        bubble(KIOSK_SAY[i], 6000);
+      }, 10000);
+      cleanups.push(() => clearInterval(sayId));
+    }
+    // Variasi ekspresi santai — untuk stage kios (ambient) & untuk rig hasil/pilih
+    // SETELAH koreografi selesai. Tidak pernah "menunjuk" di sini.
     const exprId = setInterval(() => {
       if (talkingRef.current) return;
-      // Hanya berganti "bahasa wajah" saat sedang santai/idle (bukan state percakapan).
+      if (!ambient && !storyDoneRef.current) return;
       const idleish: MikoState[] = ["IDLE", "WARM", "HAPPY", "THINKING", "MISCHIEF", "SLEEPY"];
       if (!idleish.includes(stateRef.current)) return;
-      // Pilih ekspresi idle berikutnya (acak, tidak sama dgn sekarang). Mengantuk & usil jarang.
       const pool: MikoState[] = ["IDLE", "WARM", "HAPPY", "WARM", "THINKING", "IDLE", "MISCHIEF", "WARM", "SLEEPY", "HAPPY"];
       let next = pool[Math.floor(Math.random() * pool.length)];
       if (next === stateRef.current) next = "IDLE";
       goState(next);
     }, 4500);
-    return () => { clearInterval(sayId); clearInterval(exprId); };
+    cleanups.push(() => clearInterval(exprId));
+    return () => cleanups.forEach((f) => f());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBubble, ambient]);
 

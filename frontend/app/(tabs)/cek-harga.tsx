@@ -114,6 +114,20 @@ function salesToState(intent: string): MikoState {
   }
 }
 
+// Koreografi gerak Miko (bukan pose menunjuk yang ditahan terus).
+// Hasil harga: antusias ketemu → sebentar menunjuk harga → menjelaskan → ramah.
+const STORY_RESULT: { state: MikoState; hold: number }[] = [
+  { state: "HAPPY", hold: 850 },
+  { state: "POINT", hold: 1200 },
+  { state: "SALES_EXPLAIN", hold: 1500 },
+];
+// Layar pilihan: melihat-lihat (berpikir) → sebentar menunjuk daftar → menjelaskan → ramah.
+const STORY_PICK: { state: MikoState; hold: number }[] = [
+  { state: "THINKING", hold: 1000 },
+  { state: "POINT", hold: 1000 },
+  { state: "SALES_EXPLAIN", hold: 1500 },
+];
+
 
 export default function CekHargaScreen() {
   const insets = useSafeAreaInsets();
@@ -177,16 +191,6 @@ export default function CekHargaScreen() {
   };
 
   useEffect(() => () => clearAutoClose(), []);
-
-  // Layar "beberapa pilihan" (Pilih Barang / Pilih Varian): Miko MELIHAT dulu
-  // (berpikir) lalu MENUNJUK daftar → terasa dilayani sales sungguhan.
-  useEffect(() => {
-    if ((searchResults && searchResults.length) || varProduct) {
-      mikoBus.emit({ type: "miko_state", state: "THINKING" });
-      const t = setTimeout(() => mikoBus.emit({ type: "miko_state", state: "POINT" }), 1100);
-      return () => clearTimeout(t);
-    }
-  }, [searchResults, varProduct]);
 
   const openChat = () => {
     clearTimers();
@@ -548,7 +552,7 @@ export default function CekHargaScreen() {
         {result ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultScroll}>
           <View style={styles.resultMiko}>
-            <MikoRig size={116} ambient={false} initial="POINT" />
+            <MikoRig size={116} ambient={false} story={STORY_RESULT} rest="WARM" />
           </View>
           <View style={styles.resultCard} testID="cekharga-result">
             <Text style={styles.shopName}>{(settings?.shopName || "TOKO BAGUS").toUpperCase()}</Text>
@@ -605,7 +609,7 @@ export default function CekHargaScreen() {
                 <Text style={styles.pickSub}>Pilih ukuran / varian</Text>
               </View>
               <View style={styles.pickMiko}>
-                <MikoRig size={92} ambient={false} initial="THINKING" />
+                <MikoRig size={92} ambient={false} story={STORY_PICK} rest="WARM" />
               </View>
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -637,7 +641,7 @@ export default function CekHargaScreen() {
                 <Text style={styles.pickSub}>{searchResults.length} barang ditemukan</Text>
               </View>
               <View style={styles.pickMiko}>
-                <MikoRig size={92} ambient={false} initial="THINKING" />
+                <MikoRig size={92} ambient={false} story={STORY_PICK} rest="WARM" />
               </View>
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
