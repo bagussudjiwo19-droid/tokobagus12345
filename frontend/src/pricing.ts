@@ -31,3 +31,28 @@ export function stockOf(product: Product, variation?: Variation | null): number 
   if (variation) return variation.stock;
   return product.stock;
 }
+
+// === Keluarga produk (induk + anak) ===
+// Root = induk asli (produk tanpa parent_id). Anak = produk dengan parent_id === root.id.
+export function familyOptions(
+  product: Product,
+  all: Product[],
+): { root: Product; children: Product[] } {
+  const rootId = product.parent_id || product.id;
+  const root = all.find((p) => p.id === rootId) || product;
+  const children = all.filter((p) => p.parent_id === rootId);
+  return { root, children };
+}
+
+// Harga efektif satu anak: bila "ikut induk" (inherit_tiers), pakai harga & grosir
+// induk (auto-sync). Bila tidak, pakai harga anak sendiri.
+export function childEffective(
+  child: Product,
+  root: Product,
+): { sell_price: number; tiers: Tier[] } {
+  if (child.inherit_tiers) {
+    return { sell_price: root.sell_price, tiers: root.tiers || [] };
+  }
+  return { sell_price: child.sell_price, tiers: child.tiers || [] };
+}
+

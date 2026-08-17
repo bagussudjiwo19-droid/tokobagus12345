@@ -11,8 +11,10 @@ import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
+import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { rupiah } from "@/src/format";
+import { childEffective } from "@/src/pricing";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Variation } from "@/src/types";
 
@@ -24,6 +26,7 @@ export default function CariScreen() {
   const { products, reload, setPricePick } = useData();
   const cart = useCart();
   const toast = useToast();
+  const unlimited = useUnlimitedStock();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
@@ -90,6 +93,14 @@ export default function CariScreen() {
     router.back(); // kembali otomatis ke Cek Harga
   };
 
+  // Tahap 4: tambah variasi baru langsung saat transaksi — buka form variasi induk
+  // (menampilkan variasi sebelumnya), isi & simpan, keranjang tetap utuh.
+  const addVariation = (p: Product) => {
+    const rootId = p.parent_id || p.id;
+    Haptics.selectionAsync();
+    router.push({ pathname: "/variasi-cepat", params: { id: rootId } });
+  };
+
   const onTap = (p: Product) => {
     // Produk punya variasi (nested lama ATAU produk anak baru) → tampilkan semua
     // pilihan variasi dulu, baru dipilih.
@@ -107,8 +118,11 @@ export default function CariScreen() {
 
   // Pilih satu variasi anak (produk terpisah) → langsung masuk daftar belanja.
   const pickChild = (child: Product) => {
-    if (isPrice) { pickForPrice(child, null); return; }
-    cart.addProduct(child);
+    const root = products.find((p) => p.id === child.parent_id) || child;
+    const eff = childEffective(child, root);
+    const effChild = { ...child, sell_price: eff.sell_price, tiers: eff.tiers };
+    if (isPrice) { pickForPrice(effChild, null); return; }
+    cart.addProduct(effChild);
     Haptics.selectionAsync();
     toast.show(`${child.name} ditambahkan`, "success");
     router.back();
@@ -224,10 +238,17 @@ export default function CariScreen() {
               onPress={() => pickChild(c)}
             >
               <Text style={styles.varName} numberOfLines={1}>{c.name}</Text>
-              <Text style={styles.varPrice}>{rupiah(c.sell_price)}</Text>
+              <Text style={styles.varPrice}>{rupiah(childEffective(c, selected).sell_price)}</Text>
               <Ionicons name={isPrice ? "chevron-forward" : "add-circle"} size={22} color={colors.brand} />
             </Pressable>
           ))}
+
+          {!isPrice && (
+            <Pressable style={styles.detailAddVar} onPress={() => addVariation(selected)} testID="cari-detail-addvar">
+              <Ionicons name="add-circle-outline" size={18} color={colors.brand} />
+              <Text style={styles.detailAddVarTxt}>Tambah Variasi Baru</Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -246,11 +267,22 @@ export default function CariScreen() {
             <Pressable style={styles.rowMain} onPress={() => onTap(item)} testID={`cari-row-${item.id}`}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"}{isPrice ? "" : ` • Stok ${item.stock}`}</Text>
+                <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"}{isPrice || unlimited ? "" : ` • Stok ${item.stock}`}</Text>
               </View>
               <Text style={styles.rowPrice}>{hasVariants(item) ? "Bervariasi" : rupiah(item.sell_price)}</Text>
               {!isPrice && <Ionicons name="add-circle-outline" size={24} color={colors.brand} style={{ marginLeft: 8 }} />}
             </Pressable>
+            {!isPrice && (
+              <Pressable
+                style={styles.addVarBtn}
+                testID={`cari-addvar-${item.id}`}
+                onPress={() => addVariation(item)}
+                hitSlop={6}
+              >
+                <Ionicons name="git-branch-outline" size={18} color={colors.brand} />
+                <Text style={styles.addVarTxt}>Variasi</Text>
+              </Pressable>
+            )}
             {!isPrice && (
               <Pressable
                 style={styles.trashBtn}
@@ -310,6 +342,10 @@ const styles = StyleSheet.create({
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   rowPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   trashBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: spacing.xs },
+  addVarBtn: { flexDirection: "row", alignItems: "center", gap: 3, height: 32, paddingHorizontal: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.brandTertiary, marginLeft: spacing.xs },
+  addVarTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xs },
+  detailAddVar: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.brandTertiary, backgroundColor: colors.surface, marginTop: spacing.md },
+  detailAddVarTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   sep: { height: spacing.md },
   confirmTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   confirmName: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.lg },

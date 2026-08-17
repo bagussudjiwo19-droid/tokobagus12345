@@ -1,6 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — TAHAP 1 SELESAI: Mode Unlimited (tanpa stok)
+## Session Log (fork) — TAHAP 2/3/4 SELESAI: Anak Ikut Induk + Scan→Pilih Semua + Tambah Variasi saat Transaksi
+- pricing.ts: helper `familyOptions(product, all)` → {root (induk asli), children (produk parent_id===root)}; `childEffective(child, root)` → bila child.inherit_tiers pakai sell_price+tiers INDUK (auto-sync 2a), else milik sendiri.
+- TRANSAKSI (index.tsx): onQuickTap & submitBarcode kini sadar-keluarga. Scan/ketuk barcode apa pun dari keluarga (induk atau anak) → buka popup "Pilih Variasi" berisi anak (harga efektif) + variasi nested. Barcode variasi nested spesifik tetap langsung tambah. Standalone → tambah langsung (harga efektif). addChild() tambah anak dgn harga ikut induk. Verified e2e: ketuk induk → popup 2 anak @16.500 → pilih → masuk keranjang.
+- DINDING (cek-harga.tsx): handleScan & pickProduct & hasil pencarian sadar-keluarga. optCount = children+nested vars; >1 → layar "Pilih ukuran/varian" menampilkan SEMUA (anak + nested) dgn harga efektif; =1 → langsung hasil. showResultChild() render anak dgn harga/grosir efektif. Verified e2e: cari induk → layar pilih menampilkan ecer & Ecer2 @16.500.
+- TAHAP 4 (cari.tsx): tombol kecil "🜲 Variasi" di tiap baris hasil + "Tambah Variasi Baru" di panel detail → router.push /variasi-cepat?id=rootId (menampilkan variasi sebelumnya). Isi nama+barcode → Simpan → kembali ke Cari, KERANJANG UTUH (useCart global). pickChild & harga baris detail pakai childEffective (auto-sync). Verified e2e: +Variasi → form Tambah Variasi (induk terbaca) → isi "hijau"+barcode → simpan → "…hijau ditambahkan", balik ke Cari.
+- Stok di cari row juga hormati Unlimited. Lint clean semua. Frontend-only → user Publish untuk ke HP. Scanner HW hanya di build.
+
+
 - Setting baru `unlimitedStock?: boolean` (types.ts) default `true` (localdb DEFAULT_SETTINGS). Hook global `src/useUnlimitedStock.ts` (baca settings + reaktif via onLocalChange). `saveSettings` di localdb kini panggil `notifyChange()` agar toggle langsung menyebar ke semua layar.
 - Bila AKTIF (default): sembunyikan angka stok & peringatan stok di: katalog Produk (kartu + badge low + baris meta + kartu hasil scan), keranjang Transaksi (blok peringatan stok menipis di-skip), form Produk (field Stok disembunyikan, meta anak tanpa stok). Toggle "Mode Unlimited (Tanpa Stok)" ditambah di `pengaturan-suara.tsx`.
 - Verified screenshot: katalog Produk tidak menampilkan "Stok" per item. Lint clean.

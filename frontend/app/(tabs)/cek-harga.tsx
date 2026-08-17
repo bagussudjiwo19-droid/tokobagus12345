@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import { api } from "@/src/api";
 import { mikoBus, type MikoState } from "@/src/mikoBus";
 import { useData } from "@/src/data";
+import { familyOptions, childEffective } from "@/src/pricing";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import { hasAdminPin, setAdminPin, verifyAdminPin } from "@/src/adminPin";
@@ -335,22 +336,34 @@ export default function CekHargaScreen() {
     selTimer.current = setTimeout(() => backToScan(), RESET_MS);
   };
 
+  // Tampilkan hasil untuk satu produk ANAK (harga efektif: ikut induk bila di-set).
+  const showResultChild = (child: Product, root: Product) => {
+    const eff = childEffective(child, root);
+    showResult({ ...child, sell_price: eff.sell_price, tiers: eff.tiers }, null);
+  };
+
   // Tampilkan varian bila LEBIH DARI SATU; 1 varian → langsung hasil; tanpa varian → langsung hasil.
   const pickProduct = (p: Product) => {
-    const vars = p.variations || [];
-    if (vars.length > 1) {
+    const { root, children } = familyOptions(p, products);
+    const vars = root.variations || [];
+    const optCount = children.length + vars.length;
+    if (optCount > 1) {
       setSearchResults(null);
-      setVarProduct(p);
+      setVarProduct(root);
       armSelTimer();
       setTimeout(() => inputRef.current?.focus(), 60);
+    } else if (children.length === 1) {
+      setSearchResults(null);
+      setVarProduct(null);
+      showResultChild(children[0], root);
     } else if (vars.length === 1) {
       setSearchResults(null);
       setVarProduct(null);
-      showResult(p, vars[0]);
+      showResult(root, vars[0]);
     } else {
       setSearchResults(null);
       setVarProduct(null);
-      showResult(p, null);
+      showResult(root, null);
     }
   };
 
@@ -502,7 +515,21 @@ export default function CekHargaScreen() {
     try {
       const product = await api.getByBarcode(c);
       const variation = product.variations?.find((v) => v.barcode === c) || null;
-      showResult(product, variation);
+      if (variation) { showResult(product, variation); return; }
+      // Keluarga: bila punya anak / variasi nested → tampilkan semua pilihan di dinding.
+      const { root, children } = familyOptions(product, products);
+      const vars = root.variations || [];
+      if (children.length + vars.length > 1) {
+        setVarProduct(root);
+        armSelTimer();
+        setTimeout(() => inputRef.current?.focus(), 60);
+      } else if (children.length === 1) {
+        showResultChild(children[0], root);
+      } else if (vars.length === 1) {
+        showResult(root, vars[0]);
+      } else {
+        showResult(root, null);
+      }
     } catch {
       setResult(null);
       toast.show(`Barcode ${c} tidak ditemukan`, "error");
@@ -613,6 +640,16 @@ export default function CekHargaScreen() {
               </View>
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {products.filter((p) => p.parent_id === varProduct.id).map((child) => {
+                const eff = childEffective(child, varProduct);
+                return (
+                  <Pressable key={child.id} style={styles.pickCard} onPress={() => showResultChild(child, varProduct)} testID={`var-child-${child.id}`}>
+                    <Text style={styles.pickCardName} numberOfLines={2}>{child.name}</Text>
+                    <Text style={styles.pickCardPrice}>{rupiah(eff.sell_price)}</Text>
+                    <Ionicons name="chevron-forward" size={24} color={colors.brand} />
+                  </Pressable>
+                );
+              })}
               {varProduct.variations.map((v) => {
                 const price = v.inherit_tiers ? varProduct.sell_price : v.sell_price;
                 return (
@@ -646,15 +683,20 @@ export default function CekHargaScreen() {
             </View>
             <ScrollView contentContainerStyle={styles.pickList} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {searchResults.map((p) => {
-                const vars = p.variations || [];
-                const hasMulti = vars.length > 1;
-                const single = vars.length === 1 ? vars[0] : null;
-                const price = single ? (single.inherit_tiers ? p.sell_price : single.sell_price) : p.sell_price;
+                const { root, children } = familyOptions(p, products);
+                const vars = root.variations || [];
+                const optCount = children.length + vars.length;
+                const hasMulti = optCount > 1;
+                let price = root.sell_price;
+                if (optCount === 1) {
+                  if (children.length === 1) price = childEffective(children[0], root).sell_price;
+                  else price = vars[0].inherit_tiers ? root.sell_price : vars[0].sell_price;
+                }
                 return (
                   <Pressable key={p.id} style={styles.pickCard} onPress={() => pickProduct(p)} testID={`prod-${p.id}`}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.pickCardName} numberOfLines={2}>{p.name}</Text>
-                      <Text style={styles.pickCardSub}>{hasMulti ? `${vars.length} pilihan ukuran` : rupiah(price)}</Text>
+                      <Text style={styles.pickCardSub}>{hasMulti ? `${optCount} pilihan ukuran` : rupiah(price)}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={24} color={colors.brand} />
                   </Pressable>

@@ -22,6 +22,7 @@ import { useToast } from "@/src/toast";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
+import { familyOptions, childEffective } from "@/src/pricing";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
@@ -75,10 +76,24 @@ export default function TransaksiScreen() {
     .filter((p): p is Product => !!p);
 
   const onQuickTap = (p: Product) => {
-    if (p.variations && p.variations.length > 0) { setVariantFor(p); return; }
+    const { root, children } = familyOptions(p, products);
+    if (children.length > 0 || (root.variations && root.variations.length > 0)) {
+      setVariantFor(root);
+      return;
+    }
     cart.addProduct(p, null);
     Haptics.selectionAsync();
     toast.show(`${p.name} ditambahkan`, "success");
+    refocusScanner();
+  };
+
+  // Tambah satu produk anak ke keranjang dengan harga efektif (ikut induk bila di-set).
+  const addChild = (child: Product, root: Product) => {
+    const eff = childEffective(child, root);
+    cart.addProduct({ ...child, sell_price: eff.sell_price, tiers: eff.tiers }, null);
+    setVariantFor(null);
+    Haptics.selectionAsync();
+    toast.show(`${child.name} ditambahkan`, "success");
     refocusScanner();
   };
 
@@ -129,17 +144,35 @@ export default function TransaksiScreen() {
       if (!c) { inputRef.current?.focus(); return; }
       try {
         const product = await api.getByBarcode(c);
-        const variation = product.variations?.find((v) => v.barcode === c) || null;
-        cart.addProduct(product, variation);
+        // Barcode variasi nested spesifik → langsung tambah variasi itu.
+        const inlineVar = product.variations?.find((v) => v.barcode === c) || null;
+        if (inlineVar) {
+          cart.addProduct(product, inlineVar);
+          Haptics.selectionAsync();
+          toast.show(`${product.name} — ${inlineVar.name} ditambahkan`, "success");
+          setTimeout(() => inputRef.current?.focus(), 100);
+          return;
+        }
+        // Bila produk punya keluarga (anak) atau variasi nested → munculkan popup pilih.
+        const { root, children } = familyOptions(product, products);
+        if (children.length > 0 || (root.variations && root.variations.length > 0)) {
+          setVariantFor(root);
+          Haptics.selectionAsync();
+          setTimeout(() => inputRef.current?.focus(), 100);
+          return;
+        }
+        // Standalone: tambah langsung (harga efektif bila anak yang ikut induk).
+        const eff = childEffective(product, root);
+        cart.addProduct({ ...product, sell_price: eff.sell_price, tiers: eff.tiers }, null);
         Haptics.selectionAsync();
-        toast.show(`${product.name}${variation ? " — " + variation.name : ""} ditambahkan`, "success");
+        toast.show(`${product.name} ditambahkan`, "success");
       } catch {
         toast.show(`Barcode ${c} belum terdaftar`, "error");
         mikoBus.emit({ type: "not_found" });
       }
       setTimeout(() => inputRef.current?.focus(), 100);
     },
-    [cart, toast],
+    [cart, toast, products],
   );
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(submitBarcode, { isScanMode: () => true });
@@ -354,13 +387,29 @@ export default function TransaksiScreen() {
         </Pressable>
       </View>
 
-      {/* Popup Pilih Variasi (untuk tombol Pintasan Produk) — tetap di halaman Transaksi */}
+      {/* Popup Pilih Variasi (anak + variasi nested induk) — tetap di halaman Transaksi */}
       <Modal visible={!!variantFor} transparent animationType="fade" onRequestClose={closeVariant}>
         <Pressable style={styles.vBackdrop} onPress={closeVariant} testID="variasi-backdrop" />
         <View style={styles.vCenter} pointerEvents="box-none">
           <View style={styles.vCard}>
             <Text style={styles.vTitle} numberOfLines={1}>Pilih Variasi {variantFor?.name}</Text>
-            <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={styles.vWrap}>
+            <ScrollView style={{ maxHeight: 340 }} contentContainerStyle={styles.vWrap}>
+              {/* Anak (produk terpisah dengan barcode sendiri) */}
+              {variantFor && products.filter((p) => p.parent_id === variantFor.id).map((child) => {
+                const eff = childEffective(child, variantFor);
+                return (
+                  <Pressable
+                    key={child.id}
+                    style={styles.vPill}
+                    onPress={() => addChild(child, variantFor)}
+                    testID={`variasi-child-${child.id}`}
+                  >
+                    <Text style={styles.vPillName} numberOfLines={1}>{child.name}</Text>
+                    <Text style={styles.vPillPrice}>{rupiah(eff.sell_price)}</Text>
+                  </Pressable>
+                );
+              })}
+              {/* Variasi nested (di dalam induk) */}
               {variantFor?.variations?.map((v) => (
                 <Pressable
                   key={v.id}
@@ -369,7 +418,7 @@ export default function TransaksiScreen() {
                   testID={`variasi-${v.id}`}
                 >
                   <Text style={styles.vPillName} numberOfLines={1}>{v.name}</Text>
-                  <Text style={styles.vPillPrice}>{rupiah(v.sell_price)}</Text>
+                  <Text style={styles.vPillPrice}>{rupiah(v.inherit_tiers ? variantFor.sell_price : v.sell_price)}</Text>
                 </Pressable>
               ))}
             </ScrollView>
