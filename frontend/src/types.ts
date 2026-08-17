@@ -85,6 +85,7 @@ export type Settings = {
   sfxOk?: string; // bunyi: barang masuk / berhasil
   sfxFail?: string; // bunyi: gagal / tidak masuk
   sfxPaid?: string; // bunyi: transaksi lunas
+  quickSlots?: (string | null)[]; // 10 slot Pintasan Produk (menyimpan ID produk; null = kosong)
 };
 
 export type Printer = { address?: string | null; name?: string | null };

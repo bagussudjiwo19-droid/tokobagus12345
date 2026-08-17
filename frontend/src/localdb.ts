@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS: Settings = {
   readPrice: true, priceClosing: true,
   showNote: false, showThanks: true,
   sfxVolume: "keras", sfxOk: "sparkle", sfxFail: "oops", sfxPaid: "premium",
+  quickSlots: [],
 };
 
 function nowIso(): string { return new Date().toISOString(); }

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -24,6 +25,8 @@ import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { CartLine } from "@/src/types";
 import { mikoBus } from "@/src/mikoBus";
+import { onLocalChange } from "@/src/localdb";
+import type { Product, Variation } from "@/src/types";
 
 // Di HP pakai BottomSheetTextInput (agar sheet naik di atas keyboard). Di WEB
 // pakai TextInput biasa — BottomSheetTextInput memanggil API yang tidak ada di
@@ -51,15 +54,44 @@ export default function TransaksiScreen() {
   const deleteSheet = useRef<BottomSheetModal>(null);
   const [deleteLine, setDeleteLine] = useState<CartLine | null>(null);
 
+  // Pintasan Produk: 10 slot (menyimpan ID produk) — ikut sinkron via Settings.
+  const [slots, setSlots] = useState<(string | null)[]>([]);
+  const [variantFor, setVariantFor] = useState<Product | null>(null);
+  const loadSlots = useCallback(async () => {
+    try { const s = await api.getSettings(); setSlots(Array.isArray(s.quickSlots) ? s.quickSlots : []); } catch { /* abaikan */ }
+  }, []);
+  useEffect(() => { loadSlots(); const off = onLocalChange(() => loadSlots()); return off; }, [loadSlots]);
+
+  // Produk yang terpasang di slot (abaikan slot kosong / produk terhapus). Selalu
+  // ambil data TERBARU dari daftar produk (nama & harga ikut database).
+  const quickProducts = slots
+    .map((id) => (id ? products.find((p) => p.id === id) : null))
+    .filter((p): p is Product => !!p);
+
+  const onQuickTap = (p: Product) => {
+    if (p.variations && p.variations.length > 0) { setVariantFor(p); return; }
+    cart.addProduct(p, null);
+    Haptics.selectionAsync();
+    toast.show(`${p.name} ditambahkan`, "success");
+  };
+
+  const onPickVariation = (p: Product, v: Variation) => {
+    cart.addProduct(p, v);
+    setVariantFor(null);
+    Haptics.selectionAsync();
+    toast.show(`${p.name} — ${v.name} ditambahkan`, "success");
+  };
+
   // 1. Auto scan mode: keep the hardware-scanner input focused whenever the
   // Transaksi tab is focused, so scanning works immediately without tapping.
   // Kolom ini KHUSUS scanner: keyboard HP tidak pernah muncul (pakai tombol
   // "Cari Barang"/"Item Manual" untuk input manual).
   useFocusEffect(
     useCallback(() => {
+      loadSlots();
       const t = setTimeout(() => inputRef.current?.focus(), 350);
       return () => clearTimeout(t);
-    }, []),
+    }, [loadSlots]),
   );
 
   useHideScanKeyboard(inputRef, kbdRef);
@@ -141,12 +173,30 @@ export default function TransaksiScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.top}>
-        {/* Header sapaan */}
+        {/* Header sapaan + Pintasan Produk (2 baris chip di samping teks) */}
         <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
+          <View style={styles.headerLeft}>
             <Text style={styles.hi}>Halo, Kasir 👋</Text>
             <Text style={styles.pageTitle}>Transaksi</Text>
           </View>
+          <View style={styles.quickArea}>
+            <View style={styles.quickGrid}>
+              {quickProducts.slice(0, 10).map((p) => (
+                <Pressable
+                  key={p.id}
+                  style={styles.chip}
+                  onPress={() => onQuickTap(p)}
+                  hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
+                  testID={`quick-chip-${p.id}`}
+                >
+                  <Text style={styles.chipTxt} numberOfLines={1}>{p.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <Pressable style={styles.gearBtn} onPress={() => router.push("/atur-pintasan")} hitSlop={8} testID="atur-pintasan-btn">
+            <Ionicons name="settings-outline" size={20} color={colors.brand} />
+          </Pressable>
         </View>
 
         {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) — keyboard HP TIDAK pernah tampil */}
@@ -270,7 +320,29 @@ export default function TransaksiScreen() {
         </Pressable>
       </View>
 
-      {/* Edit Harga */}
+      {/* Popup Pilih Variasi (untuk tombol Pintasan Produk) — tetap di halaman Transaksi */}
+      <Modal visible={!!variantFor} transparent animationType="fade" onRequestClose={() => setVariantFor(null)}>
+        <Pressable style={styles.vBackdrop} onPress={() => setVariantFor(null)} testID="variasi-backdrop" />
+        <View style={styles.vCenter} pointerEvents="box-none">
+          <View style={styles.vCard}>
+            <Text style={styles.vTitle} numberOfLines={1}>Pilih Variasi {variantFor?.name}</Text>
+            <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={styles.vWrap}>
+              {variantFor?.variations?.map((v) => (
+                <Pressable
+                  key={v.id}
+                  style={styles.vPill}
+                  onPress={() => variantFor && onPickVariation(variantFor, v)}
+                  testID={`variasi-${v.id}`}
+                >
+                  <Text style={styles.vPillName} numberOfLines={1}>{v.name}</Text>
+                  <Text style={styles.vPillPrice}>{rupiah(v.sell_price)}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <BottomSheetModal
         ref={priceSheet}
         enableDynamicSizing
@@ -379,6 +451,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   top: { paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.xs },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 0 },
+  headerLeft: { marginRight: spacing.sm },
+  quickArea: { flex: 1 },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", rowGap: 4, columnGap: 4 },
+  chip: {
+    width: "18%", height: 28, borderRadius: 8, borderWidth: 1, borderColor: colors.brand,
+    backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center", paddingHorizontal: 3,
+  },
+  chipTxt: { color: colors.onSurfaceTertiary, fontFamily: font.bold, fontSize: 10 },
+  gearBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center", marginLeft: 2 },
+  vBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+  vCenter: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  vCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surfaceSecondary, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderStrong, padding: spacing.lg },
+  vTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface, textAlign: "center", marginBottom: spacing.md },
+  vWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" },
+  vPill: { minWidth: "30%", flexGrow: 1, backgroundColor: colors.surfaceTertiary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brand, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, alignItems: "center" },
+  vPillName: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
+  vPillPrice: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.onSurfaceTertiary, marginTop: 2 },
   hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.xs },
   pageTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl, marginTop: 0 },
   scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 44, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, paddingLeft: 5, paddingRight: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },

@@ -1,6 +1,14 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — KOREOGRAFI Miko (kurangi pose menunjuk berlebih)
+## Session Log (fork) — FITUR: 10 Tombol Pintasan Produk (menu Transaksi)
+- Chip pintasan di HEADER Transaksi (2 baris × 5, kecil ~28px, font 10, bingkai pink, bg surfaceTertiary, nama dipotong "…"; tidak digeser — sesuai permintaan user). Slot kosong TIDAK ditampilkan. Ikon ⚙️ "Atur Pintasan" di kanan header. Tombol Cari Barang & Tambah Item TIDAK diubah.
+- Simpan sebagai `Settings.quickSlots: (string|null)[]` (ID produk, panjang 10) → ikut sinkron via mekanisme Settings yang sudah ada (tidak buat sistem baru). Default `[]` (kosong; user isi sendiri). types.ts + localdb DEFAULT_SETTINGS diperbarui.
+- Ketuk chip: produk TANPA variasi → `cart.addProduct(p,null)` langsung (sama seperti scanner) + toast; produk DENGAN variasi (`p.variations.length>0`) → Modal "Pilih Variasi" muncul DI halaman Transaksi (tanpa pindah halaman), pilih 1 → `cart.addProduct(p,v)` + popup tutup. Harga & nama SELALU dari `products` (DB terbaru); produk terhapus → slot otomatis dianggap kosong (tak error).
+- Layar baru `app/atur-pintasan.tsx`: 10 slot, isi/ganti/kosongkan, pemilih produk dgn pencarian (hanya produk non-anak). Simpan ke Settings.
+- index.tsx: state `slots`+`variantFor`, `loadSlots()` dipanggil di focus & `onLocalChange` (agar ikut update saat sinkron/kembali dari pengaturan).
+- DIVERIFIKASI e2e (screenshot preview): TEST1 tanpa variasi→langsung masuk (beras Rp14.000); TEST2 variasi→popup "Pilih Variasi Beras" (7 opsi) tanpa pindah halaman; TEST3 pilih 14100→masuk keranjang Rp14.100 & popup tutup; TEST4 ganti slot→chip berubah; TEST5 harga dari DB; TEST6 chip kecil rapi portrait. Lint clean. Akses pengaturan: BEBAS (tanpa PIN) sesuai keputusan. Frontend-only → user perlu REDEPLOY.
+
+
 - Keluhan: di layar hasil Miko terlalu sering menahan pose MENUNJUK. Target: menunjuk hanya saat benar-benar menunjuk; selebihnya gerak natural bervariasi.
 - `components/MikoRig.tsx`: tambah prop `story?: Step[]` (urutan {state,hold}) + `rest?: MikoState`. Efek koreografi memainkan urutan lalu `storyDoneRef=true` & settle ke `rest`. `stopTalk` kini kembali ke `rest` (mis. WARM) saat story selesai (bukan menahan POINT). Aksen saat bicara kini DINAMIS (baca stateRef terkini) → mengikuti perpindahan koreografi (menunjuk→menjelaskan) sambil mulut bergerak. Variasi "bahasa wajah" (WARM/HAPPY/IDLE/THINKING/MISCHIEF/SLEEPY) kini juga jalan untuk rig non-ambient SETELAH story selesai (tak pernah menunjuk di fase ini).
 - `app/(tabs)/cek-harga.tsx`: STORY_RESULT = HAPPY(0.85s)→POINT(1.2s)→SALES_EXPLAIN(1.5s)→rest WARM; STORY_PICK = THINKING(1s)→POINT(1s)→SALES_EXPLAIN(1.5s)→rest WARM. Rig hasil & 2 layar pilihan pakai `story` + `rest="WARM"`; efek THINKING→POINT lama dihapus.
