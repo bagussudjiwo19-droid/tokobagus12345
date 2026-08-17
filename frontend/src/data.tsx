@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "./types";
 import { api } from "./api";
 import { onLocalChange } from "./localdb";
@@ -37,11 +37,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     reload();
     // Muat ulang produk saat data lokal berubah karena sinkron cloud masuk.
-    const off = onLocalChange(() => { reload(); });
-    return off;
+    // Sinkron bisa menulis banyak item beruntun → debounce agar hanya reload
+    // sekali per "burst", tidak membebani CPU/render saat sinkron berjalan.
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const off = onLocalChange(() => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => { reload(); }, 350);
+    });
+    return () => { if (t) clearTimeout(t); off(); };
   }, [reload]);
 
-  return <Ctx.Provider value={{ products, loading, error, reload, pricePick, setPricePick }}>{children}</Ctx.Provider>;
+  const value = useMemo<DataCtx>(
+    () => ({ products, loading, error, reload, pricePick, setPricePick }),
+    [products, loading, error, reload, pricePick],
+  );
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useData(): DataCtx {

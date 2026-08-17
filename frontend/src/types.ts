@@ -86,6 +86,7 @@ export type Settings = {
   sfxFail?: string; // bunyi: gagal / tidak masuk
   sfxPaid?: string; // bunyi: transaksi lunas
   quickSlots?: (string | null)[]; // 10 slot Pintasan Produk (menyimpan ID produk; null = kosong)
+  hideMiko?: boolean; // sembunyikan maskot Miko di layar kasir (default: tampil)
 };
 
 export type Printer = { address?: string | null; name?: string | null };

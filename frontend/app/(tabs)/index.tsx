@@ -270,6 +270,26 @@ export default function TransaksiScreen() {
                 </Pressable>
               </View>
 
+              {/* Peringatan stok menipis / kurang untuk barang katalog */}
+              {(() => {
+                if (!l.product_id) return null;
+                const p = products.find((x) => x.id === l.product_id);
+                if (!p) return null;
+                const st = l.variation_id
+                  ? ((p.variations || []).find((v) => v.id === l.variation_id)?.stock ?? p.stock)
+                  : p.stock;
+                if (st > 5) return null;
+                const over = l.quantity > st;
+                return (
+                  <View style={styles.lowWarn} testID={`cart-low-${l.key}`}>
+                    <Ionicons name="alert-circle" size={13} color={colors.error} />
+                    <Text style={styles.lowWarnTxt}>
+                      {over ? `Stok kurang! Sisa ${st}` : `Stok menipis · sisa ${st}`}
+                    </Text>
+                  </View>
+                );
+              })()}
+
               {/* Baris 2: harga×qty · stepper · subtotal */}
               <View style={styles.line2}>
                 <Pressable style={styles.unitWrap} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
@@ -498,6 +518,8 @@ const styles = StyleSheet.create({
   cardNew: { borderColor: colors.brand, backgroundColor: colors.surfaceTertiary },
   line1: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   line2: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 6 },
+  lowWarn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  lowWarnTxt: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.xs },
   iconMini: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   unitWrap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 3 },
   unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },

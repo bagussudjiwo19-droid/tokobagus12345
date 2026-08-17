@@ -1,7 +1,7 @@
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import { colors } from "@/src/theme";
 import { maybeDailyAutoBackup, shouldRemindBackup } from "@/src/autobackup";
 import { mikoBus } from "@/src/mikoBus";
 import { startAutoSync } from "@/src/sync";
+import { api } from "@/src/api";
 import Miko from "@/components/Miko";
 
 // Disable logbox errors etc so that users can see the app
@@ -31,6 +32,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const pathname = usePathname();
+  const [mikoHidden, setMikoHidden] = useState(false);
   const [loaded, error] = useIconFonts();
   const [fontsLoaded, fontsError] = useFonts({
     "DMSans-Regular": require("../assets/fonts/DMSans-Regular.ttf"),
@@ -47,6 +49,15 @@ export default function RootLayout() {
   });
 
   const ready = (loaded || error) && (fontsLoaded || fontsError);
+
+  // Sembunyikan/tampilkan maskot Miko sesuai pengaturan (reaktif).
+  useEffect(() => {
+    api.getSettings().then((s) => setMikoHidden(!!s.hideMiko)).catch(() => {});
+    const off = mikoBus.on((e) => {
+      if (e.type === "miko_visibility") setMikoHidden(e.hidden);
+    });
+    return off;
+  }, []);
 
   useEffect(() => {
     if (ready) {
@@ -95,7 +106,7 @@ export default function RootLayout() {
                   <Stack.Screen name="admin-pin" options={{ presentation: "modal" }} />
                   <Stack.Screen name="pengaturan-suara" options={{ presentation: "modal" }} />
                 </Stack>
-                {!(pathname || "").includes("cek-harga") && <Miko />}
+                {!mikoHidden && !(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>
             </CartProvider>
           </ToastProvider>

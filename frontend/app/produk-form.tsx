@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
@@ -108,6 +108,31 @@ export default function ProdukFormScreen() {
 
   const hasVar = variations.length > 0;
 
+  // Hapus cepat satu variasi (produk anak) langsung dari form induk.
+  const delChild = (c: Product) => {
+    Alert.alert(
+      "Hapus Variasi?",
+      `Variasi "${c.name}" akan dihapus permanen.`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.deleteProduct(c.id);
+              toast.show("Variasi dihapus", "success");
+              await reload();
+              mikoBus.emit({ type: "product_deleted" });
+            } catch (e: any) {
+              toast.show(e?.message || "Gagal menghapus", "error");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
@@ -211,6 +236,14 @@ export default function ProdukFormScreen() {
                   <Text style={styles.childMeta} numberOfLines={1}>{c.barcode || "Tanpa barcode"} · Stok {c.stock} {c.unit}</Text>
                   <Text style={styles.childMeta} numberOfLines={1}>Jual {rupiah(c.sell_price)} · Beli {rupiah(c.buy_price)}</Text>
                 </View>
+                <Pressable
+                  onPress={() => delChild(c)}
+                  style={styles.childDel}
+                  testID={`child-variation-delete-${c.id}`}
+                  hitSlop={8}
+                >
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
+                </Pressable>
                 <Ionicons name="chevron-forward" size={20} color={colors.brand} />
               </Pressable>
             ))}
@@ -393,6 +426,7 @@ const styles = StyleSheet.create({
   childSection: { marginBottom: spacing.md },
   childHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2, marginBottom: spacing.sm },
   childCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
+  childDel: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary },
   childName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   childMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm, marginBottom: spacing.sm },

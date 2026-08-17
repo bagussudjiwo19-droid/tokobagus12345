@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -45,6 +46,7 @@ export default function CheckoutScreen() {
   const [printer, setPrinter] = useState<{ address?: string | null; name?: string | null }>({});
   const [tx, setTx] = useState<Transaction | null>(null);
   const [saving, setSaving] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const receiptRef = useRef<View>(null);
 
   useEffect(() => {
@@ -54,7 +56,12 @@ export default function CheckoutScreen() {
 
   const subtotal = cart.total;
   const [discountStr, setDiscountStr] = useState("");
-  const discount = Math.min(subtotal, Math.max(0, Number(discountStr || "0")));
+  const [discMode, setDiscMode] = useState<"rp" | "pct">("rp");
+  const discInput = Number(discountStr || "0");
+  const pctVal = Math.min(100, Math.max(0, discInput));
+  const discount = discMode === "pct"
+    ? Math.round((pctVal / 100) * subtotal)
+    : Math.min(subtotal, Math.max(0, discInput));
   const total = Math.max(0, subtotal - discount);
   const cash = Number(cashStr || "0");
   const change = cash - total;
@@ -246,26 +253,47 @@ export default function CheckoutScreen() {
               <Ionicons name="pricetag-outline" size={16} color={colors.brand} />
               <Text style={styles.discountLabel}>Diskon</Text>
             </View>
-            <View style={styles.discountInputBox}>
-              <Text style={styles.rpPrefix}>Rp</Text>
-              <TextInput
-                value={discountStr}
-                onChangeText={(t) => setDiscountStr(t.replace(/[^\d]/g, ""))}
-                keyboardType="number-pad"
-                placeholder="0"
-                placeholderTextColor={colors.muted}
-                style={styles.discountInput}
-                testID="checkout-discount-input"
-              />
-              {discountStr !== "" && (
-                <Pressable onPress={() => setDiscountStr("")} testID="checkout-discount-clear">
-                  <Ionicons name="close-circle" size={18} color={colors.muted} />
+            <View style={styles.discountRight}>
+              <View style={styles.discModeWrap}>
+                <Pressable
+                  onPress={() => setDiscMode("rp")}
+                  style={[styles.discModeBtn, discMode === "rp" && styles.discModeBtnActive]}
+                  testID="checkout-disc-mode-rp"
+                >
+                  <Text style={[styles.discModeTxt, discMode === "rp" && styles.discModeTxtActive]}>Rp</Text>
                 </Pressable>
-              )}
+                <Pressable
+                  onPress={() => setDiscMode("pct")}
+                  style={[styles.discModeBtn, discMode === "pct" && styles.discModeBtnActive]}
+                  testID="checkout-disc-mode-pct"
+                >
+                  <Text style={[styles.discModeTxt, discMode === "pct" && styles.discModeTxtActive]}>%</Text>
+                </Pressable>
+              </View>
+              <View style={styles.discountInputBox}>
+                {discMode === "rp" && <Text style={styles.rpPrefix}>Rp</Text>}
+                <TextInput
+                  value={discountStr}
+                  onChangeText={(t) => setDiscountStr(t.replace(/[^\d]/g, ""))}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                  placeholderTextColor={colors.muted}
+                  style={styles.discountInput}
+                  testID="checkout-discount-input"
+                />
+                {discMode === "pct" && <Text style={styles.rpPrefix}>%</Text>}
+                {discountStr !== "" && (
+                  <Pressable onPress={() => setDiscountStr("")} testID="checkout-discount-clear">
+                    <Ionicons name="close-circle" size={18} color={colors.muted} />
+                  </Pressable>
+                )}
+              </View>
             </View>
           </View>
           {discount > 0 && (
-            <Text style={styles.discountCaption}>Subtotal {rupiah(subtotal)} · Diskon -{rupiah(discount)}</Text>
+            <Text style={styles.discountCaption}>
+              {discMode === "pct" ? `Diskon ${pctVal}% · ` : ""}Subtotal {rupiah(subtotal)} · Potongan -{rupiah(discount)}
+            </Text>
           )}
           <View style={styles.cashDisplay}>
             <Text style={styles.cashLabel}>Uang Diterima</Text>
@@ -345,7 +373,18 @@ export default function CheckoutScreen() {
           <ActionBtn icon="share-social" label="Bagikan" onPress={shareReceipt} testID="receipt-share" />
           <ActionBtn icon="print" label="Cetak Struk" onPress={printReceipt} testID="receipt-print" />
         </View>
+        <View style={styles.calcRow}>
+          <Pressable
+            style={styles.calcBtn}
+            onPress={() => { Haptics.selectionAsync().catch(() => {}); setCalcOpen(true); }}
+            testID="receipt-calc"
+          >
+            <Ionicons name="calculator" size={22} color={colors.brand} />
+            <Text style={styles.actionTxt}>Kalkulator</Text>
+          </Pressable>
+        </View>
       </ScrollView>
+      <CalculatorModal visible={calcOpen} onClose={() => setCalcOpen(false)} />
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable testID="checkout-new-tx" onPress={closeAll} style={styles.primaryBtn}>
           <Ionicons name="add" size={20} color={colors.onBrandPrimary} />
@@ -370,6 +409,136 @@ function ActionBtn({ icon, label, onPress, testID }: { icon: any; label: string;
       <Ionicons name={icon} size={22} color={colors.brand} />
       <Text style={styles.actionTxt}>{label}</Text>
     </Pressable>
+  );
+}
+
+// Kalkulator sederhana (immediate-execution) yang tampil sebagai overlay
+// di atas halaman Transaksi Berhasil — tidak meninggalkan halaman.
+function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const [display, setDisplay] = useState("0");
+  const [prev, setPrev] = useState<number | null>(null);
+  const [op, setOp] = useState<string | null>(null);
+  const [waiting, setWaiting] = useState(false);
+
+  const tap = () => Haptics.selectionAsync().catch(() => {});
+
+  const fmt = (n: number) => {
+    if (!isFinite(n)) return "Error";
+    const r = Math.round((n + Number.EPSILON) * 1e8) / 1e8;
+    return String(r);
+  };
+  const compute = (a: number, b: number, o: string) => {
+    if (o === "+") return a + b;
+    if (o === "-") return a - b;
+    if (o === "×") return a * b;
+    if (o === "÷") return b === 0 ? NaN : a / b;
+    return b;
+  };
+
+  const clearAll = () => { tap(); setDisplay("0"); setPrev(null); setOp(null); setWaiting(false); };
+  const backspace = () => { tap(); setDisplay((d) => (d === "Error" ? "0" : d.length > 1 ? d.slice(0, -1) : "0")); };
+  const inputDigit = (d: string) => {
+    tap();
+    if (display === "Error") { setDisplay(d); setWaiting(false); return; }
+    if (waiting) { setDisplay(d); setWaiting(false); }
+    else setDisplay((cur) => (cur === "0" ? d : cur + d));
+  };
+  const inputDot = () => {
+    tap();
+    if (waiting || display === "Error") { setDisplay("0."); setWaiting(false); return; }
+    if (!display.includes(".")) setDisplay((cur) => cur + ".");
+  };
+  const percent = () => { tap(); const cur = parseFloat(display) || 0; setDisplay(fmt(cur / 100)); setWaiting(false); };
+  const setOperator = (next: string) => {
+    tap();
+    const cur = parseFloat(display) || 0;
+    if (prev === null) setPrev(cur);
+    else if (op && !waiting) { const r = compute(prev, cur, op); setPrev(r); setDisplay(fmt(r)); }
+    setOp(next);
+    setWaiting(true);
+  };
+  const equals = () => {
+    tap();
+    if (op !== null && prev !== null) {
+      const cur = parseFloat(display) || 0;
+      const r = compute(prev, cur, op);
+      setDisplay(fmt(r));
+      setPrev(null);
+      setOp(null);
+      setWaiting(true);
+    }
+  };
+
+  const Key = ({ label, onPress, kind = "num", wide, testID }: { label: string; onPress: () => void; kind?: "num" | "op" | "fn" | "eq"; wide?: boolean; testID?: string }) => (
+    <Pressable
+      onPress={onPress}
+      testID={testID}
+      style={[
+        styles.calcKey,
+        wide && styles.calcKeyWide,
+        kind === "op" && styles.calcKeyOp,
+        kind === "fn" && styles.calcKeyFn,
+        kind === "eq" && styles.calcKeyEq,
+      ]}
+    >
+      <Text style={[
+        styles.calcKeyTxt,
+        kind === "op" && styles.calcKeyTxtLight,
+        kind === "eq" && styles.calcKeyTxtEq,
+        kind === "fn" && styles.calcKeyTxtFn,
+      ]}>{label}</Text>
+    </Pressable>
+  );
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.calcBackdrop} onPress={onClose} testID="calc-backdrop">
+        <Pressable style={[styles.calcSheet, { paddingBottom: insets.bottom + spacing.md }]} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.calcHandle} />
+          <View style={styles.calcHeader}>
+            <Text style={styles.calcTitle}>Kalkulator</Text>
+            <Pressable onPress={onClose} hitSlop={10} testID="calc-close">
+              <Ionicons name="close" size={24} color={colors.onSurfaceSecondary} />
+            </Pressable>
+          </View>
+          <View style={styles.calcDisplayBox}>
+            <Text style={styles.calcDisplay} numberOfLines={1} adjustsFontSizeToFit testID="calc-display">{display}</Text>
+          </View>
+          <View style={styles.calcGrid}>
+            <View style={styles.calcRowKeys}>
+              <Key label="C" onPress={clearAll} kind="fn" testID="calc-clear" />
+              <Key label="⌫" onPress={backspace} kind="fn" testID="calc-back" />
+              <Key label="%" onPress={percent} kind="fn" testID="calc-percent" />
+              <Key label="÷" onPress={() => setOperator("÷")} kind="op" />
+            </View>
+            <View style={styles.calcRowKeys}>
+              <Key label="7" onPress={() => inputDigit("7")} />
+              <Key label="8" onPress={() => inputDigit("8")} />
+              <Key label="9" onPress={() => inputDigit("9")} />
+              <Key label="×" onPress={() => setOperator("×")} kind="op" />
+            </View>
+            <View style={styles.calcRowKeys}>
+              <Key label="4" onPress={() => inputDigit("4")} />
+              <Key label="5" onPress={() => inputDigit("5")} />
+              <Key label="6" onPress={() => inputDigit("6")} />
+              <Key label="-" onPress={() => setOperator("-")} kind="op" />
+            </View>
+            <View style={styles.calcRowKeys}>
+              <Key label="1" onPress={() => inputDigit("1")} />
+              <Key label="2" onPress={() => inputDigit("2")} />
+              <Key label="3" onPress={() => inputDigit("3")} />
+              <Key label="+" onPress={() => setOperator("+")} kind="op" />
+            </View>
+            <View style={styles.calcRowKeys}>
+              <Key label="0" onPress={() => inputDigit("0")} wide />
+              <Key label="." onPress={inputDot} />
+              <Key label="=" onPress={equals} kind="eq" testID="calc-equals" />
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -398,9 +567,15 @@ const styles = StyleSheet.create({
   discountRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
   discountLabelWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   discountLabel: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
-  discountInputBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 42, minWidth: 130 },
+  discountRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexShrink: 1 },
+  discModeWrap: { flexDirection: "row", backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
+  discModeBtn: { width: 38, height: 42, alignItems: "center", justifyContent: "center" },
+  discModeBtnActive: { backgroundColor: colors.brand },
+  discModeTxt: { color: colors.onSurfaceSecondary, fontFamily: font.bold, fontSize: fontSize.base },
+  discModeTxtActive: { color: colors.onBrandPrimary },
+  discountInputBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 42, flexShrink: 0 },
   rpPrefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.base },
-  discountInput: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right", paddingVertical: 0 },
+  discountInput: { width: 66, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right", paddingVertical: 0 },
   subRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
   subLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   subValue: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base },
@@ -433,4 +608,24 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg, width: "100%", maxWidth: 320 },
   actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   actionTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  calcRow: { width: "100%", maxWidth: 320, marginTop: spacing.md },
+  calcBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
+  calcBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
+  calcSheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  calcHandle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.sm },
+  calcHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
+  calcTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
+  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, marginBottom: spacing.md, minHeight: 72, justifyContent: "center" },
+  calcDisplay: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right" },
+  calcGrid: { gap: spacing.sm },
+  calcRowKeys: { flexDirection: "row", gap: spacing.sm },
+  calcKey: { flex: 1, height: 60, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
+  calcKeyWide: { flex: 2.15 },
+  calcKeyOp: { backgroundColor: colors.brandTertiary, borderColor: colors.brandTertiary },
+  calcKeyFn: { backgroundColor: colors.surfaceTertiary, borderColor: colors.surfaceTertiary },
+  calcKeyEq: { backgroundColor: colors.brand, borderColor: colors.brand },
+  calcKeyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: 24 },
+  calcKeyTxtLight: { color: colors.brand },
+  calcKeyTxtEq: { color: colors.onBrandPrimary },
+  calcKeyTxtFn: { color: colors.onSurfaceSecondary },
 });

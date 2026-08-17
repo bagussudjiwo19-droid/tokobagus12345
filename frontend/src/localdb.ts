@@ -45,6 +45,7 @@ const DEFAULT_SETTINGS: Settings = {
   showNote: false, showThanks: true,
   sfxVolume: "keras", sfxOk: "sparkle", sfxFail: "oops", sfxPaid: "premium",
   quickSlots: [],
+  hideMiko: false,
 };
 
 function nowIso(): string { return new Date().toISOString(); }

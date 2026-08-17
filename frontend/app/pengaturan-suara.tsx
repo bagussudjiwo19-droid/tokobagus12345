@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { api } from "@/src/api";
 import { useToast } from "@/src/toast";
+import { mikoBus } from "@/src/mikoBus";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Settings } from "@/src/types";
 import { sfx, SFX_LIBRARY, type SfxId } from "@/src/sfx";
@@ -36,6 +37,7 @@ export default function PengaturanSuaraScreen() {
     setS(next);
     await api.saveSettings(next);
     sfx.reload();
+    if ("hideMiko" in patch) mikoBus.emit({ type: "miko_visibility", hidden: !!next.hideMiko });
   };
 
   const vol = s?.sfxVolume || "keras";
@@ -50,6 +52,26 @@ export default function PengaturanSuaraScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}>
+        {/* Maskot Miko: tampil/sembunyi di layar kasir */}
+        <View style={styles.mikoRow}>
+          <View style={styles.mikoLeft}>
+            <View style={styles.mikoIcon}>
+              <Ionicons name="happy-outline" size={22} color={colors.brand} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.mikoTitle}>Tampilkan Maskot Miko</Text>
+              <Text style={styles.mikoDesc}>Sembunyikan Miko di layar kasir bila terasa mengganggu. Kios Cek Harga tidak terpengaruh.</Text>
+            </View>
+          </View>
+          <Switch
+            testID="toggle-miko"
+            value={!(s?.hideMiko)}
+            onValueChange={(val) => update({ hideMiko: !val })}
+            trackColor={{ true: colors.brand, false: colors.surfaceTertiary }}
+            thumbColor="#fff"
+          />
+        </View>
+
         <View style={styles.infoBox}>
           <Ionicons name="volume-high-outline" size={22} color={colors.brand} />
           <Text style={styles.infoTxt}>Pilih bunyi & volume sesuai selera. Untuk toko ramai, pakai volume Maksimal. Suara hanya berbunyi di HP (bukan preview).</Text>
@@ -128,6 +150,11 @@ const styles = StyleSheet.create({
   hTitle: { fontFamily: font.bold, fontSize: fontSize.xl, color: colors.onSurface },
   closeBtn: { position: "absolute", right: spacing.md, bottom: spacing.md, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   infoBox: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.surfaceTertiary, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg },
+  mikoRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.lg },
+  mikoLeft: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  mikoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  mikoTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
+  mikoDesc: { fontFamily: font.regular, fontSize: fontSize.xs, color: colors.muted, marginTop: 2, lineHeight: 16 },
   infoTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 19 },
   section: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface, marginBottom: spacing.sm },
   volRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.xl },

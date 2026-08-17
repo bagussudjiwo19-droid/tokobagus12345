@@ -16,6 +16,7 @@ export type MikoEvent =
   | { type: "product_deleted" }
   | { type: "say"; text: string; pose?: string }
   | { type: "backup_reminder" }
+  | { type: "miko_visibility"; hidden: boolean }
   | { type: "speak_start"; ms?: number }
   | { type: "speak_end" }
   | { type: "miko_state"; state: MikoState }

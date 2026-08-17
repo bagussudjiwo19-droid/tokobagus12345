@@ -1,6 +1,29 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
-## Session Log (fork) — FITUR: Icon Cetak Barcode di kartu Produk
+## Session Log (fork) — TOMBOL KALKULATOR di Transaksi Berhasil
+- `app/checkout.tsx` step "done": tambah baris `calcRow` (full-width) di bawah actionRow [Bagikan][Cetak Struk], tombol pink-outline "🧮 Kalkulator" (testID receipt-calc, style calcBtn = mirip actionBtn tapi selebar 2 tombol, maxWidth 320). Tombol Bagikan/Cetak Struk/Transaksi Baru/struk TIDAK diubah.
+- `CalculatorModal` (komponen di file yg sama): Modal transparent slide dari bawah (bottom sheet), overlay di ATAS halaman Transaksi Berhasil (tidak navigasi/tidak meninggalkan halaman). Kalkulator immediate-execution: digit 0-9, . , + - × ÷, =, C, ⌫, %. Operator = brandTertiary pink, = brand pink (teks putih), fn = surfaceTertiary. State: display/prev/op/waiting. Haptics selectionAsync tiap tap. Verified e2e screenshot: transaksi selesai → tombol tampil sesuai referensi → buka kalkulator → 12×3=36 benar.
+- Lint clean (hanya 1 warning pre-existing unused 'e' di line 147, bukan dari perubahan ini). Frontend-only → user Publish untuk ke HP.
+
+
+## Session Log (fork) — 4 FITUR CEPAT: Diskon %, Stok Menipis di Keranjang, Hapus Variasi, Sembunyikan Miko
+- DISKON PERSEN (`app/checkout.tsx`): tambah toggle mode Rp/% di baris Diskon (state `discMode`). Bila `%`, potongan = round(pct/100 × subtotal) dgn pct dibatasi 0–100; Rp tetap seperti semula (dibatasi ≤ subtotal). `discount` yang tersimpan ke transaksi TETAP nominal rupiah (tidak ubah backend/struk). Caption menampilkan "Diskon N% · Subtotal … · Potongan -Rp…". FIX web: input width fixed 66 + box flexShrink:0 (react-native-web tidak menghormati flex:1 → input meluber; sekarang rapi, verified screenshot input di 251–317px, muat penuh).
+- STOK MENIPIS DI KERANJANG (`app/(tabs)/index.tsx`): di tiap kartu keranjang, cari stok produk/variasi terkini dari `products` (variasi via product.variations, atau product.stock). Bila stok ≤ 5 → tampil baris merah kecil: "Stok menipis · sisa N" (Ionicons alert-circle). Bila qty > stok → "Stok kurang! Sisa N". Item manual (product_id null) dilewati. Styles: lowWarn/lowWarnTxt.
+- HAPUS VARIASI DARI INDUK (`app/produk-form.tsx`): di tiap kartu variasi anak (childVariations) tambah tombol trash. Ketuk → Alert konfirmasi "Hapus Variasi?" → `api.deleteProduct(c.id)` + reload + emit product_deleted. Style childDel. Import Alert ditambah.
+- SEMBUNYIKAN MIKO (`Settings.hideMiko` di types.ts + DEFAULT_SETTINGS false): toggle "Tampilkan Maskot Miko" di `pengaturan-suara.tsx` (Switch). Saat diubah → simpan settings + emit `mikoBus {type:"miko_visibility", hidden}`. `_layout.tsx` baca settings awal (api.getSettings) + subscribe event → state `mikoHidden` → `{!mikoHidden && !cek-harga && <Miko/>}`. CATATAN: hanya menyembunyikan Miko MELAYANG di layar kasir; kios Cek Harga (stage + MikoRig) TIDAK terpengaruh (sengaja, kios = pengalaman Miko khusus). mikoBus event `miko_visibility` ditambah.
+- Lint clean. DIVERIFIKASI screenshot: toggle Miko tampil & mascot muncul; checkout Diskon % toggle aktif + input "10%" rapi dalam layar. Frontend-only → user REDEPLOY (Publish). BELUM: Suara Miko/STT (Tahap B, butuh build APK).
+
+
+## Session Log (fork) — OPTIMASI PERFORMA Tahap 1 (risiko rendah, tanpa ubah fitur)
+- AUDIT: FlatList Produk (`produk.tsx`) & Riwayat (`riwayat.tsx`) SUDAH teroptimasi penuh (keyExtractor, getItemLayout[produk], removeClippedSubviews, initialNumToRender, maxToRenderPerBatch, windowSize) → tidak diubah. MikoRig & sync.ts sudah bersih-bersih timer (cleanup ada). Cart pakai ScrollView (biasanya sedikit item) → dibiarkan agar tak ubah layout.
+- PERUBAHAN (aman, behavior-preserving) di `src/data.tsx`:
+  1. Provider value dibungkus `useMemo` → mencegah SEMUA konsumen `useData()` re-render tiap provider render.
+  2. Reload dari `onLocalChange` (dipicu sinkron cloud) di-DEBOUNCE 350ms → badai tulis saat sinkron (chunk 150) jadi 1x reload, bukan puluhan. Aman karena semua aksi user (tambah/edit produk, stok, checkout, item-manual, variasi-cepat, edit-transaksi, backup, cari) memanggil `reload()` LANGSUNG (tidak lewat onLocalChange) → perubahan user tetap instan.
+- Tidak menyentuh DB/query, scanner, keranjang, suara, animasi Miko, transaksi, sinkronisasi (logika), backup/restore. Tidak ada fitur dinonaktifkan.
+- DIVERIFIKASI (screenshot): Produk render (ikon printer 12), Transaksi header ada, navigasi tab lancar, tidak crash. Lint clean. Frontend-only → user REDEPLOY.
+- BELUM dikerjakan (Tahap 2, risiko sedang bila diminta): jeda animasi saat tab tidak fokus (Miko float/kios berjalan di background karena tab tetap mounted), memoisasi row Riwayat, downscale aset gambar. Perlu pengujian ketat.
+
+
 - Kartu produk (produk.tsx `ProdukRow`): tambah ikon printer pink kecil (Ionicons print-outline, 20px, style `printBtn` 34×34) di antara price pill/"Bervariasi" dan tombol ⋮ (hanya mode normal, bukan selectMode). Tidak menambah tinggi kartu.
 - Ketuk ikon → Modal "Cetak Barcode" (RN Modal, tema pink): tampil Produk (nama), Barcode, stepper Jumlah (1–50), tombol "Pilih Printer" (router.push `/pengaturan-printer`, menampilkan nama printer tersimpan), tombol Cetak & Batal.
 - Cetak: `printText(printer.address, buildBarcodeLabels(name, barcode, qty))`. Helper BARU `buildBarcodeLabels()` di `src/receipt.ts` → ESC/POS: nama (tengah, tebal) + barcode CODE128 (GS k 73, code set {B) + angka HRI, diulang qty kali. Guard `isBluetoothAvailable()` (web → toast NATIVE_ONLY_MSG). Printer dimuat via `api.getPrinter()` di `useFocusEffect` (auto refresh setelah kembali dari Pilih Printer).
