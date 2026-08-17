@@ -278,8 +278,8 @@ export default function MikoRig({ size = 216, ambient = true, initial = "IDLE", 
         let i = Math.floor(Math.random() * KIOSK_SAY.length);
         if (i === kioskI.current) i = (i + 1) % KIOSK_SAY.length;
         kioskI.current = i;
-        // Balon tampil 6 dtk, lalu jeda 4 dtk sebelum balon berikutnya (siklus 10 dtk).
-        bubble(KIOSK_SAY[i], 6000);
+        // Balon tampil 7 dtk, lalu jeda 3 dtk sebelum balon berikutnya (siklus 10 dtk).
+        bubble(KIOSK_SAY[i], 7000);
       }, 10000);
       cleanups.push(() => clearInterval(sayId));
     }
