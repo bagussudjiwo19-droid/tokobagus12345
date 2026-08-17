@@ -50,7 +50,8 @@ export default function ProdukFormScreen() {
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
   const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi">(
     editing
-      ? ((editing.variations?.length || hasChildNow) ? "variasi" : (editing.tiers?.length ? "grosir" : "biasa"))
+      ? (editing.price_type
+          ?? ((editing.variations?.length || hasChildNow) ? "variasi" : (editing.tiers?.length ? "grosir" : "biasa")))
       : "biasa",
   );
 
@@ -61,7 +62,7 @@ export default function ProdukFormScreen() {
       toast.show("Nama produk wajib diisi", "error");
       return;
     }
-    if (variations.some((v) => !v.name.trim())) {
+    if ((priceType === "variasi" || priceType === "biasa") && variations.some((v) => !v.name.trim())) {
       toast.show("Nama variasi tidak boleh kosong", "error");
       return;
     }
@@ -78,7 +79,7 @@ export default function ProdukFormScreen() {
       sell_price: num(sellPrice),
       stock: num(stock),
       tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
-      variations: priceType === "variasi"
+      variations: (priceType === "variasi" || priceType === "biasa")
         ? variations.map((v) => ({
             ...v,
             buy_price: Number(v.buy_price) || 0,
@@ -88,6 +89,7 @@ export default function ProdukFormScreen() {
             tiers: [],
           }))
         : [],
+      price_type: priceType,
     };
     try {
       if (editing) {
@@ -124,6 +126,29 @@ export default function ProdukFormScreen() {
   };
 
   const hasVar = variations.length > 0;
+
+  // Tambah 1 baris variasi (nama + harga jual). Dipakai di mode Biasa & Variasi.
+  const addVarRow = () =>
+    setVariations((v) => [
+      ...v,
+      { id: newId(), name: "", barcode: null, buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: false },
+    ]);
+
+  // Baris editor variasi (Nama Variasi + Harga Jual + hapus). Sama untuk Biasa & Variasi.
+  const renderVarRows = () =>
+    variations.map((v, idx) => (
+      <View key={v.id} style={styles.varPriceRow} testID={`form-variation-${idx}`}>
+        <View style={{ flex: 1.4 }}>
+          <Field label={idx === 0 ? "Nama Variasi" : ""} value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 1 pcs" testID={`form-var-name-${idx}`} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label={idx === 0 ? "Harga Jual" : ""} value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
+        </View>
+        <Pressable onPress={() => setVariations((arr) => arr.filter((x) => x.id !== v.id))} testID={`form-variation-remove-${idx}`} style={[styles.varDelBtn, idx === 0 && { marginTop: 20 }]} hitSlop={6}>
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
+        </Pressable>
+      </View>
+    ));
 
   // Hapus cepat satu variasi (produk anak) langsung dari form induk.
   const delChild = (c: Product) => {
@@ -208,13 +233,32 @@ export default function ProdukFormScreen() {
             <Field label="Harga Beli" value={buyPrice} onChange={setBuyPrice} keyboardType="numeric" prefix="Rp" testID="form-buy" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label={hasVar ? "Harga Induk" : "Harga Jual"} value={sellPrice} onChange={setSellPrice} keyboardType="numeric" prefix="Rp" testID="form-sell" />
+            <Field label={priceType === "variasi" && hasVar ? "Harga Induk" : "Harga Jual"} value={sellPrice} onChange={setSellPrice} keyboardType="numeric" prefix="Rp" testID="form-sell" />
           </View>
         </View>
 
         {!hasVar && !unlimited && (
           <Field label="Stok" value={stock} onChange={setStock} keyboardType="numeric" testID="form-stock" />
         )}
+
+        {/* Mode BIASA: variasi opsional (nama + harga jual sendiri). Tanpa variasi →
+            produk pakai Harga Jual utama seperti biasa. Barcode & grosir tidak diubah. */}
+        {priceType === "biasa" && (<>
+        <View style={[styles.sectionHead, { marginTop: spacing.md }]}>
+          <Text style={styles.sectionTitle}>Variasi</Text>
+          <Pressable testID="form-add-variation-biasa" onPress={addVarRow} style={styles.addSmall}>
+            <Ionicons name="add" size={18} color={colors.brand} />
+            <Text style={styles.addSmallTxt}>Tambah Variasi</Text>
+          </Pressable>
+        </View>
+        {variations.length === 0 && (
+          <Text style={styles.childHint}>Opsional. Tanpa variasi → pakai Harga Jual utama. Ketuk &quot;Tambah Variasi&quot; untuk harga pilihan.</Text>
+        )}
+        {renderVarRows()}
+        {variations.length > 0 && (
+          <Text style={styles.childHint}>Ada variasi → saat produk discan muncul pilihan harga. Harga Jual utama tetap tersimpan.</Text>
+        )}
+        </>)}
 
         {/* Tiered / wholesale pricing */}
         {priceType === "grosir" && (
@@ -274,19 +318,7 @@ export default function ProdukFormScreen() {
         )}
 
         {/* Bagian A: rows Nama + Harga Jual (satu-satunya sumber harga). Barcode cukup 1 di atas (kolom Barcode produk). */}
-        {variations.map((v, idx) => (
-          <View key={v.id} style={styles.varPriceRow} testID={`form-variation-${idx}`}>
-            <View style={{ flex: 1.4 }}>
-              <Field label={idx === 0 ? "Nama Variasi" : ""} value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 1 pcs" testID={`form-var-name-${idx}`} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label={idx === 0 ? "Harga Jual" : ""} value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-var-sell-${idx}`} />
-            </View>
-            <Pressable onPress={() => setVariations((arr) => arr.filter((x) => x.id !== v.id))} testID={`form-variation-remove-${idx}`} style={[styles.varDelBtn, idx === 0 && { marginTop: 20 }]} hitSlop={6}>
-              <Ionicons name="trash-outline" size={18} color={colors.error} />
-            </Pressable>
-          </View>
-        ))}
+        {renderVarRows()}
         {/* Bagian Variasi / Barcode: banyak barcode (tanpa nama/harga). Semua barcode ini
             membuka daftar harga variasi yang SAMA saat discan. */}
         <View style={[styles.sectionHead, { marginTop: spacing.lg }]}>

@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — HARGA BIASA + VARIASI OPSIONAL (grosir & variasi tak diubah)
+- Permintaan user: mode "Biasa" kini bisa punya VARIASI opsional. Tetap ada Harga Beli + Harga Jual utama; tambah bagian "Variasi" (tombol "+ Tambah Variasi", testID form-add-variation-biasa) berisi baris [Nama Variasi | Harga Jual] + hapus. Tanpa variasi → pakai Harga Jual utama (perilaku lama, scan langsung masuk). Ada variasi → scan produk memunculkan popup pilih variasi. Harga tiap variasi bebas diedit, boleh beda dari harga utama. Harga Jual utama TIDAK dihapus saat ada variasi. Grosir & mode Variasi TIDAK diubah.
+- `produk-form.tsx`: helper `addVarRow()` + `renderVarRows()` (dipakai bersama Biasa & Variasi). Blok baru mode Biasa menampilkan section "Variasi" + rows. Label field harga utama = "Harga Induk" HANYA di mode Variasi (else "Harga Jual"). Save: `variations` disimpan untuk biasa & variasi (grosir → []); validasi nama variasi hanya untuk biasa/variasi. `barcodes` tetap hanya di mode Variasi. Simpan `price_type` ("biasa"|"grosir"|"variasi") agar form buka di mode yang benar (Product.price_type baru di types.ts + createProduct di localdb; updateProduct via spread; fallback inferensi bila undefined utk data lama).
+- Scan biasa-dengan-variasi memakai jalur yang SAMA (index.tsx submitBarcode → familyOptions → popup bila root.variations.length>0), jadi tak ada perubahan logika transaksi.
+- DIVERIFIKASI (screenshot e2e, satu sesi): buat "SoklinB" mode Biasa, Harga Jual utama 3000, +2 variasi (1 pcs 1000, 1 renteng 5000) → simpan ("Produk ditambahkan") → ke Transaksi → scan B222 → popup "Pilih Variasi SoklinB" MUNCUL. UI section Variasi mode Biasa tampil benar. Lint clean. Frontend-only → user REDEPLOY (Publish). Scanner HW hanya di build APK.
+
+
+
 ## Session Log (fork) — MULTI-BARCODE: banyak barcode → 1 produk → 1 daftar variasi
 - Permintaan user: mode Variasi kini punya bagian TERPISAH "Variasi / Barcode" di bawah "Daftar Harga Variasi". Bagian ini HANYA berisi kolom Barcode (tanpa nama/harga) + tombol "Tambah Barcode". Banyak barcode berbeda → semua membuka DAFTAR VARIASI YANG SAMA (bukan 1 barcode = 1 variasi). Teks hint lama "Cukup 1 barcode…" dihapus/diganti.
 - `types.ts`: Product tambah `barcodes?: string[]` (barcode tambahan).

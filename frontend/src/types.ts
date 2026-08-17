@@ -25,6 +25,7 @@ export type Product = {
   tiers: Tier[];
   inherit_tiers?: boolean;
   variations: Variation[];
+  price_type?: "biasa" | "grosir" | "variasi"; // mode harga tersimpan (agar form buka di mode yang benar)
   created_at?: string;
   updated_at?: string;
 };
