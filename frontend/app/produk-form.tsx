@@ -48,7 +48,7 @@ export default function ProdukFormScreen() {
   );
   const [saving, setSaving] = useState(false);
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
-  const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi">(
+  const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi" | "ikut">(
     editing
       ? (editing.price_type
           ?? ((editing.variations?.length || hasChildNow) ? "variasi" : (editing.tiers?.length ? "grosir" : "biasa")))
@@ -72,7 +72,7 @@ export default function ProdukFormScreen() {
       category: category.trim(),
       unit,
       barcode: barcode.trim() || null,
-      barcodes: (priceType === "variasi" || priceType === "grosir")
+      barcodes: (priceType === "variasi" || priceType === "grosir" || priceType === "ikut")
         ? Array.from(new Set(extraBarcodes.map((b) => b.trim()).filter(Boolean)))
         : [],
       buy_price: num(buyPrice),
@@ -248,11 +248,11 @@ export default function ProdukFormScreen() {
         <Field label="Barcode" value={barcode ?? ""} onChange={setBarcode} placeholder="Scan / ketik barcode" keyboardType="default" testID="form-barcode" />
 
         <Text style={styles.label}>Jenis Harga</Text>
-        <View style={styles.unitRow}>
-          {(["biasa", "grosir", "variasi"] as const).map((v) => (
+        <View style={[styles.unitRow, { flexWrap: "wrap", rowGap: spacing.sm }]}>
+          {(["biasa", "grosir", "variasi", "ikut"] as const).map((v) => (
             <Pressable key={v} onPress={() => setPriceType(v)} style={[styles.unitChip, priceType === v && styles.unitChipActive]} testID={`form-pricetype-${v}`}>
               <Text style={[styles.unitTxt, priceType === v && styles.unitTxtActive]}>
-                {v === "biasa" ? "Biasa" : v === "grosir" ? "Grosir" : "Variasi"}
+                {v === "biasa" ? "Biasa" : v === "grosir" ? "Grosir" : v === "variasi" ? "Variasi" : "Ikut Induk"}
               </Text>
             </Pressable>
           ))}
@@ -263,13 +263,16 @@ export default function ProdukFormScreen() {
         {priceType === "variasi" && (
           <Text style={styles.hint}>Tiap variasi punya harga sendiri; muncul popup pilih saat transaksi & tampil semua di Cek Harga.</Text>
         )}
+        {priceType === "ikut" && (
+          <Text style={styles.hint}>Banyak barcode → 1 produk induk. Scan barcode mana pun → langsung masuk keranjang pakai Harga Jual Induk (tanpa popup). Ubah harga induk → semua barcode ikut.</Text>
+        )}
 
         <View style={styles.row2}>
           <View style={{ flex: 1 }}>
-            <Field label="Harga Beli" value={buyPrice} onChange={setBuyPrice} keyboardType="numeric" prefix="Rp" testID="form-buy" />
+            <Field label={priceType === "ikut" ? "Harga Beli Induk" : "Harga Beli"} value={buyPrice} onChange={setBuyPrice} keyboardType="numeric" prefix="Rp" testID="form-buy" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label={priceType === "variasi" && hasVar ? "Harga Induk" : "Harga Jual"} value={sellPrice} onChange={setSellPrice} keyboardType="numeric" prefix="Rp" testID="form-sell" />
+            <Field label={priceType === "ikut" ? "Harga Jual Induk" : (priceType === "variasi" && hasVar ? "Harga Induk" : "Harga Jual")} value={sellPrice} onChange={setSellPrice} keyboardType="numeric" prefix="Rp" testID="form-sell" />
           </View>
         </View>
 
@@ -358,6 +361,12 @@ export default function ProdukFormScreen() {
         {renderVarRows()}
         {renderBarcodeSection("Variasi / Barcode", "Semua barcode di atas membuka daftar harga variasi yang sama. Saat discan → muncul pilihan variasi.")}
         </>)}
+
+        {/* Mode IKUT INDUK: banyak barcode → 1 produk induk. Scan → langsung masuk
+            keranjang pakai Harga Jual Induk (tanpa popup, tanpa harga per-barcode). */}
+        {priceType === "ikut" && (
+          renderBarcodeSection("Variasi / Barcode", "Hanya daftar barcode produk induk (tanpa nama/harga). Scan barcode mana pun → LANGSUNG masuk keranjang pakai Harga Jual Induk. Ubah harga induk → semua barcode otomatis ikut.")
+        )}
       </KeyboardAwareScrollView>
 
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>

@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — JENIS HARGA KE-4: "IKUT INDUK" (banyak barcode → 1 harga induk flat, tanpa popup)
+- Permintaan user: tambah pilihan Jenis Harga ke-4 "Ikut Induk". Tampilkan Harga Beli Induk + Harga Jual Induk, lalu bagian "Variasi / Barcode" (HANYA barcode, tanpa nama/harga). Scan barcode mana pun → produk induk LANGSUNG masuk keranjang pakai Harga Jual Induk (tanpa popup, tanpa tier). Ubah harga induk → semua barcode ikut (harga tidak disimpan per-barcode). Biasa/Grosir/Variasi TIDAK diubah.
+- `produk-form.tsx`: priceType union tambah "ikut". Chip ke-4 "Ikut Induk" (testID form-pricetype-ikut); baris Jenis Harga diberi flexWrap+rowGap agar 4 chip rapi. Label field harga di mode ikut → "Harga Beli Induk"/"Harga Jual Induk". Blok mode ikut render `renderBarcodeSection("Variasi / Barcode", ...)` (reuse helper). Save: mode ikut → variations:[] (tak ada popup), tiers:[] (flat), barcodes[] disimpan; price_type="ikut". types.ts price_type union tambah "ikut".
+- Logika scan (tanpa ubah index.tsx/cart.tsx): produk ikut punya variations=[] & tiers=[] & children=[] → submitBarcode tambah LANGSUNG pakai sell_price (childEffective standalone). Banyak barcode map ke product.id sama (local.getByBarcode cocokkan barcodes[]) → key keranjang sama → qty naik, harga tetap flat sell_price. Harga tersimpan di produk → ubah sekali berlaku semua barcode.
+- DIVERIFIKASI (screenshot e2e satu sesi): buat "SoklinI" mode Ikut Induk, Harga Jual Induk 3000, barcode IA+IB. Form tampil benar (4 chip wrap, label "Harga …Induk", section barcode-only). Ke Transaksi, scan IA/IB/IA → SATU baris "SoklinI" qty 3, Rp 3.000 × 3 = Rp 9.000 (flat, tanpa tier), popup count = 0 (tidak muncul). Lint clean. Frontend-only → user REDEPLOY. Scanner HW hanya di build APK.
+
+
+
 ## Session Log (fork) — HARGA GROSIR + Banyak Barcode (scan LANGSUNG masuk, harga ikut tier, TANPA popup)
 - Permintaan user: mode "Grosir" tetap punya Daftar Harga Bertingkat (sumber harga). Di BAWAHnya tambah bagian "Variasi" yang HANYA berisi barcode (tanpa nama/harga). Banyak barcode → produk yang sama. Scan barcode mana pun → produk LANGSUNG masuk keranjang (TANPA popup), harga otomatis ikut tier berdasar total qty di keranjang. Harga Biasa & Variasi TIDAK diubah.
 - `produk-form.tsx`: ekstrak helper `renderBarcodeSection(title, hint)` (bagian barcode-only, dipakai bersama Grosir & Variasi). Mode Grosir kini render TierEditor + `renderBarcodeSection("Variasi", ...)`. Mode Variasi tetap pakai helper yang sama (title "Variasi / Barcode"). Save: `barcodes[]` disimpan untuk grosir & variasi (biasa → []). Grosir tetap `variations: []` → jadi TIDAK memicu popup.
