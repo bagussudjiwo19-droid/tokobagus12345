@@ -1,5 +1,15 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX konflik Scanner vs Produk Pintasan di Transaksi (prioritas scanner, anti dobel, fokus)
+- Keluhan user: input scanner barcode bentrok dgn tombol Produk Pintasan. Aturan: scanner prioritas tertinggi; Pintasan hanya aktif bila ditekan jari (tak boleh proses input scanner / tahan fokus); fokus balik ke scanner tiap habis scan; barcode tak ada → "Barcode tidak ditemukan." tetap fokus scanner, tanpa popup / tanpa substitusi Pintasan; 1 scan = 1 proses (anti dobel).
+- `app/(tabs)/index.tsx`:
+  - `submitBarcode`: tambah `processingRef` (lock re-entrant) + `lastScanRef` (dedup barcode SAMA <350ms → cegah dobel dari ENTER+newline scanner HID). Struktur try/finally: finally lepas lock + selalu `inputRef.focus()` (fokus balik ke scanner). Pesan not-found diubah → "Barcode tidak ditemukan." (dari "Barcode X belum terdaftar"). Cabang not-found TIDAK jatuh ke Pintasan / tidak buka popup.
+  - Chip Pintasan (quick-chip-<id>) & tombol gear (atur-pintasan-btn) diberi `focusable={false}` → ENTER dari scanner tak bisa memicu tombol Pintasan & tombol tak menahan fokus input; onPress sentuh tetap jalan. TIDAK mengubah tampilan/fitur Pintasan.
+- Alur per jenis harga saat scan (tak berubah): Biasa/Grosir/Ikut → langsung masuk; Variasi (barcode induk) → popup pilih; Variasi Barcode (matchedVar) → langsung "Induk — Variasi".
+- DIVERIFIKASI testing_agent iteration_16 (5/5 core PASS): 1 scan=1 baris & fokus balik; 10x scan sama → qty tepat 10 (tanpa dobel); barcode 'ZZZ' → toast "Barcode tidak ditemukan." tanpa popup/tanpa Pintasan, fokus balik; sekuens campur 25 scan+tap chip → qty tepat per produk, chip hanya tambah produknya sendiri (tak tercampur barcode terakhir); dobel ENTER <350ms → +1 saja. Path grosir-tier/variasi-popup/varbarcode (sudah terverifikasi di task sebelumnya; code review OK — tak diruntime ulang krn overlay Miko menutupi /produk-form saat otomasi). Lint hanya warning pre-existing. Frontend-only → user REDEPLOY. Uji scanner fisik hanya di build APK.
+
+
+
 ## Session Log (fork) — JENIS HARGA ke-5: "VARIASI BARCODE" (tiap variasi: Nama+Barcode+Harga; scan → langsung Induk—Variasi, tanpa popup)
 - Permintaan user: fitur variasi baru. 1 produk induk (mis. Aqua) → banyak Variasi Barcode, tiap variasi punya Nama + Barcode SENDIRI + Harga Jual sendiri. Scan barcode → sistem langsung tahu produk+variasi+harga → masuk keranjang sbg "Induk — Variasi" (mis. "Aqua — 600ml" Rp3.000) TANPA popup. Cek Harga: scan → tampil nama lengkap variasi + harga variasi itu saja (bukan semua). Edit variasi (nama/barcode/harga) tanpa buat induk baru. JANGAN ubah Biasa/Grosir/Variasi/Ikut Induk/scanner/transaksi/keranjang/Cek Harga lama/DB/sync.
 - Data model: pakai `Variation` yg SUDAH punya `barcode` + `sell_price`. price_type baru "varbarcode" (ditambah di types.ts). Variasi disimpan di `product.variations[]`, tiap punya barcode unik. `local.getByBarcode` SUDAH cocokkan `variations[].barcode` (branch ke-3) → tak perlu ubah.

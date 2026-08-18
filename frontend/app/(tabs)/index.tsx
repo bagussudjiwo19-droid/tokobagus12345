@@ -44,6 +44,10 @@ export default function TransaksiScreen() {
   const toast = useToast();
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
+  // Kunci proses ganda: 1 scan = 1 proses. Scanner HID kadang mengirim ENTER +
+  // newline (onSubmitEditing & onChangeText) untuk barcode yang sama → cegah dobel.
+  const processingRef = useRef(false);
+  const lastScanRef = useRef<{ code: string; at: number }>({ code: "", at: 0 });
   const refocusScanner = useCallback(() => {
     setTimeout(() => inputRef.current?.focus(), 60);
     setTimeout(() => inputRef.current?.focus(), 320);
@@ -142,6 +146,16 @@ export default function TransaksiScreen() {
       const c = code.trim();
       inputRef.current?.clear();
       if (!c) { inputRef.current?.focus(); return; }
+      // PRIORITAS SCANNER + anti proses-ganda: abaikan bila sedang memproses, atau
+      // barcode SAMA terulang <350ms (dobel ENTER/newline dari scanner HID).
+      const now = Date.now();
+      if (processingRef.current) { inputRef.current?.focus(); return; }
+      if (c === lastScanRef.current.code && now - lastScanRef.current.at < 350) {
+        inputRef.current?.focus();
+        return;
+      }
+      processingRef.current = true;
+      lastScanRef.current = { code: c, at: now };
       try {
         const product = await api.getByBarcode(c);
         // VARIASI BARCODE: bila barcode cocok dgn barcode SATU variasi tertentu,
@@ -152,14 +166,12 @@ export default function TransaksiScreen() {
           cart.addProduct(root, matchedVar);
           Haptics.selectionAsync();
           toast.show(`${root.name} — ${matchedVar.name} ditambahkan`, "success");
-          setTimeout(() => inputRef.current?.focus(), 100);
           return;
         }
         // Bila produk punya keluarga (anak) atau variasi → SELALU munculkan popup pilih.
         if (children.length > 0 || (root.variations && root.variations.length > 0)) {
           setVariantFor(root);
           Haptics.selectionAsync();
-          setTimeout(() => inputRef.current?.focus(), 100);
           return;
         }
         // Standalone: tambah langsung (harga efektif bila anak yang ikut induk).
@@ -168,10 +180,14 @@ export default function TransaksiScreen() {
         Haptics.selectionAsync();
         toast.show(`${product.name} ditambahkan`, "success");
       } catch {
-        toast.show(`Barcode ${c} belum terdaftar`, "error");
+        // Barcode tidak ditemukan → JANGAN pakai produk Pintasan / buka popup lain.
+        toast.show("Barcode tidak ditemukan.", "error");
         mikoBus.emit({ type: "not_found" });
+      } finally {
+        processingRef.current = false;
+        // Selalu kembalikan fokus ke scanner agar scan berikutnya langsung terbaca.
+        setTimeout(() => inputRef.current?.focus(), 100);
       }
-      setTimeout(() => inputRef.current?.focus(), 100);
     },
     [cart, toast, products],
   );
@@ -235,13 +251,14 @@ export default function TransaksiScreen() {
                   onPress={() => onQuickTap(p)}
                   hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
                   testID={`quick-chip-${p.id}`}
+                  focusable={false}
                 >
                   <Text style={styles.chipTxt} numberOfLines={1}>{p.name}</Text>
                 </Pressable>
               ))}
             </View>
           </View>
-          <Pressable style={styles.gearBtn} onPress={() => router.push("/atur-pintasan")} hitSlop={8} testID="atur-pintasan-btn">
+          <Pressable style={styles.gearBtn} onPress={() => router.push("/atur-pintasan")} hitSlop={8} testID="atur-pintasan-btn" focusable={false}>
             <Ionicons name="settings-outline" size={20} color={colors.brand} />
           </Pressable>
         </View>
