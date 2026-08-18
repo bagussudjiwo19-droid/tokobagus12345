@@ -101,7 +101,7 @@ const NOT_FOUND: string[] = [
   "Miko belum berhasil menemukan produk ini. Jangan khawatir, coba tanya Vita atau Sasa ya.",
 ];
 
-type ScanResult = { name: string; price: number; unit: string; tiers: Tier[] };
+type ScanResult = { name: string; price: number; unit: string; tiers: Tier[]; variations?: { name: string; price: number }[] };
 
 // Petakan intent jawaban Miko (offline sales) → state animasi rig 2.5D.
 function salesToState(intent: string): MikoState {
@@ -342,16 +342,47 @@ export default function CekHargaScreen() {
     showResult({ ...child, sell_price: eff.sell_price, tiers: eff.tiers }, null);
   };
 
+  // CEK HARGA: tampilkan SEMUA harga variasi sekaligus (tanpa memilih). Untuk
+  // produk ber-variasi (nested variations dan/atau produk anak). Berbeda dgn
+  // Transaksi yang tetap memunculkan popup pilih variasi.
+  const showResultAll = useCallback((root: Product) => {
+    clearTimers();
+    const children = products.filter((p) => p.parent_id === root.id);
+    const list: { name: string; price: number }[] = [];
+    (root.variations || []).forEach((v) => {
+      list.push({ name: v.name, price: v.inherit_tiers ? root.sell_price : v.sell_price });
+    });
+    children.forEach((c) => {
+      const eff = childEffective(c, root);
+      list.push({ name: c.name, price: eff.sell_price });
+    });
+    setResult({ name: root.name, price: root.sell_price, unit: root.unit || "pcs", tiers: [], variations: list });
+    Haptics.selectionAsync();
+    mikoBus.emit({ type: "price_found" });
+    // Bacakan semua variasi (TTS) — hanya terdengar di HP/APK build.
+    setTimeout(() => {
+      const readOn = settings?.readPrice !== false;
+      if (readOn) {
+        const parts = [`${root.name}.`, ...list.map((it) => `${it.name.replace(/—/g, " ")}, ${terbilang(it.price).trim()} rupiah.`)];
+        speakCalm(parts.join(" "));
+      }
+    }, 120);
+    setCountdown(RESET_MS / 1000);
+    tickTimer.current = setInterval(() => setCountdown((n) => (n > 1 ? n - 1 : 0)), 1000);
+    resetTimer.current = setTimeout(() => backToScan(), RESET_MS);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, [products, settings, backToScan]);
+
   // Tampilkan varian bila LEBIH DARI SATU; 1 varian → langsung hasil; tanpa varian → langsung hasil.
   const pickProduct = (p: Product) => {
     const { root, children } = familyOptions(p, products);
     const vars = root.variations || [];
     const optCount = children.length + vars.length;
     if (optCount > 1) {
+      // Cek Harga = lihat semua harga sekaligus (tidak memilih variasi).
       setSearchResults(null);
-      setVarProduct(root);
-      armSelTimer();
-      setTimeout(() => inputRef.current?.focus(), 60);
+      setVarProduct(null);
+      showResultAll(root);
     } else if (children.length === 1) {
       setSearchResults(null);
       setVarProduct(null);
@@ -518,9 +549,8 @@ export default function CekHargaScreen() {
       const { root, children } = familyOptions(product, products);
       const vars = root.variations || [];
       if (children.length + vars.length > 1) {
-        setVarProduct(root);
-        armSelTimer();
-        setTimeout(() => inputRef.current?.focus(), 60);
+        // CEK HARGA: langsung tampil SEMUA harga variasi (tanpa layar pilih).
+        showResultAll(root);
       } else if (children.length === 1) {
         showResultChild(children[0], root);
       } else if (vars.length === 1) {
@@ -541,7 +571,7 @@ export default function CekHargaScreen() {
       // Stay in scan mode, ready for the next barcode.
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [showResult, toast]);
+  }, [showResult, showResultAll, toast, products]);
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(handleScan, { isScanMode: () => true });
 
@@ -588,6 +618,27 @@ export default function CekHargaScreen() {
             </View>
             <Text style={styles.resultName} numberOfLines={2}>{result.name}</Text>
 
+            {result.variations && result.variations.length > 0 ? (
+              /* CEK HARGA produk VARIASI: tampilkan SEMUA harga variasi sekaligus */
+              <View style={styles.grosirBox} testID="cekharga-variations">
+                <View style={styles.labelRow}>
+                  <View style={styles.dashRed} />
+                  <Text style={styles.grosirHead}>DAFTAR HARGA</Text>
+                  <View style={styles.dashRed} />
+                </View>
+                {result.variations.map((v, i) => (
+                  <View key={i} style={styles.grosirPill} testID={`cekharga-var-${i}`}>
+                    <View style={styles.grosirLeft}>
+                      <Text style={styles.grosirQty} numberOfLines={2}>{v.name}</Text>
+                    </View>
+                    <View style={styles.grosirRight}>
+                      <Text style={styles.grosirPrice}>{rupiah(v.price)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <>
             {/* HARGA ECER — kartu 3D merah */}
             <View style={styles.ecerPill}>
               <View style={styles.ecerChip}>
@@ -614,6 +665,8 @@ export default function CekHargaScreen() {
                   </View>
                 ))}
               </View>
+            )}
+              </>
             )}
 
             <View style={styles.countdownRow}>

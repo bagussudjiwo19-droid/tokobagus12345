@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — CEK HARGA produk VARIASI: scan → tampil SEMUA harga sekaligus (tanpa layar pilih)
+- Permintaan user: di menu Cek Harga, scan produk Harga Variasi TIDAK boleh menampilkan layar "Pilih ukuran/varian" & tidak minta pelanggan memilih. Setelah barcode ketemu → langsung tampilkan seluruh daftar harga variasi sekaligus (mis. PLASTIK: 1 biji 6.000 / 1 renteng 5.000 / 2 renteng 7.000). Auto kembali ke scanner setelah beberapa detik (mekanisme lama). PENTING: HANYA Cek Harga; alur Transaksi (scan → popup pilih variasi → keranjang) TIDAK diubah.
+- `app/(tabs)/cek-harga.tsx`: ScanResult tambah `variations?: {name, price}[]`. Fungsi baru `showResultAll(root)` kumpulkan semua nested variations (harga inherit→sell_price induk) + produk anak (childEffective) → set result.variations; TTS bacakan semua; countdown + auto backToScan RESET_MS. `handleScan`: cabang `children+vars > 1` kini panggil `showResultAll(root)` (bukan setVarProduct). `pickProduct` (hasil pencarian ketik): cabang optCount>1 juga panggil `showResultAll`. Semua `setVarProduct` kini null → layar "Pilih ukuran/varian" tidak pernah muncul di Cek Harga (kode render varProduct jadi dead code, dibiarkan). Kartu hasil: bila `result.variations` ada → render blok "DAFTAR HARGA" (list nama — harga, style grosirPill) menggantikan ecer pill; else tetap ecer + grosir seperti biasa.
+- Transaksi (index.tsx) TIDAK disentuh → popup pilih variasi tetap ada untuk kasir.
+- DIVERIFIKASI (screenshot e2e): buat "PLASTIK" (barcode PLK1, 3 variasi 6.000/5.000/7.000) → set PIN kios → scan PLK1 di Cek Harga → tampil "DAFTAR HARGA": 1 biji Rp6.000, 1 renteng Rp5.000, 2 renteng Rp7.000 sekaligus + "Kembali otomatis 15s", picker count = 0 (tak ada layar pilih). Lint clean (hanya warning pre-existing). Frontend-only → user REDEPLOY.
+
+
+
 ## Session Log (fork) — TAMBAH ITEM: pilih "Transaksi Saat Ini" (sementara) vs "Simpan Permanen"
 - Permintaan user: tombol "Tambah Item" di Transaksi kini buka layar Tambah Produk dgn 2 pilihan simpan. (1) "Transaksi Saat Ini": hanya Nama Barang + Harga Jual → langsung masuk keranjang sbg item sementara (TIDAK masuk DB Produk, tidak muncul di menu Produk, tidak jadi produk permanen saat transaksi selesai/batal). (2) "Simpan Permanen": form Tambah Produk lengkap seperti biasa → tersimpan ke DB Produk.
 - `app/(tabs)/index.tsx`: kedua tombol "Tambah Item" (empty state & list state, testID item-manual-button) rute diganti `/item-manual` → `/produk-form?fromCart=1`. (item-manual.tsx dibiarkan sbg route yatim, tak dipakai.)
