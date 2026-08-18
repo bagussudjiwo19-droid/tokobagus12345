@@ -59,7 +59,7 @@ export default function ProdukFormScreen() {
   const barcodeRefs = useRef<(TextInput | null)[]>([]);
   const [saving, setSaving] = useState(false);
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
-  const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi" | "ikut">(
+  const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi" | "ikut" | "varbarcode">(
     editing
       ? (editing.price_type
           ?? ((editing.variations?.length || hasChildNow) ? "variasi" : (editing.tiers?.length ? "grosir" : "biasa")))
@@ -97,6 +97,25 @@ export default function ProdukFormScreen() {
       toast.show("Nama variasi tidak boleh kosong", "error");
       return;
     }
+    if (priceType === "varbarcode") {
+      if (variations.length === 0) {
+        toast.show("Tambahkan minimal 1 variasi barcode", "error");
+        return;
+      }
+      if (variations.some((v) => !v.name.trim())) {
+        toast.show("Nama variasi tidak boleh kosong", "error");
+        return;
+      }
+      if (variations.some((v) => !(v.barcode || "").trim())) {
+        toast.show("Barcode setiap variasi wajib diisi", "error");
+        return;
+      }
+      const codes = variations.map((v) => (v.barcode || "").trim());
+      if (new Set(codes).size !== codes.length) {
+        toast.show("Barcode sudah digunakan", "error");
+        return;
+      }
+    }
     setSaving(true);
     const payload: Partial<Product> = {
       name: name.trim(),
@@ -110,9 +129,10 @@ export default function ProdukFormScreen() {
       sell_price: num(sellPrice),
       stock: num(stock),
       tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
-      variations: (priceType === "variasi" || priceType === "biasa")
+      variations: (priceType === "variasi" || priceType === "biasa" || priceType === "varbarcode")
         ? variations.map((v) => ({
             ...v,
+            barcode: priceType === "varbarcode" ? ((v.barcode || "").trim() || null) : null,
             buy_price: Number(v.buy_price) || 0,
             sell_price: Number(v.sell_price) || 0,
             stock: Number(v.stock) || 999,
@@ -180,6 +200,31 @@ export default function ProdukFormScreen() {
         </Pressable>
       </View>
     ));
+
+  // Kartu VARIASI BARCODE: Nama Variasi + Barcode + Harga Jual (tiap variasi punya
+  // barcode & harga sendiri). Scan barcode → langsung "Induk — Variasi" ke keranjang.
+  const renderVarBarcodeCards = () =>
+    variations.map((v, idx) => (
+      <View key={v.id} style={styles.vbCard} testID={`form-vb-card-${idx}`}>
+        <View style={styles.vbCardHead}>
+          <Text style={styles.vbCardTitle}>Variasi {idx + 1}</Text>
+          <Pressable onPress={() => setVariations((arr) => arr.filter((x) => x.id !== v.id))} testID={`form-vb-remove-${idx}`} hitSlop={6}>
+            <Ionicons name="trash-outline" size={18} color={colors.error} />
+          </Pressable>
+        </View>
+        <Field label="Nama Variasi" value={v.name} onChange={(t) => updateVar(setVariations, v.id, { name: t })} placeholder="mis. 600ml" testID={`form-vb-name-${idx}`} />
+        <Field label="Barcode" value={v.barcode ?? ""} onChange={(t) => updateVar(setVariations, v.id, { barcode: t })} placeholder="Scan / masukkan barcode" keyboardType="default" testID={`form-vb-barcode-${idx}`} />
+        <Field label="Harga Jual" value={String(v.sell_price || "")} onChange={(t) => updateVar(setVariations, v.id, { sell_price: Number(t.replace(/[^\d]/g, "")) || 0 })} keyboardType="numeric" prefix="Rp" testID={`form-vb-sell-${idx}`} />
+      </View>
+    ));
+
+  // Tambah 1 variasi barcode (nama + barcode + harga).
+  const addVarBarcode = () =>
+    setVariations((v) => [
+      ...v,
+      { id: newId(), name: "", barcode: "", buy_price: 0, sell_price: 0, stock: 999, tiers: [], inherit_tiers: false },
+    ]);
+
 
   // Scan barcode berurutan: Enter dari scanner = selesai 1 barcode → validasi
   // duplikat → auto-focus kolom berikutnya. Bila duplikat: peringatan & tetap di
@@ -329,14 +374,16 @@ export default function ProdukFormScreen() {
           ))}
         </View>
 
-        <Field label="Barcode" value={barcode ?? ""} onChange={setBarcode} placeholder="Scan / ketik barcode" keyboardType="default" testID="form-barcode" />
+        {priceType !== "varbarcode" && (
+          <Field label="Barcode" value={barcode ?? ""} onChange={setBarcode} placeholder="Scan / ketik barcode" keyboardType="default" testID="form-barcode" />
+        )}
 
         <Text style={styles.label}>Jenis Harga</Text>
         <View style={[styles.unitRow, { flexWrap: "wrap", rowGap: spacing.sm }]}>
-          {(["biasa", "grosir", "variasi", "ikut"] as const).map((v) => (
+          {(["biasa", "grosir", "variasi", "ikut", "varbarcode"] as const).map((v) => (
             <Pressable key={v} onPress={() => setPriceType(v)} style={[styles.unitChip, priceType === v && styles.unitChipActive]} testID={`form-pricetype-${v}`}>
               <Text style={[styles.unitTxt, priceType === v && styles.unitTxtActive]}>
-                {v === "biasa" ? "Biasa" : v === "grosir" ? "Grosir" : v === "variasi" ? "Variasi" : "Ikut Induk"}
+                {v === "biasa" ? "Biasa" : v === "grosir" ? "Grosir" : v === "variasi" ? "Variasi" : v === "ikut" ? "Ikut Induk" : "Variasi Barcode"}
               </Text>
             </Pressable>
           ))}
@@ -349,6 +396,9 @@ export default function ProdukFormScreen() {
         )}
         {priceType === "ikut" && (
           <Text style={styles.hint}>Banyak barcode → 1 produk induk. Scan barcode mana pun → langsung masuk keranjang pakai Harga Jual Induk (tanpa popup). Ubah harga induk → semua barcode ikut.</Text>
+        )}
+        {priceType === "varbarcode" && (
+          <Text style={styles.hint}>Tiap variasi punya barcode & harga sendiri. Scan barcode → langsung masuk keranjang sebagai &quot;Induk — Variasi&quot; (tanpa popup).</Text>
         )}
 
         <View style={styles.row2}>
@@ -451,6 +501,22 @@ export default function ProdukFormScreen() {
         {priceType === "ikut" && (
           renderBarcodeSection("Variasi / Barcode", "Hanya daftar barcode produk induk (tanpa nama/harga). Scan barcode mana pun → LANGSUNG masuk keranjang pakai Harga Jual Induk. Ubah harga induk → semua barcode otomatis ikut.")
         )}
+
+        {/* Mode VARIASI BARCODE: tiap variasi = Nama + Barcode + Harga sendiri. Scan
+            barcode → langsung "Induk — Variasi" ke keranjang (tanpa popup). */}
+        {priceType === "varbarcode" && (<>
+          <View style={[styles.sectionHead, { marginTop: spacing.lg }]}>
+            <Text style={styles.sectionTitle}>Variasi Barcode</Text>
+            <Pressable testID="form-add-vb" onPress={addVarBarcode} style={styles.addSmall}>
+              <Ionicons name="add" size={18} color={colors.brand} />
+              <Text style={styles.addSmallTxt}>Tambah Variasi Barcode</Text>
+            </Pressable>
+          </View>
+          {variations.length === 0 && (
+            <Text style={styles.childHint}>Ketuk &quot;Tambah Variasi Barcode&quot; untuk membuat variasi (mis. 600ml → barcode → Rp3.000).</Text>
+          )}
+          {renderVarBarcodeCards()}
+        </>)}
         </>)}
       </KeyboardAwareScrollView>
 
@@ -584,6 +650,9 @@ const styles = StyleSheet.create({
   childSection: { marginBottom: spacing.md },
   childHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2, marginBottom: spacing.sm },
   childCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
+  vbCard: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },
+  vbCardHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
+  vbCardTitle: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   childDel: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary },
   childName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   childMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },

@@ -548,7 +548,11 @@ export default function CekHargaScreen() {
       // Keluarga: bila punya anak / variasi → tampilkan SEMUA pilihan di dinding.
       const { root, children } = familyOptions(product, products);
       const vars = root.variations || [];
-      if (children.length + vars.length > 1) {
+      // VARIASI BARCODE: barcode menentukan satu variasi → tampil nama+harga variasi itu saja.
+      const matchedVar = vars.find((v) => v.barcode && v.barcode === c);
+      if (matchedVar) {
+        showResult(root, matchedVar);
+      } else if (children.length + vars.length > 1) {
         // CEK HARGA: langsung tampil SEMUA harga variasi (tanpa layar pilih).
         showResultAll(root);
       } else if (children.length === 1) {

@@ -144,8 +144,18 @@ export default function TransaksiScreen() {
       if (!c) { inputRef.current?.focus(); return; }
       try {
         const product = await api.getByBarcode(c);
-        // Bila produk punya keluarga (anak) atau variasi → SELALU munculkan popup pilih.
+        // VARIASI BARCODE: bila barcode cocok dgn barcode SATU variasi tertentu,
+        // langsung masuk keranjang "Induk — Variasi" (tanpa popup pilih).
         const { root, children } = familyOptions(product, products);
+        const matchedVar = (root.variations || []).find((v) => v.barcode && v.barcode === c);
+        if (matchedVar) {
+          cart.addProduct(root, matchedVar);
+          Haptics.selectionAsync();
+          toast.show(`${root.name} — ${matchedVar.name} ditambahkan`, "success");
+          setTimeout(() => inputRef.current?.focus(), 100);
+          return;
+        }
+        // Bila produk punya keluarga (anak) atau variasi → SELALU munculkan popup pilih.
         if (children.length > 0 || (root.variations && root.variations.length > 0)) {
           setVariantFor(root);
           Haptics.selectionAsync();
