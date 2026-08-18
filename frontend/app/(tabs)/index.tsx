@@ -67,6 +67,9 @@ export default function TransaksiScreen() {
   // Pintasan Produk: 10 slot (menyimpan ID produk) — ikut sinkron via Settings.
   const [slots, setSlots] = useState<(string | null)[]>([]);
   const [variantFor, setVariantFor] = useState<Product | null>(null);
+  // Remount kolom scan tiap selesai 1 scan → field DIJAMIN kosong (tidak bergantung
+  // pada inputRef.clear() yang kadang gagal di HP → barcode berikutnya tak tergabung).
+  const [scanKey, setScanKey] = useState(0);
   const loadSlots = useCallback(async () => {
     try { const s = await api.getSettings(); setSlots(Array.isArray(s.quickSlots) ? s.quickSlots : []); } catch { /* abaikan */ }
   }, []);
@@ -184,9 +187,10 @@ export default function TransaksiScreen() {
         toast.show("Barcode tidak ditemukan.", "error");
         mikoBus.emit({ type: "not_found" });
       } finally {
-        // Selalu bersihkan & kembalikan fokus ke scanner → siap scan berikutnya.
-        inputRef.current?.clear();
-        setTimeout(() => inputRef.current?.focus(), 60);
+        // Selalu remount kolom scan (field kosong dijamin) & fokus balik → siap scan
+        // berikutnya. Tidak bergantung pada clear() yang kadang gagal di perangkat.
+        setScanKey((k) => k + 1);
+        setTimeout(() => inputRef.current?.focus(), 70);
       }
     },
     [cart, toast, products],
@@ -269,9 +273,11 @@ export default function TransaksiScreen() {
             <Ionicons name="barcode-outline" size={18} color={colors.brand} />
           </View>
           <TextInput
+            key={scanKey}
             ref={inputRef}
             testID="scan-mode-input"
             defaultValue=""
+            autoFocus
             onChangeText={scan.onChangeText}
             onSubmitEditing={scan.onSubmitEditing}
             blurOnSubmit={false}
