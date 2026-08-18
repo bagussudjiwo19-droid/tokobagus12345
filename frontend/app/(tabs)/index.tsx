@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
   Modal,
   Platform,
   Pressable,
@@ -53,6 +54,22 @@ export default function TransaksiScreen() {
   // popup/tombol menutup agar view expo-key-event merebut fokus lagi.
   const [refocusSignal, setRefocusSignal] = useState(0);
   const [calcOpen, setCalcOpen] = useState(false);
+  // Notifikasi hasil scan LOKAL (menimpa kolom Scan Barcode sementara, ~2 dtk).
+  // Dipakai utk scan/pintasan/variasi. TIDAK menyentuh mekanisme scanner.
+  const [scanNotif, setScanNotif] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const notifAnim = useRef(new Animated.Value(0)).current;
+  const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showScanNotif = useCallback((text: string, type: "success" | "error") => {
+    if (notifTimer.current) clearTimeout(notifTimer.current);
+    setScanNotif({ text, type });
+    Animated.timing(notifAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    notifTimer.current = setTimeout(() => {
+      Animated.timing(notifAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) setScanNotif(null);
+      });
+    }, 2000);
+  }, [notifAnim]);
+  useEffect(() => () => { if (notifTimer.current) clearTimeout(notifTimer.current); }, []);
   const refocusScanner = useCallback(() => {
     if (Platform.OS === "web") {
       // Web: kolom TextInput tersembunyi yang menerima scan → fokuskan lagi.
@@ -109,7 +126,7 @@ export default function TransaksiScreen() {
     }
     cart.addProduct(p, null);
     Haptics.selectionAsync();
-    toast.show(`${p.name} ditambahkan`, "success");
+    showScanNotif(`${p.name} ditambahkan`, "success");
     refocusScanner();
   };
 
@@ -119,7 +136,7 @@ export default function TransaksiScreen() {
     cart.addProduct({ ...child, sell_price: eff.sell_price, tiers: eff.tiers }, null);
     setVariantFor(null);
     Haptics.selectionAsync();
-    toast.show(`${child.name} ditambahkan`, "success");
+    showScanNotif(`${child.name} ditambahkan`, "success");
     refocusScanner();
   };
 
@@ -127,7 +144,7 @@ export default function TransaksiScreen() {
     cart.addProduct(p, v);
     setVariantFor(null);
     Haptics.selectionAsync();
-    toast.show(`${p.name} — ${v.name} ditambahkan`, "success");
+    showScanNotif(`${p.name} — ${v.name} ditambahkan`, "success");
     refocusScanner();
   };
 
@@ -190,7 +207,7 @@ export default function TransaksiScreen() {
         if (matchedVar) {
           cart.addProduct(root, matchedVar);
           Haptics.selectionAsync();
-          toast.show(`${root.name} — ${matchedVar.name} ditambahkan`, "success");
+          showScanNotif(`${root.name} — ${matchedVar.name} ditambahkan`, "success");
           return;
         }
         // Bila produk punya keluarga (anak) atau variasi → SELALU munculkan popup pilih.
@@ -203,10 +220,10 @@ export default function TransaksiScreen() {
         const eff = childEffective(product, root);
         cart.addProduct({ ...product, sell_price: eff.sell_price, tiers: eff.tiers }, null);
         Haptics.selectionAsync();
-        toast.show(`${product.name} ditambahkan`, "success");
+        showScanNotif(`${product.name} ditambahkan`, "success");
       } catch {
         // Barcode tidak ditemukan → JANGAN pakai produk Pintasan / buka popup lain.
-        toast.show("Barcode tidak ditemukan.", "error");
+        showScanNotif("Barcode tidak ditemukan", "error");
         mikoBus.emit({ type: "not_found" });
       } finally {
         // Kosongkan kolom scan dgn andal → barcode berikutnya TIDAK tergabung.
@@ -218,7 +235,7 @@ export default function TransaksiScreen() {
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
-    [cart, toast, products],
+    [cart, products, showScanNotif],
   );
   // Penerimaan input scanner Bluetooth yang andal (buffer + ENTER/jeda, tanpa terpotong).
   const scan = useBarcodeScan(submitBarcode, { isScanMode: () => true });
@@ -293,29 +310,49 @@ export default function TransaksiScreen() {
         </View>
 
         {/* 1) Mode Scan Barcode aktif (scanner Bluetooth) — keyboard HP TIDAK pernah tampil */}
-        <View style={styles.scanModeBox}>
-          <View style={styles.scanIcon}>
-            <Ionicons name="barcode-outline" size={18} color={colors.brand} />
+        <View style={styles.scanArea}>
+          <View style={styles.scanModeBox}>
+            <View style={styles.scanIcon}>
+              <Ionicons name="barcode-outline" size={18} color={colors.brand} />
+            </View>
+            <TextInput
+              ref={inputRef}
+              testID="scan-mode-input"
+              defaultValue=""
+              autoFocus={Platform.OS === "web"}
+              editable={Platform.OS === "web"}
+              focusable={Platform.OS === "web"}
+              onChangeText={Platform.OS === "web" ? scan.onChangeText : undefined}
+              onSubmitEditing={Platform.OS === "web" ? scan.onSubmitEditing : undefined}
+              onBlur={Platform.OS === "web" ? keepScanFocused : undefined}
+              blurOnSubmit={false}
+              showSoftInputOnFocus={false}
+              caretHidden
+              placeholder="Scan barcode di sini…"
+              placeholderTextColor={colors.muted}
+              style={styles.scanModeInput}
+            />
+            <HardwareScanner enabled={screenActive} refocusSignal={refocusSignal} onScan={submitBarcode} />
+            <View style={styles.readyDot} />
           </View>
-          <TextInput
-            ref={inputRef}
-            testID="scan-mode-input"
-            defaultValue=""
-            autoFocus={Platform.OS === "web"}
-            editable={Platform.OS === "web"}
-            focusable={Platform.OS === "web"}
-            onChangeText={Platform.OS === "web" ? scan.onChangeText : undefined}
-            onSubmitEditing={Platform.OS === "web" ? scan.onSubmitEditing : undefined}
-            onBlur={Platform.OS === "web" ? keepScanFocused : undefined}
-            blurOnSubmit={false}
-            showSoftInputOnFocus={false}
-            caretHidden
-            placeholder="Scan barcode di sini…"
-            placeholderTextColor={colors.muted}
-            style={styles.scanModeInput}
-          />
-          <HardwareScanner enabled={screenActive} refocusSignal={refocusSignal} onScan={submitBarcode} />
-          <View style={styles.readyDot} />
+          {scanNotif && (
+            <Animated.View
+              pointerEvents="none"
+              testID="scan-notif"
+              style={[
+                styles.scanNotif,
+                scanNotif.type === "success" ? styles.scanNotifSuccess : styles.scanNotifError,
+                { opacity: notifAnim, transform: [{ translateY: notifAnim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }] },
+              ]}
+            >
+              <Ionicons
+                name={scanNotif.type === "success" ? "checkmark-circle" : "close-circle"}
+                size={20}
+                color={scanNotif.type === "success" ? colors.success : colors.error}
+              />
+              <Text style={styles.scanNotifTxt} numberOfLines={1}>{scanNotif.text}</Text>
+            </Animated.View>
+          )}
         </View>
 
         {/* Header daftar belanja */}
@@ -617,6 +654,11 @@ const styles = StyleSheet.create({
   hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.xs },
   pageTitle: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl, marginTop: 0 },
   scanModeBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, height: 44, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, paddingLeft: 5, paddingRight: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  scanArea: { position: "relative" },
+  scanNotif: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderRadius: radius.pill, borderWidth: 1.5, paddingHorizontal: spacing.md },
+  scanNotifSuccess: { backgroundColor: "#E6F6EC", borderColor: "#A7DDB5" },
+  scanNotifError: { backgroundColor: "#FDE7EA", borderColor: "#F5B5BE" },
+  scanNotifTxt: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   scanIcon: { width: 34, height: 34, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   scanModeInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   readyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.success },
