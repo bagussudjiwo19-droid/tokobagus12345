@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Kalkulator display: ekspresi MEMBUNGKUS multi-baris + kotak tumbuh KE ATAS (1b/2a/3a)
+- Pilihan user: (1b) ekspresi maks 3 baris lalu SCROLL; (2a) kotak display tumbuh KE ATAS (tombol/keypad tetap di tempat); (3a) hasil boleh mengecil bila panjang.
+- `components/CalculatorModal.tsx`: ekspresi kini `ScrollView` (ref exprScrollRef, maxHeight 92 ≈ 3 baris, showsVerticalScrollIndicator=false, contentContainer flexGrow+justify flex-end, onContentSizeChange→scrollToEnd) berisi `<Text style=exprLine>` yang MEMBUNGKUS (fontSize tetap 22, lineHeight 30, textAlign right; TANPA numberOfLines/adjustsFontSizeToFit → jadi wrap, bukan mengecil). exprSize dihapus (font ekspresi tetap nyaman). Hasil tetap `resultSize=fitFont(len,42,20,8,18)` + numberOfLines=1 + adjustsFontSizeToFit (boleh mengecil).
+- Styles: `displayBox` height TETAP → diganti `minHeight:100` + `justifyContent:"flex-end"` (tumbuh ke atas; hasil menempel bawah, ekspresi menumpuk di atasnya). Karena sheet berada di `backdrop justify flex-end` (anchored bawah), tinggi displayBox bertambah → sheet memanjang KE ATAS, keypad tetap di bawah. `exprScroll` maxHeight 92, `exprScrollContent` flexGrow+justify flex-end. `resultLine` height 54 tetap.
+- DIVERIFIKASI (screenshot e2e web): 7×2.500 → ekspresi membungkus 2 baris ("... + 2.500 + 2.500 + 2.500 / + 2.500 ..."), judul terdorong naik (kotak tumbuh ke atas), keypad tetap, hasil "17.500" besar. >3 baris → scroll ke isi terbaru. Lint bersih. Frontend-only. Getaran haptic tetap di onPressIn (hanya HP/APK).
+
+
+
 ## Session Log (fork) — Kalkulator: font display RESPONSIF (ekspresi + hasil mengecil bertahap, tinggi kotak tetap)
 - Permintaan user: hanya ukuran FONT ANGKA di display yang responsif (jangan kecilkan kalkulator/tombol/keypad). Hasil perhitungan mengecil bertahap saat sangat panjang (ada batas minimum agar terbaca), selalu muat penuh di kotak (tak terpotong/keluar layar). Rangkaian ekspresi (atas) JUGA mengecil bila panjang, TANPA mengubah tinggi kotak display. Plus konfirmasi getaran saat disentuh (sudah ada di onPressIn tiap tombol).
 - `components/CalculatorModal.tsx`: helper `fitFont(len,max,min,startLen,endLen)` → font penuh s/d startLen char lalu turun linear ke min di endLen. `exprSize=fitFont(len,24,13,16,40)`, `resultSize=fitFont(len,42,20,8,18)` dihitung dari `exprText=fmtExpr(expr)` & `resultText=displayResult()`. Ekspresi kini `<Text>` biasa (BUKAN ScrollView lagi) dgn fontSize dinamis + `numberOfLines=1` + `adjustsFontSizeToFit minimumFontScale=0.5`; hasil sama (minimumFontScale 0.45). Hapus ScrollView + exprScrollRef + import ScrollView.

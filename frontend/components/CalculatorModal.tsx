@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -85,6 +85,7 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
   const insets = useSafeAreaInsets();
   const [expr, setExpr] = useState("");
   const [lastOp, setLastOp] = useState("");
+  const exprScrollRef = useRef<ScrollView>(null);
 
   // Ambil token angka terakhir (setelah operator terakhir).
   const lastNum = (s: string) => {
@@ -207,8 +208,8 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
 
   const exprText = fmtExpr(expr);
   const resultText = displayResult();
-  // Font responsif: ekspresi (atas) & hasil (bawah) mengecil bertahap bila panjang.
-  const exprSize = fitFont(exprText.length, 24, 13, 16, 40);
+  // Ekspresi (atas): font tetap nyaman, MEMBUNGKUS ke bawah (maks 3 baris) lalu
+  // kotak tumbuh ke atas & scroll ke isi terbaru. Hasil (bawah): boleh mengecil.
   const resultSize = fitFont(resultText.length, 42, 20, 8, 18);
 
   return (
@@ -227,15 +228,15 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
           </View>
 
           <View style={styles.displayBox}>
-            <Text
-              style={[styles.exprLine, { fontSize: exprSize }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.5}
-              testID="calc-display"
+            <ScrollView
+              ref={exprScrollRef}
+              style={styles.exprScroll}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.exprScrollContent}
+              onContentSizeChange={() => exprScrollRef.current?.scrollToEnd({ animated: false })}
             >
-              {exprText}
-            </Text>
+              <Text style={styles.exprLine} testID="calc-display">{exprText}</Text>
+            </ScrollView>
             <Text
               style={[styles.resultLine, { fontSize: resultSize }]}
               numberOfLines={1}
@@ -297,8 +298,10 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   opIndicator: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, marginTop: 2, minHeight: 26 },
-  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, height: 112, justifyContent: "center", overflow: "hidden" },
-  exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, textAlign: "right", height: 30 },
+  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, minHeight: 100, justifyContent: "flex-end" },
+  exprScroll: { maxHeight: 92, width: "100%" },
+  exprScrollContent: { flexGrow: 1, justifyContent: "flex-end" },
+  exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: 22, lineHeight: 30, textAlign: "right" },
   resultLine: { color: colors.onSurface, fontFamily: font.bold, textAlign: "right", marginTop: 4, height: 54 },
   grid: { gap: spacing.sm },
   row: { flexDirection: "row", gap: spacing.sm },
