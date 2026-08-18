@@ -1,5 +1,15 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Notif "ditambahkan" KONSISTEN utk Cari Barang & Tambah Item (via scanNotifBus)
+- Keluhan lanjutan user: uji lewat "Cari Barang" → pilih barang → notif MASIH pakai toast lama (di atas, menutupi pintasan). Sebab: penambahan dari `cari.tsx` & tambah-item manual `produk-form.tsx` = HALAMAN BERBEDA, masih `toast.show` global (fix notif lokal sebelumnya hanya di index.tsx).
+- BARU `src/scanNotifBus.ts`: bus mini (emit/subscribe) tipe `{text,type}`.
+- `app/(tabs)/index.tsx`: subscribe scanNotifBus → panggil `showScanNotif(text,type)` (notif lokal di kolom scan). Jadi layar lain cukup emit; index menampilkannya saat Transaksi tampil.
+- `app/cari.tsx`: 4 `toast.show("…ditambahkan")` (pickProduct/pickChild/scanComplete-variasi/detail-variasi) → `scanNotifBus.emit(...)` + router.back(). Toast lain (hapus permanen/error) tetap.
+- `app/produk-form.tsx`: saveTemp (Tambah Item "transaksi ini") `toast.show` → `scanNotifBus.emit(...)`. Toast validasi/simpan produk lain tetap.
+- DIVERIFIKASI (screenshot e2e web): Cari Barang → pilih "6A cocopa" → kembali ke Transaksi → notif LOKAL "✓ 6A cocopa ditambahkan" (hijau lembut, di kolom scan, teks hitam), BUKAN toast atas. Lint bersih. Frontend-only.
+
+
+
 ## Session Log (fork) — Notifikasi hasil scan: LOKAL menimpa kolom Scan (bukan toast global di atas pintasan)
 - Keluhan user: notifikasi hasil scan (toast global) muncul di ATAS layar → menutupi tombol Pintasan. Mau: notif muncul TEPAT di area kolom Scan Barcode (boleh menutupi kolom scan sementara), TIDAK menyentuh/menggeser pintasan, bukan overlay besar, konsisten sukses/gagal, kartu membulat compact, lebar = kolom scan, animasi halus, auto-hilang ~2 dtk. Warna: sukses bg hijau lembut + ikon centang hijau; gagal bg merah lembut + ikon X merah; TEKS HITAM (bukan hijau/merah). JANGAN ubah scanner (fokus/hardware/event/baca/masuk keranjang).
 - Pilihan user: (1b) notif dipakai utk scan + tap pintasan + pilih variasi (semua "…ditambahkan") + gagal; teks hitam. (2b) durasi ~2 dtk. (3) setuju kolom scan tertutup sementara tak ganggu scan (scanner hardware tak bergantung fokus).

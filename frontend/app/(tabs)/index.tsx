@@ -20,6 +20,7 @@ import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
+import { scanNotifBus } from "@/src/scanNotifBus";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
@@ -70,6 +71,8 @@ export default function TransaksiScreen() {
     }, 2000);
   }, [notifAnim]);
   useEffect(() => () => { if (notifTimer.current) clearTimeout(notifTimer.current); }, []);
+  // Notif dari layar lain (Cari Barang / Tambah Item manual) → tampil di kolom scan.
+  useEffect(() => scanNotifBus.subscribe((n) => showScanNotif(n.text, n.type)), [showScanNotif]);
   const refocusScanner = useCallback(() => {
     if (Platform.OS === "web") {
       // Web: kolom TextInput tersembunyi yang menerima scan → fokuskan lagi.

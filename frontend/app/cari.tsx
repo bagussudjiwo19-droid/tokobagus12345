@@ -9,6 +9,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/
 import { useData } from "@/src/data";
 import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
+import { scanNotifBus } from "@/src/scanNotifBus";
 import { api } from "@/src/api";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
@@ -112,7 +113,7 @@ export default function CariScreen() {
     if (isPrice) { pickForPrice(p, null); return; }
     cart.addProduct(p);
     Haptics.selectionAsync();
-    toast.show(`${p.name} ditambahkan`, "success");
+    scanNotifBus.emit({ text: `${p.name} ditambahkan`, type: "success" });
     router.back(); // langsung kembali ke Transaksi
   };
 
@@ -124,7 +125,7 @@ export default function CariScreen() {
     if (isPrice) { pickForPrice(effChild, null); return; }
     cart.addProduct(effChild);
     Haptics.selectionAsync();
-    toast.show(`${child.name} ditambahkan`, "success");
+    scanNotifBus.emit({ text: `${child.name} ditambahkan`, type: "success" });
     router.back();
   };
 
@@ -143,7 +144,7 @@ export default function CariScreen() {
       else {
         cart.addProduct(parent, v);
         Haptics.selectionAsync();
-        toast.show(`${parent.name} — ${v.name} ditambahkan`, "success");
+        scanNotifBus.emit({ text: `${parent.name} — ${v.name} ditambahkan`, type: "success" });
         router.back();
       }
       return;
@@ -219,7 +220,7 @@ export default function CariScreen() {
                 if (isPrice) { pickForPrice(selected, v); return; }
                 cart.addProduct(selected, v);
                 Haptics.selectionAsync();
-                toast.show(`${selected.name} — ${v.name} ditambahkan`, "success");
+                scanNotifBus.emit({ text: `${selected.name} — ${v.name} ditambahkan`, type: "success" });
                 router.back();
               }}
             >

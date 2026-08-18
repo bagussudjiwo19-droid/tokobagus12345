@@ -9,6 +9,7 @@ import { useData } from "@/src/data";
 import { useCart } from "@/src/cart";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useToast } from "@/src/toast";
+import { scanNotifBus } from "@/src/scanNotifBus";
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
 import { rupiah } from "@/src/format";
@@ -84,7 +85,7 @@ export default function ProdukFormScreen() {
     const price = num(sellPrice);
     if (price <= 0) { toast.show("Harga jual harus lebih dari 0", "error"); return; }
     cart.addManual(name.trim(), price, 1);
-    toast.show(`${name.trim()} ditambahkan (transaksi ini)`, "success");
+    scanNotifBus.emit({ text: `${name.trim()} ditambahkan (transaksi ini)`, type: "success" });
     router.back();
   };
 
