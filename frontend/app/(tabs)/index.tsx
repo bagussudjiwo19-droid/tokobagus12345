@@ -22,6 +22,7 @@ import { useToast } from "@/src/toast";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
+import HardwareScanner from "@/components/HardwareScanner";
 import { familyOptions, childEffective } from "@/src/pricing";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -70,6 +71,7 @@ export default function TransaksiScreen() {
   // Jaga fokus kolom scan: bila fokus lepas (mis. setelah popup/aksi) sementara
   // masih di halaman Transaksi & tanpa popup → fokuskan lagi otomatis.
   const screenFocusedRef = useRef(false);
+  const [screenActive, setScreenActive] = useState(false);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
   const keepScanFocused = useCallback(() => {
@@ -131,8 +133,9 @@ export default function TransaksiScreen() {
     useCallback(() => {
       loadSlots();
       screenFocusedRef.current = true;
+      setScreenActive(true);
       const t = setTimeout(() => inputRef.current?.focus(), 350);
-      return () => { screenFocusedRef.current = false; clearTimeout(t); };
+      return () => { screenFocusedRef.current = false; setScreenActive(false); clearTimeout(t); };
     }, [loadSlots]),
   );
 
@@ -288,8 +291,8 @@ export default function TransaksiScreen() {
             testID="scan-mode-input"
             defaultValue=""
             autoFocus
-            onChangeText={scan.onChangeText}
-            onSubmitEditing={scan.onSubmitEditing}
+            onChangeText={Platform.OS === "web" ? scan.onChangeText : undefined}
+            onSubmitEditing={Platform.OS === "web" ? scan.onSubmitEditing : undefined}
             onBlur={keepScanFocused}
             blurOnSubmit={false}
             showSoftInputOnFocus={false}
@@ -298,6 +301,7 @@ export default function TransaksiScreen() {
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}
           />
+          <HardwareScanner enabled={screenActive} onScan={submitBarcode} />
           <View style={styles.readyDot} />
         </View>
 
