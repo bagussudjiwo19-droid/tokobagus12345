@@ -48,9 +48,18 @@ export default function TransaksiScreen() {
   // Anti proses-ganda: barcode SAMA dari dobel ENTER/newline scanner HID dalam
   // <350ms diabaikan. Barcode BERBEDA tidak pernah diblokir.
   const lastScanRef = useRef<{ code: string; at: number }>({ code: "", at: 0 });
+  // Sinyal minta-fokus-ulang utk penangkap HARDWARE (native). Dinaikkan tiap
+  // popup/tombol menutup agar view expo-key-event merebut fokus lagi.
+  const [refocusSignal, setRefocusSignal] = useState(0);
   const refocusScanner = useCallback(() => {
-    setTimeout(() => inputRef.current?.focus(), 60);
-    setTimeout(() => inputRef.current?.focus(), 320);
+    if (Platform.OS === "web") {
+      // Web: kolom TextInput tersembunyi yang menerima scan → fokuskan lagi.
+      setTimeout(() => inputRef.current?.focus(), 60);
+      setTimeout(() => inputRef.current?.focus(), 320);
+    } else {
+      // Native: minta view penangkap hardware merebut fokus lagi.
+      setRefocusSignal((n) => n + 1);
+    }
   }, []);
   const scrollRef = useRef<ScrollView>(null);
   const prevLen = useRef(0);
@@ -134,7 +143,7 @@ export default function TransaksiScreen() {
       loadSlots();
       screenFocusedRef.current = true;
       setScreenActive(true);
-      const t = setTimeout(() => inputRef.current?.focus(), 350);
+      const t = setTimeout(() => { if (Platform.OS === "web") inputRef.current?.focus(); }, 350);
       return () => { screenFocusedRef.current = false; setScreenActive(false); clearTimeout(t); };
     }, [loadSlots]),
   );
@@ -290,10 +299,12 @@ export default function TransaksiScreen() {
             ref={inputRef}
             testID="scan-mode-input"
             defaultValue=""
-            autoFocus
+            autoFocus={Platform.OS === "web"}
+            editable={Platform.OS === "web"}
+            focusable={Platform.OS === "web"}
             onChangeText={Platform.OS === "web" ? scan.onChangeText : undefined}
             onSubmitEditing={Platform.OS === "web" ? scan.onSubmitEditing : undefined}
-            onBlur={keepScanFocused}
+            onBlur={Platform.OS === "web" ? keepScanFocused : undefined}
             blurOnSubmit={false}
             showSoftInputOnFocus={false}
             caretHidden
@@ -301,7 +312,7 @@ export default function TransaksiScreen() {
             placeholderTextColor={colors.muted}
             style={styles.scanModeInput}
           />
-          <HardwareScanner enabled={screenActive} onScan={submitBarcode} />
+          <HardwareScanner enabled={screenActive} refocusSignal={refocusSignal} onScan={submitBarcode} />
           <View style={styles.readyDot} />
         </View>
 

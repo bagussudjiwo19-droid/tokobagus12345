@@ -4,6 +4,8 @@ import { useKeyEventListener } from "expo-key-event";
 type Props = {
   /** Aktif hanya saat layar Transaksi fokus (agar tak menangkap scan di layar lain). */
   enabled: boolean;
+  /** Naikkan nilai ini untuk MEMINTA fokus ulang ke view penangkap (setelah popup/tombol). */
+  refocusSignal?: number;
   /** Dipanggil dgn barcode lengkap saat scan selesai (Enter atau jeda). */
   onScan: (code: string) => void;
 };
@@ -17,14 +19,11 @@ type Props = {
  * native), lalu fallback ke pemetaan kode ini.
  */
 function keyToChar(uniKey: string | undefined, character: string | null | undefined): string | null {
-  // 1) Utamakan karakter asli dari native (sudah memperhitungkan shift/layout).
   if (character && character.length === 1) {
     const cc = character.charCodeAt(0);
-    // Abaikan karakter kontrol (Enter/Tab/dll) — ditangani terpisah.
-    if (cc >= 32) return character;
+    if (cc >= 32) return character; // abaikan karakter kontrol (Enter/Tab/dll)
   }
   if (!uniKey) return null;
-  // 2) Fallback: derivasi dari kode gaya-web.
   if (uniKey.length === 1) return uniKey; // sudah berupa karakter tunggal (mis. web)
   if (uniKey.startsWith("Digit")) return uniKey.slice(5); // Digit8 → "8"
   if (uniKey.startsWith("Numpad")) {
@@ -50,10 +49,12 @@ function isEnter(uniKey: string | undefined, character: string | null | undefine
 /**
  * Penerima scanner Bluetooth HID di level HARDWARE KEY EVENT (Android/iOS).
  *
- * Kenapa: scanner HID mengetik seperti keyboard. Pendekatan lama (TextInput
- * tersembunyi yang harus FOKUS) rapuh di HP — fokus bisa lepas → sebagian scan
- * hilang. Dengan menangkap key event global, scanner terbaca TANPA bergantung
- * pada fokus kolom sama sekali.
+ * Kenapa: scanner HID mengetik seperti keyboard. Native `ExpoKeyEventView` HANYA
+ * menerima tombol saat IA yang FOKUS. Karena itu di layar Transaksi kita TIDAK
+ * boleh memfokuskan TextInput (akan mencuri fokus → key event tak sampai). View
+ * ini di-`startListening` (yang otomatis requestFocus) saat layar aktif, dan
+ * di-`stopListening` saat tidak aktif. Setelah popup/tombol menutup, parent
+ * menaikkan `refocusSignal` → kita stop+start agar view merebut fokus lagi.
  *
  * Karakter di-buffer di ref (tanpa re-render). "Enter" = scan selesai → proses.
  * Fallback jeda 220ms utk scanner tanpa Enter. Karakter diambil dari
@@ -62,7 +63,7 @@ function isEnter(uniKey: string | undefined, character: string | null | undefine
  * Catatan: expo-key-event butuh build native (tidak jalan di Expo Go/web).
  * Versi web ada di HardwareScanner.web.tsx (no-op).
  */
-export default function HardwareScanner({ enabled, onScan }: Props) {
+export default function HardwareScanner({ enabled, refocusSignal = 0, onScan }: Props) {
   const bufRef = useRef("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enabledRef = useRef(enabled);
@@ -81,10 +82,11 @@ export default function HardwareScanner({ enabled, onScan }: Props) {
     if (code) onScanRef.current(code);
   };
 
-  useKeyEventListener(
+  // listenOnMount:false → view penangkap TIDAK ditambahkan sampai kita panggil
+  // startListening (mencegah view merebut fokus saat layar lain aktif).
+  const { startListening, stopListening } = useKeyEventListener(
     (event: { key?: string; character?: string | null; eventType?: string }) => {
       if (!enabledRef.current) return;
-      // Hanya proses saat tombol DITEKAN (abaikan release bila suatu saat aktif).
       if (event?.eventType && event.eventType !== "press") return;
       if (isEnter(event?.key, event?.character)) { flush(); return; }
       const ch = keyToChar(event?.key, event?.character);
@@ -94,14 +96,30 @@ export default function HardwareScanner({ enabled, onScan }: Props) {
         timerRef.current = setTimeout(flush, 220);
       }
     },
-    { listenOnMount: true },
+    { listenOnMount: false },
   );
 
-  // Bersihkan timer & buffer saat layar tidak aktif atau unmount.
+  // Aktif hanya saat layar Transaksi fokus → view penangkap dipasang & merebut fokus.
   useEffect(() => {
-    if (!enabled) { clearTimer(); bufRef.current = ""; }
-    return () => { clearTimer(); bufRef.current = ""; };
+    if (enabled) {
+      startListening();
+    } else {
+      stopListening();
+      clearTimer();
+      bufRef.current = "";
+    }
+    return () => { stopListening(); clearTimer(); bufRef.current = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
+
+  // Refokus setelah popup variasi / tombol Pintasan menutup (fokus bisa berpindah).
+  useEffect(() => {
+    if (!enabled || refocusSignal <= 0) return;
+    stopListening();
+    const t = setTimeout(() => { if (enabledRef.current) startListening(); }, 40);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refocusSignal]);
 
   return null;
 }
