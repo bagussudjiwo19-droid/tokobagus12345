@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -46,7 +45,6 @@ export default function CheckoutScreen() {
   const [printer, setPrinter] = useState<{ address?: string | null; name?: string | null }>({});
   const [tx, setTx] = useState<Transaction | null>(null);
   const [saving, setSaving] = useState(false);
-  const [calcOpen, setCalcOpen] = useState(false);
   const receiptRef = useRef<View>(null);
 
   useEffect(() => {
@@ -373,18 +371,7 @@ export default function CheckoutScreen() {
           <ActionBtn icon="share-social" label="Bagikan" onPress={shareReceipt} testID="receipt-share" />
           <ActionBtn icon="print" label="Cetak Struk" onPress={printReceipt} testID="receipt-print" />
         </View>
-        <View style={styles.calcRow}>
-          <Pressable
-            style={styles.calcBtn}
-            onPress={() => { Haptics.selectionAsync().catch(() => {}); setCalcOpen(true); }}
-            testID="receipt-calc"
-          >
-            <Ionicons name="calculator" size={22} color={colors.brand} />
-            <Text style={styles.actionTxt}>Kalkulator</Text>
-          </Pressable>
-        </View>
       </ScrollView>
-      <CalculatorModal visible={calcOpen} onClose={() => setCalcOpen(false)} />
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable testID="checkout-new-tx" onPress={closeAll} style={styles.primaryBtn}>
           <Ionicons name="add" size={20} color={colors.onBrandPrimary} />
@@ -409,221 +396,6 @@ function ActionBtn({ icon, label, onPress, testID }: { icon: any; label: string;
       <Ionicons name={icon} size={22} color={colors.brand} />
       <Text style={styles.actionTxt}>{label}</Text>
     </Pressable>
-  );
-}
-
-// Kalkulator sederhana (immediate-execution) yang tampil sebagai overlay
-// di atas halaman Transaksi Berhasil — tidak meninggalkan halaman.
-function CalculatorModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
-  const [expr, setExpr] = useState("");
-  const scrollRef = useRef<ScrollView>(null);
-
-  const tap = () => Haptics.selectionAsync().catch(() => {});
-  const OPS = "+-×÷";
-  const isOp = (c: string) => OPS.includes(c);
-
-  // Ambil token angka terakhir (setelah operator terakhir).
-  const lastNum = (s: string) => {
-    let i = s.length - 1;
-    while (i >= 0 && !isOp(s[i])) i--;
-    return s.slice(i + 1);
-  };
-
-  // Format satu angka gaya Indonesia: ribuan "." dan desimal ",".
-  const fmtNum = (numStr: string) => {
-    const neg = numStr.startsWith("-");
-    const body = neg ? numStr.slice(1) : numStr;
-    const [ip, dp] = body.split(".");
-    const intFmt = (ip === "" ? "0" : ip).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    const out = dp !== undefined ? `${intFmt},${dp}` : intFmt;
-    return (neg ? "-" : "") + out;
-  };
-
-  // Tampilkan ekspresi lengkap dgn angka terformat + operator apa adanya.
-  const fmtExpr = (s: string) => {
-    if (s === "" ) return "0";
-    if (s === "Error") return "Error";
-    const tokens = s.match(/(\d+\.?\d*|\.\d+|[+\-×÷])/g) || [];
-    return tokens.map((t) => (isOp(t) ? t : fmtNum(t))).join("");
-  };
-
-  // Hitung ekspresi (× ÷ lebih dulu, lalu + -). null jika tak valid.
-  const evalExpr = (s: string): number | null => {
-    if (!s || s === "Error") return null;
-    const tokens = (s.match(/(\d+\.?\d*|\.\d+|[+\-×÷])/g) || []).slice();
-    while (tokens.length && isOp(tokens[tokens.length - 1])) tokens.pop();
-    if (!tokens.length) return null;
-    const p1: (string | number)[] = [];
-    for (let i = 0; i < tokens.length; i++) {
-      const t = tokens[i];
-      if (t === "×" || t === "÷") {
-        const a = Number(p1.pop());
-        const b = Number(tokens[++i]);
-        if (isNaN(b)) return null;
-        p1.push(t === "×" ? a * b : (b === 0 ? NaN : a / b));
-      } else if (t === "+" || t === "-") {
-        p1.push(t);
-      } else {
-        p1.push(Number(t));
-      }
-    }
-    let result = Number(p1[0]);
-    for (let i = 1; i < p1.length; i += 2) {
-      const o = p1[i];
-      const v = Number(p1[i + 1]);
-      if (o === "+") result += v;
-      else if (o === "-") result -= v;
-    }
-    if (!isFinite(result)) return null;
-    return Math.round((result + Number.EPSILON) * 1e8) / 1e8;
-  };
-
-  const clearAll = () => { tap(); setExpr(""); };
-  const backspace = () => { tap(); setExpr((s) => (s === "Error" ? "" : s.slice(0, -1))); };
-  const inputDigit = (d: string) => {
-    tap();
-    setExpr((s) => {
-      if (s === "Error") return d;
-      return lastNum(s) === "0" ? s.slice(0, -1) + d : s + d;
-    });
-  };
-  const input00 = () => {
-    tap();
-    setExpr((s) => {
-      if (s === "Error" || s === "") return "0";
-      const ln = lastNum(s);
-      if (ln === "") return s + "0";
-      if (ln === "0") return s;
-      return s + "00";
-    });
-  };
-  const inputDot = () => {
-    tap();
-    setExpr((s) => {
-      if (s === "Error") return "0.";
-      const ln = lastNum(s);
-      if (ln === "") return s + "0.";
-      if (ln.includes(".")) return s;
-      return s + ".";
-    });
-  };
-  const setOperator = (op: string) => {
-    tap();
-    setExpr((s) => {
-      if (s === "Error") return "";
-      if (s === "") return op === "-" ? "-" : s; // izinkan mulai negatif
-      let base = s;
-      if (base.endsWith(".")) base = base.slice(0, -1);
-      if (isOp(base[base.length - 1])) return base.slice(0, -1) + op; // ganti operator
-      return base + op;
-    });
-  };
-  const percent = () => {
-    tap();
-    setExpr((s) => {
-      if (s === "Error" || s === "") return s;
-      const ln = lastNum(s);
-      if (ln === "" || isOp(ln)) return s;
-      const num = Number(ln) / 100;
-      return s.slice(0, s.length - ln.length) + String(num);
-    });
-  };
-  const equals = () => {
-    tap();
-    setExpr((s) => {
-      const hasOp = (s.match(/[+\-×÷]/g) || []).length > 0;
-      if (!hasOp) return s;
-      const r = evalExpr(s);
-      return r === null ? "Error" : String(r);
-    });
-  };
-
-  const liveResult = (() => {
-    const hasOp = (expr.match(/[+\-×÷]/g) || []).length > 0;
-    if (!hasOp || expr === "Error") return "";
-    const r = evalExpr(expr);
-    return r === null ? "" : `= ${fmtNum(String(r))}`;
-  })();
-
-  const Key = ({ label, onPress, kind = "num", testID }: { label: string; onPress: () => void; kind?: "num" | "op" | "fn" | "eq"; testID?: string }) => (
-    <Pressable
-      onPress={onPress}
-      testID={testID}
-      style={[
-        styles.calcKey,
-        kind === "op" && styles.calcKeyOp,
-        kind === "fn" && styles.calcKeyFn,
-        kind === "eq" && styles.calcKeyEq,
-      ]}
-    >
-      <Text style={[
-        styles.calcKeyTxt,
-        kind === "op" && styles.calcKeyTxtLight,
-        kind === "eq" && styles.calcKeyTxtEq,
-        kind === "fn" && styles.calcKeyTxtFn,
-      ]}>{label}</Text>
-    </Pressable>
-  );
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.calcBackdrop} onPress={onClose} testID="calc-backdrop">
-        <Pressable style={[styles.calcSheet, { paddingBottom: insets.bottom + spacing.md }]} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.calcHandle} />
-          <View style={styles.calcHeader}>
-            <Text style={styles.calcTitle}>Kalkulator</Text>
-            <Pressable onPress={onClose} hitSlop={10} testID="calc-close">
-              <Ionicons name="close" size={24} color={colors.onSurfaceSecondary} />
-            </Pressable>
-          </View>
-          <View style={styles.calcDisplayBox}>
-            <ScrollView
-              ref={scrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.calcScrollContent}
-              onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
-            >
-              <Text style={styles.calcDisplay} numberOfLines={1} testID="calc-display">{fmtExpr(expr)}</Text>
-            </ScrollView>
-            <Text style={styles.calcResult} numberOfLines={1} testID="calc-result">{liveResult}</Text>
-          </View>
-          <View style={styles.calcGrid}>
-            <View style={styles.calcRowKeys}>
-              <Key label="C" onPress={clearAll} kind="fn" testID="calc-clear" />
-              <Key label="⌫" onPress={backspace} kind="fn" testID="calc-back" />
-              <Key label="%" onPress={percent} kind="fn" testID="calc-percent" />
-              <Key label="÷" onPress={() => setOperator("÷")} kind="op" />
-            </View>
-            <View style={styles.calcRowKeys}>
-              <Key label="7" onPress={() => inputDigit("7")} />
-              <Key label="8" onPress={() => inputDigit("8")} />
-              <Key label="9" onPress={() => inputDigit("9")} />
-              <Key label="×" onPress={() => setOperator("×")} kind="op" />
-            </View>
-            <View style={styles.calcRowKeys}>
-              <Key label="4" onPress={() => inputDigit("4")} />
-              <Key label="5" onPress={() => inputDigit("5")} />
-              <Key label="6" onPress={() => inputDigit("6")} />
-              <Key label="-" onPress={() => setOperator("-")} kind="op" />
-            </View>
-            <View style={styles.calcRowKeys}>
-              <Key label="1" onPress={() => inputDigit("1")} />
-              <Key label="2" onPress={() => inputDigit("2")} />
-              <Key label="3" onPress={() => inputDigit("3")} />
-              <Key label="+" onPress={() => setOperator("+")} kind="op" />
-            </View>
-            <View style={styles.calcRowKeys}>
-              <Key label="0" onPress={() => inputDigit("0")} testID="calc-0" />
-              <Key label="00" onPress={input00} testID="calc-00" />
-              <Key label="." onPress={inputDot} />
-              <Key label="=" onPress={equals} kind="eq" testID="calc-equals" />
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
   );
 }
 
@@ -693,25 +465,4 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg, width: "100%", maxWidth: 320 },
   actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
   actionTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
-  calcRow: { width: "100%", maxWidth: 320, marginTop: spacing.md },
-  calcBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 48, borderRadius: radius.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.brandTertiary },
-  calcBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
-  calcSheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  calcHandle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.sm },
-  calcHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
-  calcTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
-  calcDisplayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 92, justifyContent: "center" },
-  calcScrollContent: { flexGrow: 1, justifyContent: "flex-end", alignItems: "center" },
-  calcResult: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xl, textAlign: "right", minHeight: 26 },
-  calcDisplay: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right" },
-  calcGrid: { gap: spacing.sm },
-  calcRowKeys: { flexDirection: "row", gap: spacing.sm },
-  calcKey: { flex: 1, height: 60, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
-  calcKeyOp: { backgroundColor: colors.brandTertiary, borderColor: colors.brandTertiary },
-  calcKeyFn: { backgroundColor: colors.surfaceTertiary, borderColor: colors.surfaceTertiary },
-  calcKeyEq: { backgroundColor: colors.brand, borderColor: colors.brand },
-  calcKeyTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: 24 },
-  calcKeyTxtLight: { color: colors.brand },
-  calcKeyTxtEq: { color: colors.onBrandPrimary },
-  calcKeyTxtFn: { color: colors.onSurfaceSecondary },
 });

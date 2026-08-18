@@ -23,6 +23,7 @@ import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import HardwareScanner from "@/components/HardwareScanner";
+import CalculatorModal from "@/components/CalculatorModal";
 import { familyOptions, childEffective } from "@/src/pricing";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -51,6 +52,7 @@ export default function TransaksiScreen() {
   // Sinyal minta-fokus-ulang utk penangkap HARDWARE (native). Dinaikkan tiap
   // popup/tombol menutup agar view expo-key-event merebut fokus lagi.
   const [refocusSignal, setRefocusSignal] = useState(0);
+  const [calcOpen, setCalcOpen] = useState(false);
   const refocusScanner = useCallback(() => {
     if (Platform.OS === "web") {
       // Web: kolom TextInput tersembunyi yang menerima scan → fokuskan lagi.
@@ -426,16 +428,27 @@ export default function TransaksiScreen() {
           <Text style={styles.payItems}>{cart.count} item</Text>
           <Text style={styles.payTotal}>{rupiah(cart.total)}</Text>
         </View>
-        <Pressable
-          testID="bayar-button"
-          disabled={cart.count === 0}
-          onPress={() => router.push("/checkout?step=pay")}
-          style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
-        >
-          <Ionicons name="wallet-outline" size={18} color={colors.onBrandPrimary} />
-          <Text style={styles.payBtnTxt}>Bayar</Text>
-        </Pressable>
+        <View style={styles.payRight}>
+          <Pressable
+            testID="transaksi-calc"
+            onPress={() => { Haptics.selectionAsync().catch(() => {}); setCalcOpen(true); }}
+            style={styles.payCalcBtn}
+          >
+            <Ionicons name="calculator-outline" size={22} color={colors.brand} />
+          </Pressable>
+          <Pressable
+            testID="bayar-button"
+            disabled={cart.count === 0}
+            onPress={() => router.push("/checkout?step=pay")}
+            style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
+          >
+            <Ionicons name="wallet-outline" size={18} color={colors.onBrandPrimary} />
+            <Text style={styles.payBtnTxt}>Bayar</Text>
+          </Pressable>
+        </View>
       </View>
+
+      <CalculatorModal visible={calcOpen} onClose={() => setCalcOpen(false)} />
 
       {/* Popup Pilih Variasi (anak + variasi nested induk) — tetap di halaman Transaksi */}
       <Modal visible={!!variantFor} transparent animationType="fade" onRequestClose={closeVariant}>
@@ -646,6 +659,8 @@ const styles = StyleSheet.create({
   payItems: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   payTotal: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.xl },
   payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: colors.brand, height: 46, borderRadius: radius.md, paddingHorizontal: 26 },
+  payRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  payCalcBtn: { width: 46, height: 46, borderRadius: radius.md, backgroundColor: colors.brandTertiary, borderWidth: 1, borderColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
   payBtnDisabled: { backgroundColor: "#F2B8C2" },
   payBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize.lg },
   sheetTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
