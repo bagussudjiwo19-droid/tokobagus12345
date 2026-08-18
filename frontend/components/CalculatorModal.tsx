@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -9,6 +9,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const OPS = "+-×÷";
 const isOp = (c: string) => OPS.includes(c);
 const prettyOp = (o: string) => (o === "-" ? "−" : o);
+
+/**
+ * Ukuran font responsif berdasar panjang teks: penuh sampai `startLen` karakter,
+ * lalu MENGECIL BERTAHAP hingga `min` saat mencapai `endLen`. Memberi batas
+ * minimum agar tetap terbaca; dipadukan dgn adjustsFontSizeToFit sbg pengaman.
+ */
+function fitFont(len: number, max: number, min: number, startLen: number, endLen: number) {
+  if (len <= startLen) return max;
+  if (len >= endLen) return min;
+  const t = (len - startLen) / (endLen - startLen);
+  return Math.round(max - t * (max - min));
+}
 
 /** Satu tombol kalkulator dengan animasi tekan (scale) + getaran pendek. */
 function CalcKey({
@@ -73,7 +85,6 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
   const insets = useSafeAreaInsets();
   const [expr, setExpr] = useState("");
   const [lastOp, setLastOp] = useState("");
-  const exprScrollRef = useRef<ScrollView>(null);
 
   // Ambil token angka terakhir (setelah operator terakhir).
   const lastNum = (s: string) => {
@@ -194,6 +205,12 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
     });
   };
 
+  const exprText = fmtExpr(expr);
+  const resultText = displayResult();
+  // Font responsif: ekspresi (atas) & hasil (bawah) mengecil bertahap bila panjang.
+  const exprSize = fitFont(exprText.length, 24, 13, 16, 40);
+  const resultSize = fitFont(resultText.length, 42, 20, 8, 18);
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} testID="calc-backdrop">
@@ -210,16 +227,24 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
           </View>
 
           <View style={styles.displayBox}>
-            <ScrollView
-              ref={exprScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.exprScroll}
-              onContentSizeChange={() => exprScrollRef.current?.scrollToEnd({ animated: false })}
+            <Text
+              style={[styles.exprLine, { fontSize: exprSize }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.5}
+              testID="calc-display"
             >
-              <Text style={styles.exprLine} numberOfLines={1} testID="calc-display">{fmtExpr(expr)}</Text>
-            </ScrollView>
-            <Text style={styles.resultLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} testID="calc-result">{displayResult()}</Text>
+              {exprText}
+            </Text>
+            <Text
+              style={[styles.resultLine, { fontSize: resultSize }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.45}
+              testID="calc-result"
+            >
+              {resultText}
+            </Text>
           </View>
 
           <View style={styles.grid}>
@@ -272,10 +297,9 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   opIndicator: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, marginTop: 2, minHeight: 26 },
-  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.md, marginBottom: spacing.md, minHeight: 96, justifyContent: "center" },
-  exprScroll: { flexGrow: 1, justifyContent: "flex-end", alignItems: "center" },
-  exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: 22, textAlign: "right" },
-  resultLine: { color: colors.onSurface, fontFamily: font.bold, fontSize: 40, textAlign: "right", marginTop: 4, minHeight: 48 },
+  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, height: 112, justifyContent: "center", overflow: "hidden" },
+  exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, textAlign: "right", height: 30 },
+  resultLine: { color: colors.onSurface, fontFamily: font.bold, textAlign: "right", marginTop: 4, height: 54 },
   grid: { gap: spacing.sm },
   row: { flexDirection: "row", gap: spacing.sm },
   bottomRow: { flexDirection: "row", gap: spacing.sm },
