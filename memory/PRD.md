@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX (v2) scanner: remount per-scan bikin FOKUS LEPAS di APK → ganti keep-focus
+- Gejala user (APK, sudah redeploy): scan-1 OK, scan-2 TIDAK terbaca (bukan "not found" — memang tak masuk); kolom scan TIDAK bisa disentuh; harus pindah halaman lalu balik baru bisa. Root cause: fix sebelumnya (remount `key={scanKey}` tiap scan + autoFocus) — di APK autoFocus TIDAK selalu re-fire saat remount → fokus lepas → scan berikutnya mengetik ke kosong. Remount screen (keluar-masuk) me-mount ulang kolom (autoFocus fresh) → sementara jalan lagi.
+- FIX `app/(tabs)/index.tsx`: HAPUS remount (state scanKey, prop key, setScanKey di finally). Kolom scan tetap MOUNTED → mesin fokus lama (useHideScanKeyboard + useFocusEffect + closeVariant) tetap menjaga fokus. TAMBAH keep-focus: `onBlur={keepScanFocused}` → bila fokus lepas sementara masih di layar Transaksi (`screenFocusedRef`) & tanpa popup (`variantForRef`) → fokuskan lagi (60ms). Kosongkan kolom di finally via `el?.clear?.()` + `el?.setNativeProps?.({text:''})` (setNativeProps lebih andal di Android; keduanya OPTIONAL → aman di web yg tak punya setNativeProps, tak lagi redbox). useFocusEffect set/unset screenFocusedRef. Hook useBarcodeScan TIDAK diubah (buffer sudah reset di finish; hindari risiko ke cek-harga).
+- DIVERIFIKASI (screenshot e2e web): 20 scan cepat siklus 5 barcode → 5 baris×4 = 20 item, Rp190.000, fokus tetap scan-mode-input, TANPA redbox/crash. Catatan: fokus-lepas adalah bug KHUSUS APK (di web fokus & clear andal) → validasi final WAJIB di build APK. Frontend-only → user **Publish → build APK baru → uji 20-30 scan tanpa pindah halaman**.
+- Jika di APK masih rewel: opsi terkuat = tangkap scanner via hardware key-event (react-native-keyevent, tanpa bergantung fokus) — perubahan lebih besar + wajib rebuild.
+
+
+
 ## Session Log (fork) — FIX ROOT: kolom scan tak terhapus di HP → barcode tergabung → "tidak ditemukan" sampai remount
 - Gejala user (PRODUKSI HP): scan-1 OK, scan berikutnya sering "tidak ditemukan" (barcode sama & acak); sekali gagal → GAGAL TERUS sampai keluar-masuk halaman Transaksi; barcode BISA ditemukan di Cek Harga.
 - Diagnosis (dikonfirmasi via kode): TextInput scan UNCONTROLLED (`defaultValue=""`), hook `useBarcodeScan` set `bufferRef = text` (SELURUH teks native), lalu bergantung pada `inputRef.current?.clear()` utk kosongkan field. Di sebagian HP, clear() pada uncontrolled input TIDAK andal (apalagi dgn showSoftInputOnFocus=false + input HID cepat) → field tak kosong → scan berikutnya = teks TERGABUNG (mis. "8991…8992…") → getByBarcode gabungan → tidak ada → gagal terus sampai komponen remount (keluar-masuk halaman = field fresh). Cek Harga jalan krn layar/inputnya beda.

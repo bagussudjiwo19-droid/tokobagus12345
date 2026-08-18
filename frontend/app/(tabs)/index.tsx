@@ -67,9 +67,16 @@ export default function TransaksiScreen() {
   // Pintasan Produk: 10 slot (menyimpan ID produk) — ikut sinkron via Settings.
   const [slots, setSlots] = useState<(string | null)[]>([]);
   const [variantFor, setVariantFor] = useState<Product | null>(null);
-  // Remount kolom scan tiap selesai 1 scan → field DIJAMIN kosong (tidak bergantung
-  // pada inputRef.clear() yang kadang gagal di HP → barcode berikutnya tak tergabung).
-  const [scanKey, setScanKey] = useState(0);
+  // Jaga fokus kolom scan: bila fokus lepas (mis. setelah popup/aksi) sementara
+  // masih di halaman Transaksi & tanpa popup → fokuskan lagi otomatis.
+  const screenFocusedRef = useRef(false);
+  const variantForRef = useRef<Product | null>(null);
+  variantForRef.current = variantFor;
+  const keepScanFocused = useCallback(() => {
+    setTimeout(() => {
+      if (screenFocusedRef.current && !variantForRef.current) inputRef.current?.focus();
+    }, 60);
+  }, []);
   const loadSlots = useCallback(async () => {
     try { const s = await api.getSettings(); setSlots(Array.isArray(s.quickSlots) ? s.quickSlots : []); } catch { /* abaikan */ }
   }, []);
@@ -123,8 +130,9 @@ export default function TransaksiScreen() {
   useFocusEffect(
     useCallback(() => {
       loadSlots();
+      screenFocusedRef.current = true;
       const t = setTimeout(() => inputRef.current?.focus(), 350);
-      return () => clearTimeout(t);
+      return () => { screenFocusedRef.current = false; clearTimeout(t); };
     }, [loadSlots]),
   );
 
@@ -187,10 +195,13 @@ export default function TransaksiScreen() {
         toast.show("Barcode tidak ditemukan.", "error");
         mikoBus.emit({ type: "not_found" });
       } finally {
-        // Selalu remount kolom scan (field kosong dijamin) & fokus balik → siap scan
-        // berikutnya. Tidak bergantung pada clear() yang kadang gagal di perangkat.
-        setScanKey((k) => k + 1);
-        setTimeout(() => inputRef.current?.focus(), 70);
+        // Kosongkan kolom scan dgn andal → barcode berikutnya TIDAK tergabung.
+        // setNativeProps (Android) lebih konsisten daripada clear() pada input
+        // uncontrolled; keduanya optional agar aman di web (RNW tanpa setNativeProps).
+        const el = inputRef.current as (TextInput & { setNativeProps?: (p: { text: string }) => void }) | null;
+        el?.clear?.();
+        el?.setNativeProps?.({ text: "" });
+        setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
     [cart, toast, products],
@@ -273,13 +284,13 @@ export default function TransaksiScreen() {
             <Ionicons name="barcode-outline" size={18} color={colors.brand} />
           </View>
           <TextInput
-            key={scanKey}
             ref={inputRef}
             testID="scan-mode-input"
             defaultValue=""
             autoFocus
             onChangeText={scan.onChangeText}
             onSubmitEditing={scan.onSubmitEditing}
+            onBlur={keepScanFocused}
             blurOnSubmit={false}
             showSoftInputOnFocus={false}
             caretHidden
