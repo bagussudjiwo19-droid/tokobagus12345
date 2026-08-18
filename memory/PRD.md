@@ -1,5 +1,14 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — SEMUA notifikasi seragam: restyle Toast GLOBAL jadi kartu lembut + suara di notif Transaksi
+- Keluhan user: notif di layar Produk/Riwayat/Pengaturan/checkout MASIH gaya lama (kartu putih + garis kiri hijau/merah). Mau SEMUA notif seragam dgn gaya notif scan. Pilihan: (1a) toast global tetap di ATAS; (2a) warna "info" = PINK lembut tema; (3a) notif tambah/scan Transaksi IKUT berbunyi.
+- `src/toast.tsx`: `palette` per type → success bg #E6F6EC border #A7DDB5 ikon hijau; error bg #FDE7EA border #F5B5BE ikon merah; info bg colors.surfaceTertiary border brandTertiary ikon brand (pink). Teks colors.onSurface (hitam) bold. Style `toast`: hapus borderLeftWidth garis kiri → full soft bg + borderWidth 1.5 + borderRadius radius.lg + padding compact (10/spacing.md). Posisi tetap di atas (insets.top). Berlaku OTOMATIS di semua layar yg pakai `toast.show`. Suara tik/tok (sfx.playOk/Fail) tetap.
+- `app/(tabs)/index.tsx`: `showScanNotif` kini `sfx.playOk()`/`sfx.playFail()` (import sfx) → notif lokal Transaksi (scan/pintasan/variasi/Cari Barang/Tambah Item) ikut berbunyi seperti toast lain (3a).
+- Notif lokal kolom scan Transaksi (hijau/merah lembut, teks hitam) tetap → tampilan IDENTIK dgn toast global → konsisten di seluruh app.
+- DIVERIFIKASI (screenshot e2e web): (a) Transaksi scan invalid → notif lokal merah lembut "✕ Barcode tidak ditemukan"; (b) Produk → cetak barcode (web) → toast GLOBAL gaya baru di atas: kartu lembut membulat, ikon info, teks hitam ("Fitur printer Bluetooth hanya tersedia di build"). Lint bersih. Frontend-only.
+
+
+
 ## Session Log (fork) — Notif "ditambahkan" KONSISTEN utk Cari Barang & Tambah Item (via scanNotifBus)
 - Keluhan lanjutan user: uji lewat "Cari Barang" → pilih barang → notif MASIH pakai toast lama (di atas, menutupi pintasan). Sebab: penambahan dari `cari.tsx` & tambah-item manual `produk-form.tsx` = HALAMAN BERBEDA, masih `toast.show` global (fix notif lokal sebelumnya hanya di index.tsx).
 - BARU `src/scanNotifBus.ts`: bus mini (emit/subscribe) tipe `{text,type}`.

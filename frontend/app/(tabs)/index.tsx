@@ -21,6 +21,7 @@ import { useCart } from "@/src/cart";
 import { useData } from "@/src/data";
 import { useToast } from "@/src/toast";
 import { scanNotifBus } from "@/src/scanNotifBus";
+import { sfx } from "@/src/sfx";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
@@ -61,6 +62,7 @@ export default function TransaksiScreen() {
   const notifAnim = useRef(new Animated.Value(0)).current;
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showScanNotif = useCallback((text: string, type: "success" | "error") => {
+    if (type === "success") sfx.playOk(); else sfx.playFail();
     if (notifTimer.current) clearTimeout(notifTimer.current);
     setScanNotif({ text, type });
     Animated.timing(notifAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();

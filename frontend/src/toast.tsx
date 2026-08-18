@@ -37,8 +37,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [opacity],
   );
 
-  const color =
-    type === "success" ? colors.success : type === "error" ? colors.error : colors.surfaceTertiary;
+  const palette =
+    type === "success"
+      ? { bg: "#E6F6EC", border: "#A7DDB5", icon: colors.success }
+      : type === "error"
+        ? { bg: "#FDE7EA", border: "#F5B5BE", icon: colors.error }
+        : { bg: colors.surfaceTertiary, border: colors.brandTertiary, icon: colors.brand };
   const icon =
     type === "success" ? "checkmark-circle" : type === "error" ? "close-circle" : "information-circle";
 
@@ -50,8 +54,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           pointerEvents="none"
           style={[styles.wrap, { top: insets.top + spacing.md, opacity }]}
         >
-          <View style={[styles.toast, { borderLeftColor: color }]} testID="app-toast">
-            <Ionicons name={icon as any} size={20} color={color} />
+          <View style={[styles.toast, { backgroundColor: palette.bg, borderColor: palette.border }]} testID="app-toast">
+            <Ionicons name={icon as any} size={20} color={palette.icon} />
             <Text style={styles.text} numberOfLines={3}>
               {msg}
             </Text>
@@ -74,15 +78,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 4,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
     maxWidth: 460,
     width: "100%",
   },
-  text: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  text: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
 });
