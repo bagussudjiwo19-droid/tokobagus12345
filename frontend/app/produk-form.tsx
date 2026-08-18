@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -55,6 +55,8 @@ export default function ProdukFormScreen() {
   const [extraBarcodes, setExtraBarcodes] = useState<string[]>(
     Array.isArray(editing?.barcodes) && editing!.barcodes!.length > 0 ? editing!.barcodes! : [""],
   );
+  // Ref tiap kolom barcode → agar bisa auto-focus & pindah otomatis saat scan.
+  const barcodeRefs = useRef<(TextInput | null)[]>([]);
   const [saving, setSaving] = useState(false);
   const hasChildNow = editing ? products.some((p) => p.parent_id === editing.id) : false;
   const [priceType, setPriceType] = useState<"biasa" | "grosir" | "variasi" | "ikut">(
@@ -65,6 +67,16 @@ export default function ProdukFormScreen() {
   );
 
   const num = (s: string) => Number((s || "0").replace(/[^\d.]/g, "")) || 0;
+
+  // Auto-focus kolom barcode PERTAMA saat masuk mode yang punya bagian barcode
+  // (Grosir/Variasi/Ikut Induk) → langsung siap scan berurutan tanpa klik.
+  useEffect(() => {
+    const showsBarcodes = priceType === "grosir" || priceType === "variasi" || priceType === "ikut";
+    if (showsBarcodes && !isTemp) {
+      const t = setTimeout(() => barcodeRefs.current[0]?.focus(), 350);
+      return () => clearTimeout(t);
+    }
+  }, [priceType, isTemp]);
 
   // Simpan item HANYA untuk transaksi berjalan (tidak masuk DB Produk).
   const saveTemp = () => {
@@ -169,6 +181,26 @@ export default function ProdukFormScreen() {
       </View>
     ));
 
+  // Scan barcode berurutan: Enter dari scanner = selesai 1 barcode → validasi
+  // duplikat → auto-focus kolom berikutnya. Bila duplikat: peringatan & tetap di
+  // kolom itu (dikosongkan) sampai barcode valid.
+  const onBarcodeSubmit = (idx: number) => {
+    const val = (extraBarcodes[idx] || "").trim();
+    if (!val) { barcodeRefs.current[idx]?.focus(); return; }
+    const dup = extraBarcodes.some((b, i) => i !== idx && b.trim() && b.trim() === val);
+    if (dup) {
+      toast.show("Barcode sudah digunakan", "error");
+      setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? "" : x)));
+      setTimeout(() => barcodeRefs.current[idx]?.focus(), 40);
+      return;
+    }
+    const next = idx + 1;
+    if (next < extraBarcodes.length) {
+      setTimeout(() => barcodeRefs.current[next]?.focus(), 40);
+    }
+    // Kolom terakhir → tetap di form (tidak pindah halaman).
+  };
+
   // Bagian "Variasi" berisi HANYA barcode (tanpa nama/harga). Dipakai di mode
   // Grosir (scan → langsung masuk, harga ikut tier) & Variasi (scan → popup pilih).
   const renderBarcodeSection = (title: string, hint: string) => (
@@ -183,14 +215,22 @@ export default function ProdukFormScreen() {
       {extraBarcodes.map((b, idx) => (
         <View key={idx} style={styles.varPriceRow} testID={`form-barcode-row-${idx}`}>
           <View style={{ flex: 1 }}>
-            <Field
-              label=""
-              value={b}
-              onChange={(t) => setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? t : x)))}
-              placeholder="Masukkan Barcode"
-              keyboardType="default"
-              testID={`form-barcode-input-${idx}`}
-            />
+            <View style={[styles.inputBox, { marginBottom: spacing.md }]}>
+              <TextInput
+                ref={(r) => { barcodeRefs.current[idx] = r; }}
+                testID={`form-barcode-input-${idx}`}
+                value={b}
+                onChangeText={(t) => setExtraBarcodes((arr) => arr.map((x, i) => (i === idx ? t : x)))}
+                onSubmitEditing={() => onBarcodeSubmit(idx)}
+                blurOnSubmit={false}
+                returnKeyType="next"
+                placeholder="Masukkan Barcode"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.input}
+              />
+            </View>
           </View>
           <Pressable
             onPress={() => setExtraBarcodes((arr) => (arr.length > 1 ? arr.filter((_, i) => i !== idx) : [""]))}
