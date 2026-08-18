@@ -44,9 +44,8 @@ export default function TransaksiScreen() {
   const toast = useToast();
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
-  // Kunci proses ganda: 1 scan = 1 proses. Scanner HID kadang mengirim ENTER +
-  // newline (onSubmitEditing & onChangeText) untuk barcode yang sama → cegah dobel.
-  const processingRef = useRef(false);
+  // Anti proses-ganda: barcode SAMA dari dobel ENTER/newline scanner HID dalam
+  // <350ms diabaikan. Barcode BERBEDA tidak pernah diblokir.
   const lastScanRef = useRef<{ code: string; at: number }>({ code: "", at: 0 });
   const refocusScanner = useCallback(() => {
     setTimeout(() => inputRef.current?.focus(), 60);
@@ -144,17 +143,18 @@ export default function TransaksiScreen() {
   const submitBarcode = useCallback(
     async (code: string) => {
       const c = code.trim();
+      // Selesaikan & reset scan sebelumnya: bersihkan input native agar barcode
+      // berikutnya TIDAK tergabung dengan yang lama.
       inputRef.current?.clear();
       if (!c) { inputRef.current?.focus(); return; }
-      // PRIORITAS SCANNER + anti proses-ganda: abaikan bila sedang memproses, atau
-      // barcode SAMA terulang <350ms (dobel ENTER/newline dari scanner HID).
+      // Anti proses-ganda utk barcode SAMA (dobel ENTER/newline dari scanner HID
+      // dalam <350ms). Barcode BERBEDA selalu diproses — tidak pernah di-blokir,
+      // supaya scan A→B→C berturut-turut cepat tetap terbaca semua.
       const now = Date.now();
-      if (processingRef.current) { inputRef.current?.focus(); return; }
       if (c === lastScanRef.current.code && now - lastScanRef.current.at < 350) {
         inputRef.current?.focus();
         return;
       }
-      processingRef.current = true;
       lastScanRef.current = { code: c, at: now };
       try {
         const product = await api.getByBarcode(c);
@@ -184,9 +184,9 @@ export default function TransaksiScreen() {
         toast.show("Barcode tidak ditemukan.", "error");
         mikoBus.emit({ type: "not_found" });
       } finally {
-        processingRef.current = false;
-        // Selalu kembalikan fokus ke scanner agar scan berikutnya langsung terbaca.
-        setTimeout(() => inputRef.current?.focus(), 100);
+        // Selalu bersihkan & kembalikan fokus ke scanner → siap scan berikutnya.
+        inputRef.current?.clear();
+        setTimeout(() => inputRef.current?.focus(), 60);
       }
     },
     [cart, toast, products],

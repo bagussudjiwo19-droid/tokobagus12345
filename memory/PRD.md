@@ -1,5 +1,12 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX scan ke-2 dst "tidak terbaca" setelah scan pertama (regresi dari lock proses)
+- Keluhan user: scan barcode ke-1 berhasil, tetapi scan ke-2 (barcode valid) sering "tidak ditemukan". Root cause: pada task sebelumnya saya menambah `processingRef` (boolean re-entrancy lock) di `submitBarcode`. submitBarcode async (`await api.getByBarcode`). Scanner HID fisik mengirim barcode berikutnya SANGAT cepat → tiba saat scan-1 masih di dalam `await` → `if (processingRef.current) return` MEMBUANG barcode ke-2 (di-clear, tak diproses). (Testing agent iter16 tak menangkap ini krn Playwright men-serialize scan sehingga scan-1 selesai sebelum scan-2.)
+- FIX `app/(tabs)/index.tsx` submitBarcode: HAPUS boolean lock `processingRef` (yang membuang barcode berbeda saat proses berjalan). Pertahankan hanya dedup barcode SAMA <350ms (`lastScanRef`) utk cegah dobel dari ENTER+newline scanner HID — barcode BERBEDA TIDAK pernah diblokir. try/finally: finally selalu `inputRef.clear()` + refocus (60ms) → reset & siap scan berikutnya. Buffer scanner sudah di-reset oleh `useBarcodeScan.finish()` sebelum memanggil submitBarcode (bufferRef="" → tak ada penggabungan barcode lama+baru). Pesan Indonesia tetap: sukses "…ditambahkan", gagal "Barcode tidak ditemukan.". Pintasan tetap `focusable={false}` (prioritas scanner tetap terjaga).
+- DIVERIFIKASI (screenshot e2e, seed 2261 produk): 20 scan berturut-turut siklus 5 barcode berbeda → tepat 5 baris × qty 4 = 20 item, Total Rp190.000, TANPA barcode hilang/ganda, fokus tetap di scan-mode-input. Juga terbukti: 6× scan barcode SAMA → qty 6; 5 barcode berbeda beruntun → semua masuk (tak ada penggabungan). Catatan: 2-3 scan pertama pada COLD page-load web bisa hilang (keystroke sintetis drop saat render awal 2261 produk + Miko) — artefak harness, bukan bug device (device sudah warm). Lint hanya warning pre-existing. Tidak mengubah fitur lain. Frontend-only → user REDEPLOY. Uji scanner fisik final di build APK.
+
+
+
 ## Session Log (fork) — FIX konflik Scanner vs Produk Pintasan di Transaksi (prioritas scanner, anti dobel, fokus)
 - Keluhan user: input scanner barcode bentrok dgn tombol Produk Pintasan. Aturan: scanner prioritas tertinggi; Pintasan hanya aktif bila ditekan jari (tak boleh proses input scanner / tahan fokus); fokus balik ke scanner tiap habis scan; barcode tak ada → "Barcode tidak ditemukan." tetap fokus scanner, tanpa popup / tanpa substitusi Pintasan; 1 scan = 1 proses (anti dobel).
 - `app/(tabs)/index.tsx`:
