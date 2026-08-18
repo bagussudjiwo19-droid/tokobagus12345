@@ -481,7 +481,7 @@ export default function TransaksiScreen() {
           <Pressable
             testID="bayar-button"
             disabled={cart.count === 0}
-            onPress={() => router.push("/checkout?step=pay")}
+            onPress={() => router.push("/daftar-pesanan")}
             style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
           >
             <Ionicons name="wallet-outline" size={18} color={colors.onBrandPrimary} />

@@ -1,5 +1,15 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Alur checkout 2 tahap: halaman "Daftar Pesanan" (read-only) sebelum pembayaran
+- Permintaan user: sebelum pembayaran, kasir bisa CEK ULANG. Alur baru: Transaksi → [Bayar] → Daftar Pesanan → [Lanjut Bayar] → Pembayaran. Daftar Pesanan READ-ONLY (pilihan user: 1a halaman terpisah; hanya lihat; 3b tanpa Tambah/Cari; 4 setuju). TANPA tombol ubah jumlah/hapus/edit harga/tambah/cari. Semua edit tetap di Transaksi. Mockup pink diberikan.
+- BARU `app/daftar-pesanan.tsx` (read-only, tema pink): header ← "Daftar Pesanan" + subtitle "Periksa kembali pesanan sebelum pembayaran"; banner info pink (ikon centang) "Pastikan semua barang, jumlah, dan total sudah benar."; kartu list — tiap baris: badge nomor pink, nama TEBAL, baris kecil "jumlah x hargaSatuan" (numberID, tanpa "Rp"), hasil `qty*price` TEBAL pink kanan (TANPA kata Subtotal/Harga satuan). Kartu Total: ikon tas, "Total N item" (N=cart.lines.length) + "Pastikan pesanan sudah benar", divider, "TOTAL PESANAN" + `numberID(cart.total)` besar (adjustsFontSizeToFit). Footer: tombol besar pink "Lanjut Bayar" (bag-check icon) + caption gembok. Empty → tombol disabled. Ambil data dari `useCart` (TIDAK mengubah keranjang). numberID (bukan xxl/xs yg tak ada di theme → pakai "2xl"/sm).
+- `app/(tabs)/index.tsx`: tombol Bayar `router.push("/checkout?step=pay")` → `router.push("/daftar-pesanan")`. TIDAK ada perubahan lain (scanner/keranjang/kalkulator/pintasan/nav tetap).
+- `app/daftar-pesanan.tsx` Lanjut Bayar → `router.push("/checkout?step=pay")` (halaman pembayaran LAMA tak diubah). Back → router.back() ke Transaksi, keranjang utuh (cart global).
+- `app/_layout.tsx`: daftarkan `<Stack.Screen name="daftar-pesanan" presentation modal>`.
+- DIVERIFIKASI (screenshot e2e web): Transaksi scan 3 barcode (2 sama) → Bayar → Daftar Pesanan tampil persis mockup (badge nomor, "2 x 500" → "1.000", Total 2 item, TOTAL PESANAN 1.416) → Lanjut Bayar → halaman Pembayaran (Total/Diskon/Uang Diterima/keypad/Simpan) muncul. Lint bersih. Frontend-only.
+
+
+
 ## Session Log (fork) — SEMUA notifikasi seragam: restyle Toast GLOBAL jadi kartu lembut + suara di notif Transaksi
 - Keluhan user: notif di layar Produk/Riwayat/Pengaturan/checkout MASIH gaya lama (kartu putih + garis kiri hijau/merah). Mau SEMUA notif seragam dgn gaya notif scan. Pilihan: (1a) toast global tetap di ATAS; (2a) warna "info" = PINK lembut tema; (3a) notif tambah/scan Transaksi IKUT berbunyi.
 - `src/toast.tsx`: `palette` per type → success bg #E6F6EC border #A7DDB5 ikon hijau; error bg #FDE7EA border #F5B5BE ikon merah; info bg colors.surfaceTertiary border brandTertiary ikon brand (pink). Teks colors.onSurface (hitam) bold. Style `toast`: hapus borderLeftWidth garis kiri → full soft bg + borderWidth 1.5 + borderRadius radius.lg + padding compact (10/spacing.md). Posisi tetap di atas (insets.top). Berlaku OTOMATIS di semua layar yg pakai `toast.show`. Suara tik/tok (sfx.playOk/Fail) tetap.

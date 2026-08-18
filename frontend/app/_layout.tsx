@@ -95,6 +95,7 @@ export default function RootLayout() {
                   <Stack.Screen name="scan" options={{ presentation: "fullScreenModal" }} />
                   <Stack.Screen name="produk-form" options={{ presentation: "modal" }} />
                   <Stack.Screen name="checkout" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="daftar-pesanan" options={{ presentation: "modal" }} />
                   <Stack.Screen name="cari" options={{ presentation: "modal" }} />
                   <Stack.Screen name="edit-transaksi" options={{ presentation: "modal" }} />
                   <Stack.Screen name="variasi-cepat" options={{ presentation: "modal" }} />
