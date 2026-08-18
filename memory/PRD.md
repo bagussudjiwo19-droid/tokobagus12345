@@ -1,5 +1,15 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX KRITIS scanner APK: expo-key-event kirim KODE gaya-web ("Digit8"), bukan char → semua digit tertolak
+- Gejala user (APK produksi, HP asli, scanner Bluetooth): barcode MENUMPUK di kolom scan ("899999960134889996048899999") & TIDAK masuk keranjang ("0 baris"). Jadi scanner v3 (hardware key event) TIDAK berfungsi sama sekali di device.
+- ROOT CAUSE (dikonfirmasi dari source `node_modules/expo-key-event`): di Android, `useKeyEventListener` memberi `event.key` sebagai kode GAYA-WEB via `unifyKeyCode` (KeyCodeMapping.android): keyCode 8→"Digit1", 29→"KeyA", 66→"Enter", dst. `HardwareScanner.tsx` lama menyaring `if (k.length===1)` → "Digit8"(len 6)/"KeyA" SELALU ditolak → buffer tak pernah terisi → `onScan`/`submitBarcode` TAK PERNAH dipanggil. Sementara TextInput (fokus) tetap menerima ketikan HID (event tak di-consume, native return super.onKeyDown) → menumpuk terlihat, tapi onChangeText di native = undefined → tak diproses/tak dibersihkan → "0 baris".
+- Karakter ASLI tersedia di `event.character` (native Android: `e.getUnicodeChar(metaState)`), dan Enter = `event.key==="Enter"`.
+- FIX `components/HardwareScanner.tsx`: TULIS ULANG parsing. Helper `keyToChar(uniKey, character)`: utamakan `event.character` (single, charCode>=32); fallback derivasi dari kode → Digit0-9→"0".."9", Numpad0-9→digit, KeyA-Z→huruf kecil, simbol (Minus/Period/Comma/Slash/…). Helper `isEnter()`: key "Enter"/"NumpadEnter" atau character "\n"/"\r" → flush. Abaikan `eventType!=="press"`. Fallback jeda 220ms (tanpa Enter). TIDAK lagi memakai `k.length===1`.
+- Jalur WEB tetap: `HardwareScanner.web.tsx` no-op + TextInput onChangeText (Platform web). DIVERIFIKASI web (screenshot): ketik "8999999601348"+Enter → "Masako/royco isi12 ditambahkan", 1 baris Rp500, kolom bersih (tanpa regresi web).
+- CATATAN: jalur hardware key-event NATIVE-ONLY, TIDAK bisa diuji di preview/Expo Go/web. Frontend-only → user WAJIB Publish → BUILD APK BARU → uji 20-30 scan cepat di HP. Perbaikan bersifat logis-pasti (mengikuti source library).
+
+
+
 ## Session Log (fork) — SCANNER v3: tangkap HARDWARE KEY EVENT (lepas dari fokus kolom) via expo-key-event
 - Konteks: setelah 2x pendekatan berbasis fokus kolom (TextInput tersembunyi), di APK masih "beberapa scan tidak terbaca" + kadang stuck sampai pindah halaman. User konfirmasi: APK, scanner HID (seperti ketik), miss acak. User SETUJU pakai pendekatan hardware key event.
 - Solusi: `expo-key-event@1.9.0` (rekomendasi Expo SDK 54; autolink, tanpa edit native manual; BUTUH build native, tak jalan di Expo Go/web). Menangkap key event GLOBAL → scanner terbaca tanpa bergantung fokus kolom sama sekali.
