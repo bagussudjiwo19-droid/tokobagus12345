@@ -69,19 +69,21 @@ const ProdukRow = React.memo(function ProdukRow({
           {item.barcode || "-"}{metaStock}{hasVar ? ` · ${totalVar} variasi` : ""}
         </Text>
       </View>
-      <View style={styles.pricePill}>
-        <Text style={styles.pricePillTxt}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+      <View style={styles.actions}>
+        <View style={styles.pricePill}>
+          <Text style={styles.pricePillTxt}>{hasVar ? "Bervariasi" : rupiah(item.sell_price)}</Text>
+        </View>
+        {!selectMode && (
+          <>
+            <Pressable onPress={() => onPrint(item)} style={styles.printBtn} testID={`produk-print-${item.id}`} hitSlop={6}>
+              <Ionicons name="print-outline" size={20} color={colors.brand} />
+            </Pressable>
+            <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
+            </Pressable>
+          </>
+        )}
       </View>
-      {!selectMode && (
-        <>
-          <Pressable onPress={() => onPrint(item)} style={styles.printBtn} testID={`produk-print-${item.id}`} hitSlop={6}>
-            <Ionicons name="print-outline" size={20} color={colors.brand} />
-          </Pressable>
-          <Pressable onPress={() => onMenu(item)} style={styles.menuBtn} testID={`produk-menu-${item.id}`}>
-            <Ionicons name="ellipsis-vertical" size={20} color={colors.muted} />
-          </Pressable>
-        </>
-      )}
     </Pressable>
   );
 });
@@ -560,8 +562,9 @@ const styles = StyleSheet.create({
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 3 },
   pricePill: { backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
   pricePillTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
-  menuBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
-  printBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+  actions: { flexDirection: "row", alignItems: "center", gap: 2 },
+  menuBtn: { width: 32, height: 40, alignItems: "center", justifyContent: "center" },
+  printBtn: { width: 32, height: 40, alignItems: "center", justifyContent: "center" },
   printCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surfaceSecondary, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderStrong, padding: spacing.lg },
   printHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
   printIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },

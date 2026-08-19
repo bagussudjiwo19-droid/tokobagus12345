@@ -842,3 +842,7 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - `app/cari.tsx`: `rowName` fontSize.lg→base + lineHeight 19, hapus numberOfLines={1} (wrap penuh). `rowPrice` tambah marginLeft agar tak menempel nama. Tanpa getItemLayout (sudah tak ada).
 - Tidak mengubah fungsi produk/barcode/scanner/harga/tombol +/Variasi/hapus/transaksi/kalkulator/pembayaran. Hanya font nama (1 tingkat lebih kecil: 16→14), text wrapping, tinggi kartu auto.
 - DIVERIFIKASI screenshot: Produk & Cari Barang tampil nama panjang penuh 2–3 baris tanpa "...", harga+tombol rapi. Lint clean. Frontend-only → user REDEPLOY.
+
+## Session Log (fork) — RAPIKAN grup tombol aksi kanan kartu Produk
+- `app/(tabs)/produk.tsx`: bungkus [pricePill/Bervariasi + printBtn + menuBtn] dalam satu View `actions` (flexDirection row, gap:2). Sebelumnya ketiganya anak langsung `card` → terpisah `gap:spacing.md` (12) tiap elemen → renggang. Kini card gap md hanya memisah name-col ↔ actions; di dalam actions rapat. printBtn/menuBtn width 34→32 (height 40, hitSlop tetap → nyaman disentuh). Urutan tetap Harga→Printer→Titik-tiga. Tidak ubah fungsi/warna/ikon/kartu/nama/font.
+- DIVERIFIKASI screenshot: grup aksi kanan kompak & rapi, tidak bertabrakan. Lint clean. Frontend-only → user REDEPLOY.
