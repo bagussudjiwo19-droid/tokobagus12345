@@ -404,18 +404,20 @@ export default function TransaksiScreen() {
                 {(() => {
                   if (!l.product_id) return null;
                   const p = products.find((x) => x.id === l.product_id);
-                  const q = p?.quick_qty ?? 0;
-                  if (!q || q <= 0) return null;
-                  return (
+                  if (!p) return null;
+                  const qs = [p.quick_qty, p.quick_qty2, p.quick_qty3].filter((n): n is number => !!n && n > 0);
+                  if (qs.length === 0) return null;
+                  return qs.map((q, qi) => (
                     <Pressable
+                      key={qi}
                       style={styles.quickBtn}
-                      testID={`cart-quick-${l.key}`}
-                      hitSlop={6}
+                      testID={`cart-quick-${l.key}-${qi}`}
+                      hitSlop={4}
                       onPress={() => cart.setQty(l.key, l.quantity + q)}
                     >
                       <Text style={styles.quickTxt}>{q}</Text>
                     </Pressable>
-                  );
+                  ));
                 })()}
                 {l.product_id ? (
                   <Pressable
@@ -715,8 +717,8 @@ const styles = StyleSheet.create({
   lowWarn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   lowWarnTxt: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.xs },
   iconMini: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
-  quickBtn: { minWidth: 34, height: 28, paddingHorizontal: 8, borderRadius: 8, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
-  quickTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  quickBtn: { minWidth: 28, height: 28, paddingHorizontal: 6, borderRadius: 8, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  quickTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   unitWrap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 3 },
   unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },

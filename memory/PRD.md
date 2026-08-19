@@ -871,3 +871,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - Greeting: "Halo, Vita dan Sasa" → "Halo, Fita dan Sasa".
 - `app/(tabs)/index.tsx` tombol [N] keranjang: onPress `cart.setQty(l.key, q)` → `cart.setQty(l.key, l.quantity + q)`. Tiap tap = tambah q (1→4→7→10). Harga/subtotal/total otomatis (setQty recompute tierPrice + render total). Satu onPress = satu increment (tak dobel). Ikon/posisi/tombol −1+/scanner/desain tetap.
 - DIVERIFIKASI e2e 1 sesi (screenshot): "76 apel" quick=3, qty 1 → tap [3] → 4 (Rp60.000) → tap lagi → 7 (Rp105.000). Frontend-only → user REDEPLOY ke produksi.
+
+## Session Log (fork) — 3 tombol JUMLAH CEPAT per-produk
+- `types.ts`: Product tambah `quick_qty2?`, `quick_qty3?` (quick_qty tetap = tombol 1, kompatibel data lama).
+- `localdb.ts createProduct`: tambah quick_qty2/quick_qty3. updateProduct spread otomatis. Sync cloud (doc blob) simpan semua.
+- `produk-form.tsx`: field "Jumlah Cepat" jadi 3 kolom berjajar (form-quickqty / -2 / -3), placeholder 3/6/12, helper "tiap tap MENAMBAH". State quickQty2/3, payload quick_qty2/3 (>0 else undefined). Style `quickRow`(row+gap), `quickCell`(flex1).
+- `app/(tabs)/index.tsx` kartu keranjang: bangun array [quick_qty,2,3].filter(>0) → render tiap sbg tombol kecil `[N]` (testID `cart-quick-<key>-<i>`), onPress `setQty(l.key, l.quantity + q)` (TAMBAH). Kolom kosong tak muncul. quickBtn diringkas (minWidth28, fontSize.sm) agar 3 tombol + variasi + hapus muat rapi.
+- DIVERIFIKASI e2e 1 sesi (screenshot): "76 apel" quick 3/6/12 → keranjang tampil [3][6][12] → tap [6] → qty1→7 (Rp105.000). Lint clean. Frontend-only → user REDEPLOY.

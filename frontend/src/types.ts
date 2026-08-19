@@ -26,7 +26,9 @@ export type Product = {
   inherit_tiers?: boolean;
   variations: Variation[];
   price_type?: "biasa" | "grosir" | "variasi" | "ikut" | "varbarcode"; // mode harga tersimpan (agar form buka di mode yang benar)
-  quick_qty?: number; // Jumlah Cepat per-produk (tombol [N] di keranjang). 0/undefined = sembunyikan.
+  quick_qty?: number; // Jumlah Cepat 1 per-produk (tombol [N] di keranjang, TAMBAH nilai). 0/undefined = sembunyikan.
+  quick_qty2?: number; // Jumlah Cepat 2
+  quick_qty3?: number; // Jumlah Cepat 3
   created_at?: string;
   updated_at?: string;
 };

@@ -52,6 +52,8 @@ export default function ProdukFormScreen() {
   const [sellPrice, setSellPrice] = useState(String(editing?.sell_price ?? ""));
   const [stock, setStock] = useState(editing ? String(editing.stock ?? 0) : "999");
   const [quickQty, setQuickQty] = useState(editing?.quick_qty ? String(editing.quick_qty) : "");
+  const [quickQty2, setQuickQty2] = useState(editing?.quick_qty2 ? String(editing.quick_qty2) : "");
+  const [quickQty3, setQuickQty3] = useState(editing?.quick_qty3 ? String(editing.quick_qty3) : "");
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
   const [extraBarcodes, setExtraBarcodes] = useState<string[]>(
@@ -144,6 +146,8 @@ export default function ProdukFormScreen() {
         : [],
       price_type: priceType,
       quick_qty: num(quickQty) > 0 ? num(quickQty) : undefined,
+      quick_qty2: num(quickQty2) > 0 ? num(quickQty2) : undefined,
+      quick_qty3: num(quickQty3) > 0 ? num(quickQty3) : undefined,
     };
     try {
       if (editing) {
@@ -419,19 +423,43 @@ export default function ProdukFormScreen() {
 
         {!isTemp && (
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={styles.label}>Jumlah Cepat</Text>
-            <View style={styles.inputBox}>
-              <TextInput
-                testID="form-quickqty"
-                value={quickQty}
-                onChangeText={(t) => setQuickQty(t.replace(/[^\d]/g, ""))}
-                placeholder="mis. 12 (kosongkan bila tak dipakai)"
-                placeholderTextColor={colors.muted}
-                keyboardType="numeric"
-                style={styles.input}
-              />
+            <Text style={styles.label}>Jumlah Cepat (tombol tambah cepat)</Text>
+            <View style={styles.quickRow}>
+              <View style={[styles.inputBox, styles.quickCell]}>
+                <TextInput
+                  testID="form-quickqty"
+                  value={quickQty}
+                  onChangeText={(t) => setQuickQty(t.replace(/[^\d]/g, ""))}
+                  placeholder="mis. 3"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={styles.input}
+                />
+              </View>
+              <View style={[styles.inputBox, styles.quickCell]}>
+                <TextInput
+                  testID="form-quickqty2"
+                  value={quickQty2}
+                  onChangeText={(t) => setQuickQty2(t.replace(/[^\d]/g, ""))}
+                  placeholder="mis. 6"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={styles.input}
+                />
+              </View>
+              <View style={[styles.inputBox, styles.quickCell]}>
+                <TextInput
+                  testID="form-quickqty3"
+                  value={quickQty3}
+                  onChangeText={(t) => setQuickQty3(t.replace(/[^\d]/g, ""))}
+                  placeholder="mis. 12"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                  style={styles.input}
+                />
+              </View>
             </View>
-            <Text style={styles.helperTxt}>Muncul sebagai tombol [{quickQty && Number(quickQty) > 0 ? quickQty : "N"}] di keranjang untuk set jumlah sekali tekan.</Text>
+            <Text style={styles.helperTxt}>Muncul sebagai tombol di keranjang. Tiap tap MENAMBAH jumlah sebesar angka itu. Kosongkan yang tak dipakai.</Text>
           </View>
         )}
 
@@ -672,6 +700,8 @@ const styles = StyleSheet.create({
   hTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   label: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base, marginBottom: 6 },
   helperTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 6 },
+  quickRow: { flexDirection: "row", gap: spacing.sm },
+  quickCell: { flex: 1, paddingHorizontal: spacing.sm },
   inputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 48 },
   prefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg, marginRight: 6 },
   input: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },

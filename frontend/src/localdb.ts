@@ -237,6 +237,8 @@ export const local = {
       variations: data.variations ?? [],
       price_type: data.price_type ?? undefined,
       quick_qty: data.quick_qty ?? undefined,
+      quick_qty2: data.quick_qty2 ?? undefined,
+      quick_qty3: data.quick_qty3 ?? undefined,
       created_at: nowIso(),
       updated_at: nowIso(),
     };
