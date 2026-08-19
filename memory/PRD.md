@@ -903,3 +903,8 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - Konfirmasi pakai MODAL bertema Soft Rose sendiri (`confirmState` + styles cf*), BUKAN Alert.alert (RNW 0.21 tak render Alert di web). Works web+native.
   - − 1 + (QtyInput), Hapus, Duplikat(branch), scanner, Tambah Item, Cari, Bayar, Kalkulator: TANPA konfirmasi (tidak diubah). Manual ± TIDAK dihitung sbg penambahan cepat (quickAdded hanya diubah oleh tombol cepat).
 - DIVERIFIKASI e2e 1 sesi (screenshot): [3]→dialog→Ya→4→Ya→7; Reset muncul→dialog→Ya→1 (Rp15.000), reset button hilang. Lint clean (2 warning import dup pre-existing). Frontend-only → user REDEPLOY.
+
+## Session Log (fork) — FIX fokus tak balik ke scanner setelah ketik Jumlah
+- Penyebab: scanner reaktif hanya saat QtyInput onBlur, tapi keyboard decimal-pad Android sering tak punya Done/Enter → kolom tak pernah blur → scanner tetap istirahat.
+- `app/(tabs)/index.tsx` QtyInput: tambah `inputRef`, `onSubmitEditing={()=>inputRef.blur()}`, `blurOnSubmit`, dan listener `Keyboard.addListener("keyboardDidHide")` → jika kolom masih fokus saat keyboard tutup (Done/Back/ketuk luar) → blur → onBlur commit + onFocusChange(false) → scanner rebut fokus lagi. Import `Keyboard` ditambah.
+- DIVERIFIKASI web (screenshot): ketik 5 → Enter → qty 5 (Rp75.000) + fokus balik ke input Scan (kursor aktif). Native: keyboardDidHide menutup celah numeric-pad tanpa Done. Frontend-only → user REDEPLOY + build baru (perilaku scanner penuh hanya di APK).

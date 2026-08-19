@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -704,7 +705,16 @@ export default function TransaksiScreen() {
 
 function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; onCommit: (n: number) => void; onFocusChange?: (focused: boolean) => void; testID?: string }) {
   const [txt, setTxt] = useState(String(value));
+  const inputRef = useRef<TextInput>(null);
   useEffect(() => { setTxt(String(value)); }, [value]);
+  // Saat keyboard ditutup (Done/Back Android/ketuk area lain), bila kolom ini masih
+  // fokus → lepas fokus supaya "selesai mengetik" → scanner aktif lagi (via onBlur).
+  useEffect(() => {
+    const sub = Keyboard.addListener("keyboardDidHide", () => {
+      if (inputRef.current?.isFocused()) inputRef.current?.blur();
+    });
+    return () => sub.remove();
+  }, []);
   // Bersihkan input: hanya angka + satu pemisah desimal (titik/koma → titik).
   const sanitize = (t: string) => {
     let s = t.replace(",", ".").replace(/[^\d.]/g, "");
@@ -722,11 +732,14 @@ function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; o
   };
   return (
     <TextInput
+      ref={inputRef}
       value={txt}
       onChangeText={(t) => setTxt(sanitize(t))}
       onFocus={() => onFocusChange?.(true)}
       onEndEditing={commit}
       onBlur={() => { commit(); onFocusChange?.(false); }}
+      onSubmitEditing={() => inputRef.current?.blur()}
+      blurOnSubmit
       keyboardType="decimal-pad"
       returnKeyType="done"
       selectTextOnFocus
