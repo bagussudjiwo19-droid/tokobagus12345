@@ -14,7 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 
 import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
@@ -35,10 +36,7 @@ import { mikoBus } from "@/src/mikoBus";
 import { onLocalChange } from "@/src/localdb";
 import type { Product, Variation } from "@/src/types";
 
-// Di HP pakai BottomSheetTextInput (agar sheet naik di atas keyboard). Di WEB
-// pakai TextInput biasa — BottomSheetTextInput memanggil API yang tidak ada di
-// react-native-web (TextInput.State.currentlyFocusedInput) sehingga crash.
-const EditPriceInput: any = Platform.OS === "web" ? TextInput : BottomSheetTextInput;
+
 
 export default function TransaksiScreen() {
   const insets = useSafeAreaInsets();
@@ -90,7 +88,7 @@ export default function TransaksiScreen() {
   const [lastKey, setLastKey] = useState<string | null>(null);
 
   // Edit harga sheet
-  const priceSheet = useRef<BottomSheetModal>(null);
+  const [priceOpen, setPriceOpen] = useState(false);
   const [editLine, setEditLine] = useState<CartLine | null>(null);
   const [priceInput, setPriceInput] = useState("");
 
@@ -248,14 +246,14 @@ export default function TransaksiScreen() {
   const openEditPrice = (l: CartLine) => {
     setEditLine(l);
     setPriceInput(String(Math.round(l.price)));
-    priceSheet.current?.present();
+    setPriceOpen(true);
   };
 
   const applyTemporary = () => {
     if (!editLine) return;
     const p = Number((priceInput || "0").replace(/[^\d]/g, "")) || 0;
     cart.setPrice(editLine.key, p);
-    priceSheet.current?.dismiss();
+    setPriceOpen(false);
     toast.show("Harga diubah untuk transaksi ini", "success");
   };
 
@@ -276,7 +274,7 @@ export default function TransaksiScreen() {
       await api.updateProduct(product.id, rest);
       cart.setPrice(editLine.key, p);
       await reload();
-      priceSheet.current?.dismiss();
+      setPriceOpen(false);
       toast.show("Harga permanen disimpan", "success");
       mikoBus.emit({ type: "price_changed" });
     } catch (e: any) {
@@ -531,44 +529,40 @@ export default function TransaksiScreen() {
         </View>
       </Modal>
 
-      <BottomSheetModal
-        ref={priceSheet}
-        enableDynamicSizing
-        keyboardBehavior="interactive"
-        keyboardBlurBehavior="restore"
-        backgroundStyle={{ backgroundColor: colors.surfaceSecondary }}
-        handleIndicatorStyle={{ backgroundColor: colors.borderStrong }}
-        backdropComponent={(props) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />}
-      >
-        <BottomSheetView style={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.lg, gap: spacing.md }}>
-          <Text style={styles.sheetTitle} numberOfLines={1}>{editLine?.name}</Text>
-          <Text style={styles.sheetLabel}>Harga Satuan (Rp)</Text>
-          <View style={styles.priceInputBox}>
-            <Text style={styles.rpPrefix}>Rp</Text>
-            <EditPriceInput
-              value={priceInput}
-              onChangeText={setPriceInput}
-              keyboardType="numeric"
-              autoFocus
-              style={styles.priceInput}
-              testID="edit-price-input"
-            />
-          </View>
-          <Pressable style={styles.optRed} onPress={applyTemporary} testID="price-temporary">
-            <Ionicons name="pricetag-outline" size={18} color={colors.onBrandPrimary} />
-            <Text style={styles.optRedTxt}>Simpan untuk transaksi ini saja</Text>
-          </Pressable>
-          {editLine?.product_id ? (
-            <Pressable style={styles.optDark} onPress={applyPermanent} testID="price-permanent">
-              <Ionicons name="save-outline" size={18} color={colors.onSurfaceInverse} />
-              <Text style={styles.optDarkTxt}>Simpan sebagai harga permanen</Text>
+      <Modal visible={priceOpen} transparent animationType="fade" onRequestClose={() => setPriceOpen(false)} statusBarTranslucent>
+        <KeyboardAvoidingView behavior="padding" style={styles.priceBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPriceOpen(false)} testID="price-backdrop" />
+          <View style={styles.priceCard}>
+            <Text style={styles.sheetTitle} numberOfLines={1}>{editLine?.name}</Text>
+            <Text style={styles.sheetLabel}>Harga Satuan (Rp)</Text>
+            <View style={styles.priceInputBox}>
+              <Text style={styles.rpPrefix}>Rp</Text>
+              <TextInput
+                value={priceInput}
+                onChangeText={setPriceInput}
+                keyboardType="numeric"
+                autoFocus
+                selectTextOnFocus
+                style={styles.priceInput}
+                testID="edit-price-input"
+              />
+            </View>
+            <Pressable style={styles.optRed} onPress={applyTemporary} testID="price-temporary">
+              <Ionicons name="pricetag-outline" size={18} color={colors.onBrandPrimary} />
+              <Text style={styles.optRedTxt}>Simpan untuk transaksi ini saja</Text>
             </Pressable>
-          ) : null}
-          <Pressable style={styles.optCancel} onPress={() => priceSheet.current?.dismiss()} testID="price-cancel">
-            <Text style={styles.optCancelTxt}>Batal</Text>
-          </Pressable>
-        </BottomSheetView>
-      </BottomSheetModal>
+            {editLine?.product_id ? (
+              <Pressable style={styles.optDark} onPress={applyPermanent} testID="price-permanent">
+                <Ionicons name="save-outline" size={18} color={colors.onSurfaceInverse} />
+                <Text style={styles.optDarkTxt}>Simpan sebagai harga permanen</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.optCancel} onPress={() => setPriceOpen(false)} testID="price-cancel">
+              <Text style={styles.optCancelTxt}>Batal</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Konfirmasi hapus barang */}
       <BottomSheetModal
@@ -713,6 +707,8 @@ const styles = StyleSheet.create({
   sheetTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   sheetLabel: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.base },
   priceInputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 54 },
+  priceBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  priceCard: { width: "100%", maxWidth: 400, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   rpPrefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg, marginRight: 6 },
   priceInput: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   optRed: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.brand },

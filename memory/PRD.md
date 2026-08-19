@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX Edit Harga tertutup keyboard: ganti bottom-sheet → dialog TENGAH + KeyboardAvoidingView
+- Keluhan user (HP/APK): saat Edit Harga barang di Transaksi, keyboard MENUTUPI kolom edit. Sebab: panel pakai gorhom BottomSheetModal (keyboardBehavior interactive) TAPI app juga pakai `KeyboardProvider` (react-native-keyboard-controller) → di Android berebut kendali keyboard → sheet tak naik. Native-only (tak bisa repro di web). User pilih opsi B (dialog tengah).
+- `app/(tabs)/index.tsx`: panel Edit Harga diubah dari `BottomSheetModal` → `Modal` (transparent, fade) berisi `KeyboardAvoidingView behavior="padding"` (dari react-native-keyboard-controller) + kartu di TENGAH (`priceBackdrop` overlay gelap + `priceCard`). Input = `TextInput` biasa (bukan BottomSheetTextInput) autoFocus+selectTextOnFocus. State `priceOpen` (ganti priceSheet.present/dismiss). openEditPrice→setPriceOpen(true); applyTemporary/applyPermanent/price-cancel→setPriceOpen(false). Hapus ref priceSheet + const EditPriceInput + import BottomSheetTextInput (delete sheet masih pakai BottomSheetModal/View/Backdrop). Isi & fungsi (simpan transaksi ini / permanen / batal) TIDAK berubah. Scanner/keranjang/pembayaran tak disentuh.
+- Kenapa andal: dialog di TENGAH + KAV padding → input & tombol selalu di atas keyboard (tak seperti bottom-sheet yg bergantung native resize yg bentrok dgn keyboard-controller).
+- DIVERIFIKASI (screenshot e2e web): tap edit harga → dialog tengah tampil (judul, input Rp, 2 tombol simpan, Batal) → ubah 1234 → Simpan transaksi ini → harga jadi Rp1.234. Lint bersih. Lift final di atas keyboard = native → uji di build APK.
+
+
+
 ## Session Log (fork) — Daftar Pesanan: tiap barang jadi KARTU terpisah + teks "qty x harga" HITAM (visual only)
 - Permintaan user (visual saja, jangan ubah fungsi): tiap barang = kartu putih SENDIRI (bukan 1 kartu berpembatas), border pink muda tipis, sudut membulat, ada jarak antar kartu; badge nomor di kotak pink lembut/transparan (angka pink); nama tebal; "1 x 3.000" warna HITAM (bukan abu); hasil tebal pink kanan (lebih kecil dari total). Total & tombol Lanjut Bayar tetap. Acuan: mockup.
 - `app/daftar-pesanan.tsx` (styling): list dari 1 `listCard` berpembatas → tiap item `itemCard` (flex row, bg surfaceSecondary, border brandTertiary tipis, radius.lg, marginBottom, shadow halus). `numBadge` bg brandTertiary (pink lembut) + `numTxt` warna brand (pink). `itemCalc` warna colors.onSurface (hitam, bukan muted). Sisanya (banner, total card, footer Lanjut Bayar) tak berubah. Logika/rute/pembayaran TIDAK diubah.
