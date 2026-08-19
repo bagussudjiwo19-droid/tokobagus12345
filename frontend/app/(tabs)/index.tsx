@@ -115,6 +115,35 @@ export default function TransaksiScreen() {
     kbdRef.current = focused; // beritahu penjaga keyboard: ini ketik manual, jangan ditutup
     if (!focused) setRefocusSignal((n) => n + 1); // selesai → scanner rebut fokus lagi
   }, []);
+
+  // Melacak total penambahan via tombol Jumlah Cepat per-baris (key). Dipakai tombol
+  // Reset Penambahan Jumlah untuk mengembalikan qty ke jumlah sebelum penambahan cepat.
+  // Perubahan via − 1 + TIDAK dihitung di sini.
+  const [quickAdded, setQuickAdded] = useState<Record<string, number>>({});
+  const [confirmState, setConfirmState] = useState<{ title: string; msg?: string; onYes: () => void } | null>(null);
+
+  const confirmQuickAdd = useCallback((key: string, currentQty: number, q: number) => {
+    setConfirmState({
+      title: `Yakin menambah ${q} item?`,
+      onYes: () => {
+        cart.setQty(key, currentQty + q);
+        setQuickAdded((m) => ({ ...m, [key]: (m[key] || 0) + q }));
+      },
+    });
+  }, [cart]);
+
+  const confirmQuickReset = useCallback((key: string, currentQty: number) => {
+    setConfirmState({
+      title: "Yakin reset penambahan jumlah?",
+      msg: "Jumlah akan dikembalikan ke jumlah awal sebelum penambahan cepat.",
+      onYes: () => {
+        const added = quickAdded[key] || 0;
+        const target = Math.max(1, currentQty - added);
+        cart.setQty(key, target);
+        setQuickAdded((m) => ({ ...m, [key]: 0 }));
+      },
+    });
+  }, [cart, quickAdded]);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
   // Anti-dobel: satu tap variasi hanya boleh menambah satu item. Reset tiap kali
@@ -419,17 +448,32 @@ export default function TransaksiScreen() {
                   if (!p) return null;
                   const qs = [p.quick_qty, p.quick_qty2, p.quick_qty3].filter((n): n is number => !!n && n > 0);
                   if (qs.length === 0) return null;
-                  return qs.map((q, qi) => (
-                    <Pressable
-                      key={qi}
-                      style={styles.quickBtn}
-                      testID={`cart-quick-${l.key}-${qi}`}
-                      hitSlop={4}
-                      onPress={() => cart.setQty(l.key, l.quantity + q)}
-                    >
-                      <Text style={styles.quickTxt}>{q}</Text>
-                    </Pressable>
-                  ));
+                  const added = quickAdded[l.key] || 0;
+                  return (
+                    <>
+                      {qs.map((q, qi) => (
+                        <Pressable
+                          key={qi}
+                          style={styles.quickBtn}
+                          testID={`cart-quick-${l.key}-${qi}`}
+                          hitSlop={4}
+                          onPress={() => confirmQuickAdd(l.key, l.quantity, q)}
+                        >
+                          <Text style={styles.quickTxt}>{q}</Text>
+                        </Pressable>
+                      ))}
+                      {added > 0 && (
+                        <Pressable
+                          style={styles.quickResetBtn}
+                          testID={`cart-quick-reset-${l.key}`}
+                          hitSlop={4}
+                          onPress={() => confirmQuickReset(l.key, l.quantity)}
+                        >
+                          <Ionicons name="refresh" size={16} color={colors.error} />
+                        </Pressable>
+                      )}
+                    </>
+                  );
                 })()}
                 {l.product_id ? (
                   <Pressable
@@ -569,6 +613,28 @@ export default function TransaksiScreen() {
         </View>
       </Modal>
 
+      <Modal visible={!!confirmState} transparent animationType="fade" onRequestClose={() => setConfirmState(null)} statusBarTranslucent>
+        <View style={styles.cfBackdrop}>
+          <View style={styles.cfCard} testID="quick-confirm">
+            <Text style={styles.cfTitle}>{confirmState?.title}</Text>
+            {!!confirmState?.msg && <Text style={styles.cfMsg}>{confirmState.msg}</Text>}
+            <View style={styles.cfRow}>
+              <Pressable style={[styles.cfBtn, styles.cfBtnGhost]} onPress={() => setConfirmState(null)} testID="quick-confirm-cancel">
+                <Text style={styles.cfBtnGhostTxt}>Batal</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.cfBtn, styles.cfBtnPrimary]}
+                onPress={() => { const fn = confirmState?.onYes; setConfirmState(null); fn?.(); }}
+                testID="quick-confirm-yes"
+              >
+                <Text style={styles.cfBtnPrimaryTxt}>Ya</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+
       <Modal visible={priceOpen} transparent animationType="fade" onRequestClose={() => setPriceOpen(false)} statusBarTranslucent>
         <KeyboardAvoidingView behavior="padding" style={styles.priceBackdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setPriceOpen(false)} testID="price-backdrop" />
@@ -684,6 +750,16 @@ const styles = StyleSheet.create({
   chipTxt: { color: colors.onSurfaceTertiary, fontFamily: font.bold, fontSize: 10 },
   gearBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center", marginLeft: 2 },
   vBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+  cfBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  cfCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg },
+  cfTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "center" },
+  cfMsg: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center", marginTop: spacing.sm },
+  cfRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+  cfBtn: { flex: 1, height: 48, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  cfBtnGhost: { backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border },
+  cfBtnGhostTxt: { color: colors.onSurfaceSecondary, fontFamily: font.bold, fontSize: fontSize.base },
+  cfBtnPrimary: { backgroundColor: colors.brand },
+  cfBtnPrimaryTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.base },
   vCenter: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
   vCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surfaceSecondary, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderStrong, padding: spacing.lg },
   vTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface, textAlign: "center", marginBottom: spacing.md },
@@ -732,6 +808,7 @@ const styles = StyleSheet.create({
   iconMini: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   quickBtn: { minWidth: 28, height: 28, paddingHorizontal: 6, borderRadius: 8, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   quickTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
+  quickResetBtn: { width: 28, height: 28, borderRadius: 8, borderWidth: 1.5, borderColor: colors.error, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
   unitWrap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 3 },
   unitTxt: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },

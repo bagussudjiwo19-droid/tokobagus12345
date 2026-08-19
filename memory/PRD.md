@@ -895,3 +895,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - `cek-harga.tsx` speakPrice TTS: baca "disp_name harganya <disp_price> rupiah"; else note; else kalimat lama.
 - Simpan permanen: tier disimpan sbg objek penuh (localdb JSON + sync doc blob) → disp_name/disp_price ikut.
 - DIVERIFIKASI e2e 1 sesi (screenshot): "RexonaDisp" tier [3,1166,"3 pcs",3500] & [10,1000,"1 renceng",10000] → Cek Harga tampil "3 pcs — Rp3.500" & "1 renceng — Rp10.000", TANPA "Mulai 3"/angka internal. Lint clean. Frontend-only → user REDEPLOY.
+
+## Session Log (fork) — KONFIRMASI Jumlah Cepat + tombol RESET Penambahan
+- `app/(tabs)/index.tsx`:
+  - Tombol Jumlah Cepat [N] TIDAK langsung menambah → buka modal konfirmasi "Yakin menambah N item?" [Batal][Ya]. Ya → setQty(qty+N) + akumulasi `quickAdded[key]`.
+  - Tombol RESET (ikon refresh, style `quickResetBtn` border merah) muncul di samping tombol cepat HANYA bila `quickAdded[key]>0`. Konfirmasi "Yakin reset penambahan jumlah?" + msg. Ya → setQty(max(1, qty - quickAdded[key])) (manual −1+ tetap terjaga), quickAdded[key]=0 → tombol reset hilang.
+  - Konfirmasi pakai MODAL bertema Soft Rose sendiri (`confirmState` + styles cf*), BUKAN Alert.alert (RNW 0.21 tak render Alert di web). Works web+native.
+  - − 1 + (QtyInput), Hapus, Duplikat(branch), scanner, Tambah Item, Cari, Bayar, Kalkulator: TANPA konfirmasi (tidak diubah). Manual ± TIDAK dihitung sbg penambahan cepat (quickAdded hanya diubah oleh tombol cepat).
+- DIVERIFIKASI e2e 1 sesi (screenshot): [3]→dialog→Ya→4→Ya→7; Reset muncul→dialog→Ya→1 (Rp15.000), reset button hilang. Lint clean (2 warning import dup pre-existing). Frontend-only → user REDEPLOY.
