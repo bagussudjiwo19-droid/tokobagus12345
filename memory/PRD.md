@@ -1,5 +1,12 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Daftar Pesanan: tiap barang jadi KARTU terpisah + teks "qty x harga" HITAM (visual only)
+- Permintaan user (visual saja, jangan ubah fungsi): tiap barang = kartu putih SENDIRI (bukan 1 kartu berpembatas), border pink muda tipis, sudut membulat, ada jarak antar kartu; badge nomor di kotak pink lembut/transparan (angka pink); nama tebal; "1 x 3.000" warna HITAM (bukan abu); hasil tebal pink kanan (lebih kecil dari total). Total & tombol Lanjut Bayar tetap. Acuan: mockup.
+- `app/daftar-pesanan.tsx` (styling): list dari 1 `listCard` berpembatas → tiap item `itemCard` (flex row, bg surfaceSecondary, border brandTertiary tipis, radius.lg, marginBottom, shadow halus). `numBadge` bg brandTertiary (pink lembut) + `numTxt` warna brand (pink). `itemCalc` warna colors.onSurface (hitam, bukan muted). Sisanya (banner, total card, footer Lanjut Bayar) tak berubah. Logika/rute/pembayaran TIDAK diubah.
+- DIVERIFIKASI (screenshot e2e web): tiap barang tampil sebagai kartu putih terpisah berbingkai pink tipis, badge kotak pink lembut, "2 x 500"/"1 x 416" hitam, hasil pink kanan, TOTAL PESANAN besar. Lint bersih. Frontend-only.
+
+
+
 ## Session Log (fork) — Alur checkout 2 tahap: halaman "Daftar Pesanan" (read-only) sebelum pembayaran
 - Permintaan user: sebelum pembayaran, kasir bisa CEK ULANG. Alur baru: Transaksi → [Bayar] → Daftar Pesanan → [Lanjut Bayar] → Pembayaran. Daftar Pesanan READ-ONLY (pilihan user: 1a halaman terpisah; hanya lihat; 3b tanpa Tambah/Cari; 4 setuju). TANPA tombol ubah jumlah/hapus/edit harga/tambah/cari. Semua edit tetap di Transaksi. Mockup pink diberikan.
 - BARU `app/daftar-pesanan.tsx` (read-only, tema pink): header ← "Daftar Pesanan" + subtitle "Periksa kembali pesanan sebelum pembayaran"; banner info pink (ikon centang) "Pastikan semua barang, jumlah, dan total sudah benar."; kartu list — tiap baris: badge nomor pink, nama TEBAL, baris kecil "jumlah x hargaSatuan" (numberID, tanpa "Rp"), hasil `qty*price` TEBAL pink kanan (TANPA kata Subtotal/Harga satuan). Kartu Total: ikon tas, "Total N item" (N=cart.lines.length) + "Pastikan pesanan sudah benar", divider, "TOTAL PESANAN" + `numberID(cart.total)` besar (adjustsFontSizeToFit). Footer: tombol besar pink "Lanjut Bayar" (bag-check icon) + caption gembok. Empty → tombol disabled. Ambil data dari `useCart` (TIDAK mengubah keranjang). numberID (bukan xxl/xs yg tak ada di theme → pakai "2xl"/sm).

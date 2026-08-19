@@ -59,13 +59,9 @@ export default function DaftarPesananScreen() {
             <Text style={styles.emptyText}>Belum ada barang di pesanan.</Text>
           </View>
         ) : (
-          <View style={styles.listCard}>
+          <View>
             {lines.map((l, idx) => (
-              <View
-                key={l.key}
-                style={[styles.row, idx < lines.length - 1 && styles.rowDivider]}
-                testID={`pesanan-row-${l.key}`}
-              >
+              <View key={l.key} style={styles.itemCard} testID={`pesanan-row-${l.key}`}>
                 <View style={styles.numBadge}>
                   <Text style={styles.numTxt}>{idx + 1}</Text>
                 </View>
@@ -131,13 +127,14 @@ const styles = StyleSheet.create({
   infoIcon: { width: 26, height: 26, borderRadius: 8, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
   infoText: { flex: 1, color: colors.brand, fontFamily: font.medium, fontSize: fontSize.sm },
   listCard: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  itemCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.brandTertiary, paddingVertical: spacing.md, paddingHorizontal: spacing.md, marginBottom: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  numBadge: { width: 30, height: 30, borderRadius: 9, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
-  numTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.sm },
+  numBadge: { width: 30, height: 30, borderRadius: 9, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  numTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   rowMid: { flex: 1 },
   itemName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  itemCalc: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 3 },
+  itemCalc: { color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 3 },
   itemResult: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg, textAlign: "right", flexShrink: 0, maxWidth: 130 },
   totalCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.md, backgroundColor: colors.surfaceTertiary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.md },
   bagCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
