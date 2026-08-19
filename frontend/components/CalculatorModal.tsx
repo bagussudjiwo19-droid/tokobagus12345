@@ -257,8 +257,11 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
             >
               {resultText}
             </Text>
+          </View>
+
+          <View style={styles.bsRow}>
             <Pressable onPress={backspace} hitSlop={10} style={styles.bsBtn} testID="calc-backspace">
-              <Ionicons name="backspace-outline" size={22} color={colors.brand} />
+              <Ionicons name="backspace-outline" size={20} color={colors.brand} />
             </Pressable>
           </View>
 
@@ -312,8 +315,9 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   opIndicator: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, marginTop: 2, minHeight: 26 },
-  displayBox: { position: "relative", backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, minHeight: 100, justifyContent: "flex-end" },
-  bsBtn: { position: "absolute", top: spacing.sm, left: spacing.md, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, minHeight: 100, justifyContent: "flex-end" },
+  bsRow: { flexDirection: "row", justifyContent: "flex-end", marginBottom: spacing.md },
+  bsBtn: { width: 52, height: 40, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   exprScroll: { maxHeight: 92, width: "100%" },
   exprScrollContent: { flexGrow: 1, justifyContent: "flex-end" },
   exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: 22, lineHeight: 30, textAlign: "right" },

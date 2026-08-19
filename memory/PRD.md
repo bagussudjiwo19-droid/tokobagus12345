@@ -854,3 +854,6 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - `app/(tabs)/index.tsx` kartu keranjang line1: sebelum ikon variasi, render tombol `[N]` (styles quickBtn/quickTxt, border brand) HANYA bila `l.product_id` ada & product.quick_qty>0 (lookup dari `products`). onPress → `cart.setQty(l.key, q)` (GANTI qty jadi N, sesuai user). Item manual tanpa product_id → tak muncul.
 - DIVERIFIKASI e2e 1 sesi (screenshot): set "76 apel" quick=10 → keranjang tampil [10] → tekan → qty 1→10, subtotal Rp150.000. Layout [10][variasi][hapus] sesuai screenshot user. Lint clean. Tiap produk bisa angka beda. Frontend-only → user REDEPLOY.
 - Catatan testing: web preview screenshot = context baru tiap sesi (re-sync cloud), jadi verifikasi lintas-fitur HARUS 1 sesi; nav antar-tab pakai page.mouse.click koordinat (tab bar overlay intercept get_by_text).
+
+## Session Log (fork) — PINDAH tombol ⌫ kalkulator (tak lagi menutupi angka)
+- `CalculatorModal.tsx`: tombol backspace dipindah dari absolut pojok-kiri-atas DALAM displayBox → ke baris sendiri `bsRow` (rata kanan) DI ANTARA displayBox & keypad. displayBox `position:relative` dihapus, style `bsBtn` jadi pill 52x40 (bukan absolut). DIVERIFIKASI screenshot: ekspresi panjang multi-baris + hasil tidak tertutup tombol. Lint clean. Frontend-only → REDEPLOY.
