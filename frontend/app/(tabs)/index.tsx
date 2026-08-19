@@ -411,7 +411,7 @@ export default function TransaksiScreen() {
                       style={styles.quickBtn}
                       testID={`cart-quick-${l.key}`}
                       hitSlop={6}
-                      onPress={() => cart.setQty(l.key, q)}
+                      onPress={() => cart.setQty(l.key, l.quantity + q)}
                     >
                       <Text style={styles.quickTxt}>{q}</Text>
                     </Pressable>

@@ -866,3 +866,8 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   4. ScrollView popup: `keyboardShouldPersistTaps="handled"` agar tap tak ditelan.
 - TIDAK ubah ukuran/warna/font/posisi/scanner/daftar belanja. Hanya interaksi sentuh + feedback.
 - DIVERIFIKASI e2e 1 sesi (screenshot): pin "makuku isi 3" ke Pintasan → tap chip → popup M/L/XL → klik PADA AREA KOSONG (padding bawah) kartu M → "makuku isi 3 — M ditambahkan", 1 baris qty1 (tak dobel). Lint clean (2 warning import duplicate pre-existing, bukan dari perubahan ini). Frontend-only → REDEPLOY.
+
+## Session Log (fork) — Jumlah Cepat: dari SET → TAMBAH (increment)
+- Greeting: "Halo, Vita dan Sasa" → "Halo, Fita dan Sasa".
+- `app/(tabs)/index.tsx` tombol [N] keranjang: onPress `cart.setQty(l.key, q)` → `cart.setQty(l.key, l.quantity + q)`. Tiap tap = tambah q (1→4→7→10). Harga/subtotal/total otomatis (setQty recompute tierPrice + render total). Satu onPress = satu increment (tak dobel). Ikon/posisi/tombol −1+/scanner/desain tetap.
+- DIVERIFIKASI e2e 1 sesi (screenshot): "76 apel" quick=3, qty 1 → tap [3] → 4 (Rp60.000) → tap lagi → 7 (Rp105.000). Frontend-only → user REDEPLOY ke produksi.
