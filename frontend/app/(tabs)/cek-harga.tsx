@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +15,8 @@ import { hasAdminPin, setAdminPin, verifyAdminPin } from "@/src/adminPin";
 import { rupiah } from "@/src/format";
 import { speakCalm, terbilang } from "@/src/voice";
 import { mikoAsk, mikoThinking, collectFacts, searchProductsByName, type ChatCtx } from "@/src/mikoChat";
+import { fuzzyMatchProducts, FUZZY_THRESHOLD } from "@/src/fuzzySearch";
+import { useVoiceSearch, type VoiceError } from "@/src/useVoiceSearch";
 import { askMikoOnline, type MikoTurn } from "@/src/mikoAI";
 import { useToast } from "@/src/toast";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -409,6 +411,53 @@ export default function CekHargaScreen() {
     setVarProduct(null);
     showResult(p, v);
   };
+
+  // ── Pencarian SUARA (offline, mesin bawaan HP) — hanya di Cek Harga ──
+  const [voiceHint, setVoiceHint] = useState<{ text: string; action?: "settings" | "download" } | null>(null);
+
+  const doVoiceSearch = useCallback((text: string) => {
+    const q = (text || "").trim();
+    if (!q) return;
+    setVoiceHint(null);
+    const matches = fuzzyMatchProducts(products, q);
+    if (matches.length && matches[0].score >= FUZZY_THRESHOLD) {
+      setNoResultQuery(null);
+      pickProduct(matches[0].product);
+      return;
+    }
+    // Tidak ada yang cukup mirip → pesan "tidak ditemukan" + teks yang terdengar.
+    clearTimers();
+    setSearchResults(null);
+    setVarProduct(null);
+    setResult(null);
+    setNoResultQuery(q);
+    const msg = `Miko mendengar "${q}", tapi belum menemukan barangnya, Kak. Mau coba lagi, atau lihat semua produk?`;
+    mikoBus.emit({ type: "say", text: msg, pose: "surprised" });
+    speakCalm(msg);
+    armSelTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  const onVoiceError = useCallback((err: VoiceError) => {
+    const map: Record<VoiceError, { text: string; action?: "settings" | "download" }> = {
+      VOICE_UNAVAILABLE: { text: "Pencarian suara hanya berfungsi di aplikasi yang sudah di-build (bukan pratinjau web)." },
+      PERM_DENIED: { text: "Izin mikrofon diperlukan untuk mencari lewat suara. Ketuk mikrofon lagi untuk mengizinkan." },
+      PERM_BLOCKED: { text: "Izin mikrofon diblokir. Buka Pengaturan untuk mengizinkan.", action: "settings" },
+      NO_ID_PACK: { text: "Pengenalan suara Bahasa Indonesia butuh paket bahasa offline di HP ini.", action: "download" },
+      NO_SPEECH: { text: "Miko belum mendengar suara. Coba ketuk mikrofon lalu bicara lagi ya, Kak." },
+      START_FAIL: { text: "Gagal memulai pencarian suara. Coba lagi ya, Kak." },
+    };
+    setVoiceHint(map[err]);
+  }, []);
+
+  const voice = useVoiceSearch({ onResult: doVoiceSearch, onError: onVoiceError });
+
+  const onMicPress = useCallback(() => {
+    if (voice.listening) { voice.stop(); return; }
+    setVoiceHint(null);
+    Haptics.selectionAsync();
+    voice.start();
+  }, [voice]);
 
   // Pencarian KETIK (offline, dari DB Kasir lokal). Enter → cari nama.
   const doTextSearch = (raw: string) => {
@@ -832,10 +881,37 @@ export default function CekHargaScreen() {
                 onSubmitEditing={() => doTextSearch(searchQuery)}
                 testID="cekharga-search-input"
               />
+              <Pressable
+                style={[styles.micBtn, voice.listening && styles.micBtnActive]}
+                onPress={onMicPress}
+                testID="cekharga-mic-btn"
+                hitSlop={6}
+              >
+                <Ionicons name={voice.listening ? "stop" : "mic"} size={20} color={voice.listening ? colors.onBrandPrimary : colors.brand} />
+              </Pressable>
               <Pressable style={styles.searchBtn} onPress={() => doTextSearch(searchQuery)} testID="cekharga-search-btn">
                 <Ionicons name="arrow-forward" size={20} color={colors.onBrandPrimary} />
               </Pressable>
             </View>
+
+            {voice.listening && (
+              <Text style={styles.voiceListening} testID="cekharga-voice-listening">🎙️ Mendengarkan… silakan sebutkan nama barang</Text>
+            )}
+            {!!voiceHint && !voice.listening && (
+              <View style={styles.voiceHintBox} testID="cekharga-voice-hint">
+                <Text style={styles.voiceHintTxt}>{voiceHint.text}</Text>
+                {voiceHint.action === "settings" && (
+                  <Pressable style={styles.voiceHintBtn} onPress={() => Linking.openSettings()} testID="cekharga-voice-settings">
+                    <Text style={styles.voiceHintBtnTxt}>Buka Pengaturan</Text>
+                  </Pressable>
+                )}
+                {voiceHint.action === "download" && (
+                  <Pressable style={styles.voiceHintBtn} onPress={() => voice.downloadIdPack()} testID="cekharga-voice-download">
+                    <Text style={styles.voiceHintBtnTxt}>Unduh paket bahasa</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
 
             {/* Panggung Miko: Miko berdiri di atas pedestal, menyapa pelanggan */}
             <View style={styles.stage}>
@@ -1071,6 +1147,13 @@ const styles = StyleSheet.create({
   searchRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, width: "100%", maxWidth: 420, marginTop: spacing.lg, paddingLeft: spacing.md, paddingRight: 6, height: 54, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandTertiary, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },
   searchBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  micBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  micBtnActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  voiceListening: { marginTop: spacing.sm, color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, textAlign: "center" },
+  voiceHintBox: { marginTop: spacing.sm, width: "100%", maxWidth: 420, backgroundColor: colors.surfaceTertiary, borderRadius: radius.lg, padding: spacing.md, alignItems: "center" },
+  voiceHintTxt: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center" },
+  voiceHintBtn: { marginTop: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  voiceHintBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.base },
 
   // Layar pilihan (kartu produk / varian)
   pickWrap: { flex: 1, width: "100%", paddingHorizontal: spacing.md, paddingTop: spacing.sm },

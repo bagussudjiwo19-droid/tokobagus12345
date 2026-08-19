@@ -17,7 +17,9 @@
         "NSBluetoothPeripheralUsageDescription": "Cetak struk ke printer Bluetooth",
         "LSApplicationQueriesSchemes": [
           "whatsapp"
-        ]
+        ],
+        "NSMicrophoneUsageDescription": "Cari produk lewat suara",
+        "NSSpeechRecognitionUsageDescription": "Kenali ucapan untuk cari produk"
       }
     },
     "android": {
@@ -35,7 +37,8 @@
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -69,7 +72,18 @@
         }
       ],
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cari produk lewat suara",
+          "speechRecognitionPermission": "Kenali ucapan untuk cari produk",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.as"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
