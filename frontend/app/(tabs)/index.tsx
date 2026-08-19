@@ -288,7 +288,7 @@ export default function TransaksiScreen() {
         {/* Header sapaan + Pintasan Produk (2 baris chip di samping teks) */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Text style={styles.hi}>Halo, Kasir 👋</Text>
+            <Text style={styles.hi}>Halo, Vita dan Sasa 👋</Text>
             <Text style={styles.pageTitle}>Transaksi</Text>
           </View>
           <View style={styles.quickArea}>
