@@ -857,3 +857,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 
 ## Session Log (fork) — PINDAH tombol ⌫ kalkulator (tak lagi menutupi angka)
 - `CalculatorModal.tsx`: tombol backspace dipindah dari absolut pojok-kiri-atas DALAM displayBox → ke baris sendiri `bsRow` (rata kanan) DI ANTARA displayBox & keypad. displayBox `position:relative` dihapus, style `bsBtn` jadi pill 52x40 (bukan absolut). DIVERIFIKASI screenshot: ekspresi panjang multi-baris + hasil tidak tertutup tombol. Lint clean. Frontend-only → REDEPLOY.
+
+## Session Log (fork) — PERBAIKI area sentuh popup "Pilih Variasi" (tanpa ubah desain)
+- `app/(tabs)/index.tsx` popup variasi (Modal `variantFor`):
+  1. Text `vPillName`/`vPillPrice` diberi `pointerEvents="none"` → sentuhan di nama/harga/area-kosong SEMUA diarahkan ke Pressable kartu (fix zona-mati).
+  2. Feedback tekan: Pressable `style={({pressed})=>[vPill, pressed&&vPillPressed]}` (opacity 0.65) + `android_ripple`. Style baru `vPillPressed`; `vPill` tambah `overflow:hidden` utk ripple.
+  3. Anti-dobel: `pickingRef` (useRef) di addChild/onPickVariation → return bila sudah true; reset via useEffect saat variantFor jadi non-null. Satu tap = satu item.
+  4. ScrollView popup: `keyboardShouldPersistTaps="handled"` agar tap tak ditelan.
+- TIDAK ubah ukuran/warna/font/posisi/scanner/daftar belanja. Hanya interaksi sentuh + feedback.
+- DIVERIFIKASI e2e 1 sesi (screenshot): pin "makuku isi 3" ke Pintasan → tap chip → popup M/L/XL → klik PADA AREA KOSONG (padding bawah) kartu M → "makuku isi 3 — M ditambahkan", 1 baris qty1 (tak dobel). Lint clean (2 warning import duplicate pre-existing, bukan dari perubahan ini). Frontend-only → REDEPLOY.

@@ -105,6 +105,10 @@ export default function TransaksiScreen() {
   const [screenActive, setScreenActive] = useState(false);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
+  // Anti-dobel: satu tap variasi hanya boleh menambah satu item. Reset tiap kali
+  // popup dibuka (variantFor berubah jadi non-null).
+  const pickingRef = useRef(false);
+  useEffect(() => { if (variantFor) pickingRef.current = false; }, [variantFor]);
   const keepScanFocused = useCallback(() => {
     setTimeout(() => {
       if (screenFocusedRef.current && !variantForRef.current) inputRef.current?.focus();
@@ -135,6 +139,8 @@ export default function TransaksiScreen() {
 
   // Tambah satu produk anak ke keranjang dengan harga efektif (ikut induk bila di-set).
   const addChild = (child: Product, root: Product) => {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
     const eff = childEffective(child, root);
     cart.addProduct({ ...child, sell_price: eff.sell_price, tiers: eff.tiers }, null);
     setVariantFor(null);
@@ -144,6 +150,8 @@ export default function TransaksiScreen() {
   };
 
   const onPickVariation = (p: Product, v: Variation) => {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
     cart.addProduct(p, v);
     setVariantFor(null);
     Haptics.selectionAsync();
@@ -512,19 +520,20 @@ export default function TransaksiScreen() {
         <View style={styles.vCenter} pointerEvents="box-none">
           <View style={styles.vCard}>
             <Text style={styles.vTitle} numberOfLines={1}>Pilih Variasi {variantFor?.name}</Text>
-            <ScrollView style={{ maxHeight: 340 }} contentContainerStyle={styles.vWrap}>
+            <ScrollView style={{ maxHeight: 340 }} contentContainerStyle={styles.vWrap} keyboardShouldPersistTaps="handled">
               {/* Anak (produk terpisah dengan barcode sendiri) */}
               {variantFor && products.filter((p) => p.parent_id === variantFor.id).map((child) => {
                 const eff = childEffective(child, variantFor);
                 return (
                   <Pressable
                     key={child.id}
-                    style={styles.vPill}
+                    style={({ pressed }) => [styles.vPill, pressed && styles.vPillPressed]}
+                    android_ripple={{ color: colors.brandTertiary }}
                     onPress={() => addChild(child, variantFor)}
                     testID={`variasi-child-${child.id}`}
                   >
-                    <Text style={styles.vPillName} numberOfLines={1}>{child.name}</Text>
-                    <Text style={styles.vPillPrice}>{rupiah(eff.sell_price)}</Text>
+                    <Text style={styles.vPillName} numberOfLines={1} pointerEvents="none">{child.name}</Text>
+                    <Text style={styles.vPillPrice} pointerEvents="none">{rupiah(eff.sell_price)}</Text>
                   </Pressable>
                 );
               })}
@@ -532,12 +541,13 @@ export default function TransaksiScreen() {
               {variantFor?.variations?.map((v) => (
                 <Pressable
                   key={v.id}
-                  style={styles.vPill}
+                  style={({ pressed }) => [styles.vPill, pressed && styles.vPillPressed]}
+                  android_ripple={{ color: colors.brandTertiary }}
                   onPress={() => variantFor && onPickVariation(variantFor, v)}
                   testID={`variasi-${v.id}`}
                 >
-                  <Text style={styles.vPillName} numberOfLines={1}>{v.name}</Text>
-                  <Text style={styles.vPillPrice}>{rupiah(v.inherit_tiers ? variantFor.sell_price : v.sell_price)}</Text>
+                  <Text style={styles.vPillName} numberOfLines={1} pointerEvents="none">{v.name}</Text>
+                  <Text style={styles.vPillPrice} pointerEvents="none">{rupiah(v.inherit_tiers ? variantFor.sell_price : v.sell_price)}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -663,7 +673,8 @@ const styles = StyleSheet.create({
   vCard: { width: "100%", maxWidth: 360, backgroundColor: colors.surfaceSecondary, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderStrong, padding: spacing.lg },
   vTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface, textAlign: "center", marginBottom: spacing.md },
   vWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" },
-  vPill: { minWidth: "30%", flexGrow: 1, backgroundColor: colors.surfaceTertiary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brand, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, alignItems: "center" },
+  vPill: { minWidth: "30%", flexGrow: 1, backgroundColor: colors.surfaceTertiary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.brand, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, alignItems: "center", overflow: "hidden" },
+  vPillPressed: { opacity: 0.65 },
   vPillName: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface },
   vPillPrice: { fontFamily: font.regular, fontSize: fontSize.sm, color: colors.onSurfaceTertiary, marginTop: 2 },
   hi: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.xs },
