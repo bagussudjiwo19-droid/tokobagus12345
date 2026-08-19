@@ -236,6 +236,7 @@ export const local = {
       inherit_tiers: data.inherit_tiers ?? false,
       variations: data.variations ?? [],
       price_type: data.price_type ?? undefined,
+      quick_qty: data.quick_qty ?? undefined,
       created_at: nowIso(),
       updated_at: nowIso(),
     };

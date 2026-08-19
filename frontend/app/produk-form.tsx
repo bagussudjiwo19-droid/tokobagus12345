@@ -51,6 +51,7 @@ export default function ProdukFormScreen() {
   const [buyPrice, setBuyPrice] = useState(String(editing?.buy_price ?? ""));
   const [sellPrice, setSellPrice] = useState(String(editing?.sell_price ?? ""));
   const [stock, setStock] = useState(editing ? String(editing.stock ?? 0) : "999");
+  const [quickQty, setQuickQty] = useState(editing?.quick_qty ? String(editing.quick_qty) : "");
   const [tiers, setTiers] = useState<Tier[]>(editing?.tiers ?? []);
   const [variations, setVariations] = useState<Variation[]>(editing?.variations ?? []);
   const [extraBarcodes, setExtraBarcodes] = useState<string[]>(
@@ -142,6 +143,7 @@ export default function ProdukFormScreen() {
           }))
         : [],
       price_type: priceType,
+      quick_qty: num(quickQty) > 0 ? num(quickQty) : undefined,
     };
     try {
       if (editing) {
@@ -415,6 +417,24 @@ export default function ProdukFormScreen() {
           <Field label="Stok" value={stock} onChange={setStock} keyboardType="numeric" testID="form-stock" />
         )}
 
+        {!isTemp && (
+          <View style={{ marginBottom: spacing.md }}>
+            <Text style={styles.label}>Jumlah Cepat</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                testID="form-quickqty"
+                value={quickQty}
+                onChangeText={(t) => setQuickQty(t.replace(/[^\d]/g, ""))}
+                placeholder="mis. 12 (kosongkan bila tak dipakai)"
+                placeholderTextColor={colors.muted}
+                keyboardType="numeric"
+                style={styles.input}
+              />
+            </View>
+            <Text style={styles.helperTxt}>Muncul sebagai tombol [{quickQty && Number(quickQty) > 0 ? quickQty : "N"}] di keranjang untuk set jumlah sekali tekan.</Text>
+          </View>
+        )}
+
         {/* Mode BIASA: variasi opsional (nama + harga jual sendiri). Tanpa variasi →
             produk pakai Harga Jual utama seperti biasa. Barcode & grosir tidak diubah. */}
         {priceType === "biasa" && (<>
@@ -651,6 +671,7 @@ const styles = StyleSheet.create({
   hBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   hTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   label: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base, marginBottom: 6 },
+  helperTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 6 },
   inputBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 48 },
   prefix: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.lg, marginRight: 6 },
   input: { flex: 1, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },

@@ -846,3 +846,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Session Log (fork) — RAPIKAN grup tombol aksi kanan kartu Produk
 - `app/(tabs)/produk.tsx`: bungkus [pricePill/Bervariasi + printBtn + menuBtn] dalam satu View `actions` (flexDirection row, gap:2). Sebelumnya ketiganya anak langsung `card` → terpisah `gap:spacing.md` (12) tiap elemen → renggang. Kini card gap md hanya memisah name-col ↔ actions; di dalam actions rapat. printBtn/menuBtn width 34→32 (height 40, hitSlop tetap → nyaman disentuh). Urutan tetap Harga→Printer→Titik-tiga. Tidak ubah fungsi/warna/ikon/kartu/nama/font.
 - DIVERIFIKASI screenshot: grup aksi kanan kompak & rapi, tidak bertabrakan. Lint clean. Frontend-only → user REDEPLOY.
+
+## Session Log (fork) — JUMLAH CEPAT per-produk (tombol [N] di keranjang)
+- `types.ts`: Product tambah `quick_qty?: number` (0/undefined = sembunyikan tombol).
+- `localdb.ts createProduct`: tambah `quick_qty: data.quick_qty ?? undefined`. updateProduct via spread → otomatis. putProduct simpan JSON penuh → PERMANEN di device. Sync cloud (`/sync/push|pull`) simpan produk sbg opaque `doc` blob → quick_qty (dan note/Keterangan) IKUT tersimpan, TIDAK di-strip (model Pydantic ProductIn hanya utk endpoint REST legacy yg tak dipakai app offline-first). BACKEND TIDAK DIUBAH.
+- `produk-form.tsx`: state `quickQty` (init dari editing.quick_qty). Field "Jumlah Cepat" (numeric, placeholder "mis. 12 (kosongkan bila tak dipakai)") + helper text, hanya utk `!isTemp`. Payload save `quick_qty: num>0 ? num : undefined`. Style `helperTxt`.
+- `app/(tabs)/index.tsx` kartu keranjang line1: sebelum ikon variasi, render tombol `[N]` (styles quickBtn/quickTxt, border brand) HANYA bila `l.product_id` ada & product.quick_qty>0 (lookup dari `products`). onPress → `cart.setQty(l.key, q)` (GANTI qty jadi N, sesuai user). Item manual tanpa product_id → tak muncul.
+- DIVERIFIKASI e2e 1 sesi (screenshot): set "76 apel" quick=10 → keranjang tampil [10] → tekan → qty 1→10, subtotal Rp150.000. Layout [10][variasi][hapus] sesuai screenshot user. Lint clean. Tiap produk bisa angka beda. Frontend-only → user REDEPLOY.
+- Catatan testing: web preview screenshot = context baru tiap sesi (re-sync cloud), jadi verifikasi lintas-fitur HARUS 1 sesi; nav antar-tab pakai page.mouse.click koordinat (tab bar overlay intercept get_by_text).
