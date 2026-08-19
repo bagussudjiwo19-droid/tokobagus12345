@@ -152,6 +152,17 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
   };
 
   const clearAll = () => { setExpr(""); setLastOp(""); };
+  const backspace = () => {
+    Haptics.selectionAsync().catch(() => {});
+    setExpr((s) => {
+      if (s === "Error") { setLastOp(""); return ""; }
+      const next = s.slice(0, -1);
+      // Perbarui indikator operator mengikuti operator terakhir yang tersisa.
+      const ops = next.match(/[+\-×÷]/g);
+      setLastOp(ops && ops.length ? ops[ops.length - 1] : "");
+      return next;
+    });
+  };
   const inputDigit = (d: string) => {
     setExpr((s) => {
       if (s === "Error") return d;
@@ -246,6 +257,9 @@ export default function CalculatorModal({ visible, onClose }: { visible: boolean
             >
               {resultText}
             </Text>
+            <Pressable onPress={backspace} hitSlop={10} style={styles.bsBtn} testID="calc-backspace">
+              <Ionicons name="backspace-outline" size={22} color={colors.brand} />
+            </Pressable>
           </View>
 
           <View style={styles.grid}>
@@ -298,7 +312,8 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   title: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   opIndicator: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xl, marginTop: 2, minHeight: 26 },
-  displayBox: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, minHeight: 100, justifyContent: "flex-end" },
+  displayBox: { position: "relative", backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md, minHeight: 100, justifyContent: "flex-end" },
+  bsBtn: { position: "absolute", top: spacing.sm, left: spacing.md, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   exprScroll: { maxHeight: 92, width: "100%" },
   exprScrollContent: { flexGrow: 1, justifyContent: "flex-end" },
   exprLine: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: 22, lineHeight: 30, textAlign: "right" },
