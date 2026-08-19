@@ -878,3 +878,12 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - `produk-form.tsx`: field "Jumlah Cepat" jadi 3 kolom berjajar (form-quickqty / -2 / -3), placeholder 3/6/12, helper "tiap tap MENAMBAH". State quickQty2/3, payload quick_qty2/3 (>0 else undefined). Style `quickRow`(row+gap), `quickCell`(flex1).
 - `app/(tabs)/index.tsx` kartu keranjang: bangun array [quick_qty,2,3].filter(>0) → render tiap sbg tombol kecil `[N]` (testID `cart-quick-<key>-<i>`), onPress `setQty(l.key, l.quantity + q)` (TAMBAH). Kolom kosong tak muncul. quickBtn diringkas (minWidth28, fontSize.sm) agar 3 tombol + variasi + hapus muat rapi.
 - DIVERIFIKASI e2e 1 sesi (screenshot): "76 apel" quick 3/6/12 → keranjang tampil [3][6][12] → tap [6] → qty1→7 (Rp105.000). Lint clean. Frontend-only → user REDEPLOY.
+
+## Session Log (fork) — FIX keyboard kedip saat ketik Jumlah (bentrok fokus scanner)
+- Root cause: HardwareScanner (ExpoKeyEventView) wajib pegang fokus utk terima HID → saat kolom Jumlah (QtyInput) difokus & keyboard muncul, scanner merebut fokus lagi → keyboard tertutup → loop. Native-only.
+- `app/(tabs)/index.tsx`:
+  - State `qtyEditing` + `qtyEditingRef`. Handler `onQtyFocusChange(focused)`: set qtyEditing, qtyEditingRef, `kbdRef.current=focused` (penjaga keyboard anggap ketik manual), dan saat blur `setRefocusSignal(n+1)` (scanner rebut fokus lagi — pola sama spt setelah popup).
+  - `HardwareScanner enabled={screenActive && !qtyEditing}` → scanner "istirahat" hanya selama kolom Jumlah difokus; blur → enabled true → startListening (rebut fokus) + refocusSignal.
+  - `keepScanFocused` (web) tambah guard `!qtyEditingRef.current` agar scan input web tak mencuri fokus saat ketik jumlah.
+  - QtyInput: prop `onFocusChange`; `onFocus`→(true), `onBlur`→commit+(false).
+- DIVERIFIKASI web (screenshot): ketik "9" di qty → commit qty 9 (Rp135.000), fokus tak dicuri, no regresi. Perilaku scanner (jeda saat ketik, rebut fokus setelah selesai) HANYA bisa diuji penuh di build APK. Frontend-only → user REDEPLOY + build baru.

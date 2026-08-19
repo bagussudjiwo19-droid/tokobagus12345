@@ -103,6 +103,18 @@ export default function TransaksiScreen() {
   // masih di halaman Transaksi & tanpa popup → fokuskan lagi otomatis.
   const screenFocusedRef = useRef(false);
   const [screenActive, setScreenActive] = useState(false);
+  // Saat kolom Jumlah sedang diketik → scanner "diistirahatkan" agar keyboard HP
+  // tidak direbut fokusnya (tidak kedip buka-tutup). Setelah selesai (blur),
+  // scanner otomatis merebut fokus lagi (enabled true → startListening) + kita
+  // pacu refocusSignal (mekanisme yang sama dipakai setelah popup) → siap scan lagi.
+  const [qtyEditing, setQtyEditing] = useState(false);
+  const qtyEditingRef = useRef(false);
+  const onQtyFocusChange = useCallback((focused: boolean) => {
+    setQtyEditing(focused);
+    qtyEditingRef.current = focused;
+    kbdRef.current = focused; // beritahu penjaga keyboard: ini ketik manual, jangan ditutup
+    if (!focused) setRefocusSignal((n) => n + 1); // selesai → scanner rebut fokus lagi
+  }, []);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
   // Anti-dobel: satu tap variasi hanya boleh menambah satu item. Reset tiap kali
@@ -111,7 +123,7 @@ export default function TransaksiScreen() {
   useEffect(() => { if (variantFor) pickingRef.current = false; }, [variantFor]);
   const keepScanFocused = useCallback(() => {
     setTimeout(() => {
-      if (screenFocusedRef.current && !variantForRef.current) inputRef.current?.focus();
+      if (screenFocusedRef.current && !variantForRef.current && !qtyEditingRef.current) inputRef.current?.focus();
     }, 60);
   }, []);
   const loadSlots = useCallback(async () => {
@@ -343,7 +355,7 @@ export default function TransaksiScreen() {
               placeholderTextColor={colors.muted}
               style={styles.scanModeInput}
             />
-            <HardwareScanner enabled={screenActive} refocusSignal={refocusSignal} onScan={submitBarcode} />
+            <HardwareScanner enabled={screenActive && !qtyEditing} refocusSignal={refocusSignal} onScan={submitBarcode} />
             <View style={styles.readyDot} />
           </View>
           {scanNotif && (
@@ -465,7 +477,7 @@ export default function TransaksiScreen() {
                   <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
                     <Ionicons name="remove" size={18} color={colors.brand} />
                   </Pressable>
-                  <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} testID={`cart-qty-${l.key}`} />
+                  <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} onFocusChange={onQtyFocusChange} testID={`cart-qty-${l.key}`} />
                   <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
                     <Ionicons name="add" size={18} color={colors.brand} />
                   </Pressable>
@@ -624,7 +636,7 @@ export default function TransaksiScreen() {
   );
 }
 
-function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: number) => void; testID?: string }) {
+function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; onCommit: (n: number) => void; onFocusChange?: (focused: boolean) => void; testID?: string }) {
   const [txt, setTxt] = useState(String(value));
   useEffect(() => { setTxt(String(value)); }, [value]);
   // Bersihkan input: hanya angka + satu pemisah desimal (titik/koma → titik).
@@ -646,8 +658,9 @@ function QtyInput({ value, onCommit, testID }: { value: number; onCommit: (n: nu
     <TextInput
       value={txt}
       onChangeText={(t) => setTxt(sanitize(t))}
+      onFocus={() => onFocusChange?.(true)}
       onEndEditing={commit}
-      onBlur={commit}
+      onBlur={() => { commit(); onFocusChange?.(false); }}
       keyboardType="decimal-pad"
       returnKeyType="done"
       selectTextOnFocus
