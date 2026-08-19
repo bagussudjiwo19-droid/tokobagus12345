@@ -267,7 +267,7 @@ export default function CariScreen() {
           <View style={styles.row}>
             <Pressable style={styles.rowMain} onPress={() => onTap(item)} testID={`cari-row-${item.id}`}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.rowName}>{item.name}</Text>
                 <Text style={styles.rowMeta}>{item.barcode || "Tanpa barcode"}{isPrice || unlimited ? "" : ` • Stok ${item.stock}`}</Text>
               </View>
               <Text style={styles.rowPrice}>{hasVariants(item) ? "Bervariasi" : rupiah(item.sell_price)}</Text>
@@ -339,9 +339,9 @@ const styles = StyleSheet.create({
   varPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   row: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md },
   rowMain: { flex: 1, flexDirection: "row", alignItems: "center", paddingVertical: spacing.md },
-  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, lineHeight: 19 },
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
-  rowPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  rowPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, marginLeft: spacing.sm },
   trashBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: spacing.xs },
   addVarBtn: { flexDirection: "row", alignItems: "center", gap: 3, height: 32, paddingHorizontal: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.brandTertiary, marginLeft: spacing.xs },
   addVarTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.xs },

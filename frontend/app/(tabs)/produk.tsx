@@ -29,7 +29,7 @@ import { buildBarcodeLabels } from "@/src/receipt";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Printer } from "@/src/types";
 
-const PRODUK_ROW_H = 96; // tinggi kartu (84) + jarak (12) → getItemLayout scroll cepat
+
 
 const ProdukRow = React.memo(function ProdukRow({
   item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle, unlimited,
@@ -57,7 +57,7 @@ const ProdukRow = React.memo(function ProdukRow({
       )}
       <View style={{ flex: 1 }}>
         <View style={styles.nameRow}>
-          <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.rowName}>{item.name}</Text>
           {low && (
             <View style={styles.lowBadge}>
               <Ionicons name="alert-circle" size={11} color={colors.onBrandTertiary} />
@@ -395,7 +395,6 @@ export default function ProdukScreen() {
           data={filtered}
           keyExtractor={(p) => p.id}
           renderItem={renderRow}
-          getItemLayout={(_, index) => ({ length: PRODUK_ROW_H, offset: PRODUK_ROW_H * index, index })}
           removeClippedSubviews
           initialNumToRender={12}
           maxToRenderPerBatch={12}
@@ -552,10 +551,10 @@ const styles = StyleSheet.create({
   scanCardMeta: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
   scanCardPrice: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   scanCardClose: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  card: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.md, height: 84, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  card: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.md, minHeight: 84, paddingVertical: spacing.sm, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   thumb: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg, flexShrink: 1 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  rowName: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, lineHeight: 19, flexShrink: 1 },
   lowBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: colors.brandTertiary, borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 2 },
   lowTxt: { color: colors.onBrandTertiary, fontFamily: font.bold, fontSize: 10 },
   rowMeta: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 3 },

@@ -835,3 +835,10 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - `cek-harga.tsx` tampilan hasil grosir: per tingkatan → bila `note` terisi tampilkan note (style `grosirNote`, putih tebal, full-width green pill, TANPA harga di kanan); bila kosong FALLBACK ke "Mulai X unit" + harga (layout lama). Diurutkan min_qty kecil→besar (sudah ada sort di showResult).
 - `cek-harga.tsx` speakPrice (TTS Miko): bila note terisi → bacakan note (mis. "1 renceng 4500."); bila kosong → kalimat lama "Beli X harganya Y rupiah."
 - DIVERIFIKASI e2e (screenshot 1 sesi): buat "RexonaCek" grosir tier [1,500,"1pcs 500"] & [10,4500,"1 renceng 4500"] → Cek Harga tampil dua pill "1pcs 500" & "1 renceng 4500". Lint clean. TIDAK menyentuh scanner/keranjang/kalkulator-logika/pembayaran/harga normal. Frontend-only → user REDEPLOY. TTS hanya di build APK.
+
+## Session Log (fork) — NAMA PRODUK TIDAK TERPOTONG (wrapping) di Produk & Cari Barang
+- Greeting Transaksi: "Halo, Kasir" → "Halo, Vita dan Sasa".
+- `app/(tabs)/produk.tsx`: kartu produk `card` height:84 FIXED → `minHeight:84 + paddingVertical` (auto-tinggi). `rowName` fontSize.lg→base + lineHeight 19, hapus numberOfLines={1} (wrap penuh). `nameRow` tambah flexWrap. HAPUS `getItemLayout` (PRODUK_ROW_H) karena tinggi baris kini variabel → scroll akurat. Meta/barcode tetap numberOfLines={1}.
+- `app/cari.tsx`: `rowName` fontSize.lg→base + lineHeight 19, hapus numberOfLines={1} (wrap penuh). `rowPrice` tambah marginLeft agar tak menempel nama. Tanpa getItemLayout (sudah tak ada).
+- Tidak mengubah fungsi produk/barcode/scanner/harga/tombol +/Variasi/hapus/transaksi/kalkulator/pembayaran. Hanya font nama (1 tingkat lebih kecil: 16→14), text wrapping, tinggi kartu auto.
+- DIVERIFIKASI screenshot: Produk & Cari Barang tampil nama panjang penuh 2–3 baris tanpa "...", harga+tombol rapi. Lint clean. Frontend-only → user REDEPLOY.
