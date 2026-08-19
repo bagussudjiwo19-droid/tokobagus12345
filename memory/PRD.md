@@ -1,5 +1,15 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — REVERT: hapus tahap "Daftar Pesanan", Bayar langsung ke Pembayaran
+- Permintaan user: hapus fitur pengecekan (Daftar Pesanan), kembalikan alur seperti sebelum fitur itu ada.
+- `app/(tabs)/index.tsx`: tombol Bayar `router.push("/daftar-pesanan")` → kembali `router.push("/checkout?step=pay")`.
+- `app/_layout.tsx`: hapus `<Stack.Screen name="daftar-pesanan">`.
+- Hapus file `app/daftar-pesanan.tsx`.
+- Fitur lain TETAP: kalkulator samping Bayar, notif scan lokal, gaya toast global baru, dialog Edit Harga (tengah + KeyboardAvoidingView).
+- DIVERIFIKASI (screenshot e2e web): scan → Bayar → LANGSUNG halaman Pembayaran (Total/Diskon/Uang Diterima/keypad/Simpan), tanpa Daftar Pesanan. Lint bersih.
+
+
+
 ## Session Log (fork) — FIX Edit Harga tertutup keyboard: ganti bottom-sheet → dialog TENGAH + KeyboardAvoidingView
 - Keluhan user (HP/APK): saat Edit Harga barang di Transaksi, keyboard MENUTUPI kolom edit. Sebab: panel pakai gorhom BottomSheetModal (keyboardBehavior interactive) TAPI app juga pakai `KeyboardProvider` (react-native-keyboard-controller) → di Android berebut kendali keyboard → sheet tak naik. Native-only (tak bisa repro di web). User pilih opsi B (dialog tengah).
 - `app/(tabs)/index.tsx`: panel Edit Harga diubah dari `BottomSheetModal` → `Modal` (transparent, fade) berisi `KeyboardAvoidingView behavior="padding"` (dari react-native-keyboard-controller) + kartu di TENGAH (`priceBackdrop` overlay gelap + `priceCard`). Input = `TextInput` biasa (bukan BottomSheetTextInput) autoFocus+selectTextOnFocus. State `priceOpen` (ganti priceSheet.present/dismiss). openEditPrice→setPriceOpen(true); applyTemporary/applyPermanent/price-cancel→setPriceOpen(false). Hapus ref priceSheet + const EditPriceInput + import BottomSheetTextInput (delete sheet masih pakai BottomSheetModal/View/Backdrop). Isi & fungsi (simpan transaksi ini / permanen / batal) TIDAK berubah. Scanner/keranjang/pembayaran tak disentuh.
