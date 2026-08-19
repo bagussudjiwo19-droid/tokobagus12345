@@ -676,17 +676,32 @@ function TierEditor({
               <Ionicons name="close" size={18} color={colors.error} />
             </Pressable>
           </View>
-          <View style={styles.tierNoteField}>
-            <Text style={styles.tierLbl}>Keterangan (tampil di Cek Harga)</Text>
-            <TextInput
-              testID={`${testPrefix}-note-${i}`}
-              value={t.note ?? ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, note: v } : x)))}
-              style={styles.tierInput}
-              placeholder="mis. 1 renceng 4500"
-              placeholderTextColor={colors.muted}
-            />
+          <View style={styles.tierRow}>
+            <View style={styles.tierField}>
+              <Text style={styles.tierLbl}>Nama Tampilan</Text>
+              <TextInput
+                testID={`${testPrefix}-dispname-${i}`}
+                value={t.disp_name ?? ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, disp_name: v } : x)))}
+                style={styles.tierInput}
+                placeholder="mis. 3 pcs"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={styles.tierField}>
+              <Text style={styles.tierLbl}>Harga Tampilan</Text>
+              <TextInput
+                testID={`${testPrefix}-dispprice-${i}`}
+                value={t.disp_price ? String(t.disp_price) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, disp_price: Number(v.replace(/[^\d]/g, "")) || undefined } : x)))}
+                keyboardType="numeric"
+                style={styles.tierInput}
+                placeholder="mis. 3500"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
           </View>
+          <Text style={styles.tierHint}>Yang tampil ke pelanggan di Cek Harga. Min Qty & Harga di atas tetap dipakai untuk perhitungan.</Text>
         </View>
       ))}
     </View>
@@ -728,6 +743,7 @@ const styles = StyleSheet.create({
   tierCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.sm, marginBottom: spacing.sm },
   tierRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
   tierNoteField: { marginTop: spacing.sm },
+  tierHint: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 6 },
   tierField: { flex: 1 },
   tierLbl: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginBottom: 4 },
   tierInput: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 44, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },

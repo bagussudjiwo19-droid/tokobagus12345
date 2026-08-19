@@ -887,3 +887,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
   - `keepScanFocused` (web) tambah guard `!qtyEditingRef.current` agar scan input web tak mencuri fokus saat ketik jumlah.
   - QtyInput: prop `onFocusChange`; `onFocus`→(true), `onBlur`→commit+(false).
 - DIVERIFIKASI web (screenshot): ketik "9" di qty → commit qty 9 (Rp135.000), fokus tak dicuri, no regresi. Perilaku scanner (jeda saat ketik, rebut fokus setelah selesai) HANYA bisa diuji penuh di build APK. Frontend-only → user REDEPLOY + build baru.
+
+## Session Log (fork) — PECAH Keterangan grosir → Nama Tampilan + Harga Tampilan
+- `types.ts` Tier: tambah `disp_name?: string`, `disp_price?: number` (note legacy dipertahankan sbg fallback).
+- produk-form inline TierEditor + `components/TierEditor.tsx`: ganti 1 kolom "Keterangan" → baris 2 kolom [Nama Tampilan (teks, dispname)] [Harga Tampilan (numeric, dispprice)]. Min Qty & Harga (internal) TIDAK diubah. Hint text ditambah (produk-form `tierHint`).
+- `cek-harga.tsx` display: prioritas `disp_name` → tampil "`disp_name` — Rp`disp_price`" (atau nama saja bila harga kosong); else `note` (legacy); else fallback "Mulai X unit" + harga internal (kanan). Min Qty & harga internal TIDAK ditampilkan ke pelanggan bila disp/note ada.
+- `cek-harga.tsx` speakPrice TTS: baca "disp_name harganya <disp_price> rupiah"; else note; else kalimat lama.
+- Simpan permanen: tier disimpan sbg objek penuh (localdb JSON + sync doc blob) → disp_name/disp_price ikut.
+- DIVERIFIKASI e2e 1 sesi (screenshot): "RexonaDisp" tier [3,1166,"3 pcs",3500] & [10,1000,"1 renceng",10000] → Cek Harga tampil "3 pcs — Rp3.500" & "1 renceng — Rp10.000", TANPA "Mulai 3"/angka internal. Lint clean. Frontend-only → user REDEPLOY.

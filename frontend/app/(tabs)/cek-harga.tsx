@@ -295,7 +295,10 @@ export default function CekHargaScreen() {
       parts.push(`${clean(name)}.`, `Harga ${terbilang(price).trim()} rupiah.`);
       const u = unit && unit !== "pcs" ? ` ${unit}` : "";
       tiers.forEach((t) => {
-        if (t.note && t.note.trim()) {
+        if (t.disp_name && t.disp_name.trim()) {
+          const priceTxt = t.disp_price && t.disp_price > 0 ? ` harganya ${terbilang(t.disp_price).trim()} rupiah` : "";
+          parts.push(`${clean(t.disp_name)}${priceTxt}.`);
+        } else if (t.note && t.note.trim()) {
           parts.push(`${clean(t.note)}.`);
         } else {
           parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
@@ -663,17 +666,21 @@ export default function CekHargaScreen() {
                   <View style={styles.dashGreen} />
                 </View>
                 {result.tiers.map((t, i) => {
-                  const hasNote = !!(t.note && t.note.trim());
+                  const dispName = t.disp_name && t.disp_name.trim() ? t.disp_name.trim() : "";
+                  const dispLabel = dispName
+                    ? (t.disp_price && t.disp_price > 0 ? `${dispName} — ${rupiah(t.disp_price)}` : dispName)
+                    : (t.note && t.note.trim() ? t.note.trim() : "");
+                  const hasLabel = !!dispLabel;
                   return (
                     <View key={i} style={styles.grosirPill}>
                       <View style={styles.grosirLeft}>
-                        {hasNote ? (
-                          <Text style={styles.grosirNote} numberOfLines={2}>{t.note!.trim()}</Text>
+                        {hasLabel ? (
+                          <Text style={styles.grosirNote} numberOfLines={2}>{dispLabel}</Text>
                         ) : (
                           <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
                         )}
                       </View>
-                      {!hasNote && (
+                      {!hasLabel && (
                         <View style={styles.grosirRight}>
                           <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
                         </View>

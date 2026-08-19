@@ -57,16 +57,30 @@ export default function TierEditor({
               <Ionicons name="close" size={18} color={colors.error} />
             </Pressable>
           </View>
-          <View style={styles.noteField}>
-            <Text style={styles.lbl}>Keterangan (tampil di Cek Harga)</Text>
-            <TextInput
-              testID={`${testPrefix}-note-${i}`}
-              value={t.note ?? ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, note: v } : x)))}
-              style={styles.input}
-              placeholder="mis. 1 renceng 4500"
-              placeholderTextColor={colors.muted}
-            />
+          <View style={styles.row}>
+            <View style={styles.field}>
+              <Text style={styles.lbl}>Nama Tampilan</Text>
+              <TextInput
+                testID={`${testPrefix}-dispname-${i}`}
+                value={t.disp_name ?? ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, disp_name: v } : x)))}
+                style={styles.input}
+                placeholder="mis. 3 pcs"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.lbl}>Harga Tampilan</Text>
+              <TextInput
+                testID={`${testPrefix}-dispprice-${i}`}
+                value={t.disp_price ? String(t.disp_price) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, disp_price: Number(v.replace(/[^\d]/g, "")) || undefined } : x)))}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholder="mis. 3500"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
           </View>
         </View>
       ))}
