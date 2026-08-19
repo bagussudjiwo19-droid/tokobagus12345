@@ -27,34 +27,47 @@ export default function TierEditor({
       </View>
       {tiers.length === 0 && <Text style={styles.empty}>Belum ada tingkat harga. Ketuk Tambah untuk membuat.</Text>}
       {tiers.map((t, i) => (
-        <View key={i} style={styles.row} testID={`${testPrefix}-${i}`}>
-          <View style={styles.field}>
-            <Text style={styles.lbl}>Min Qty</Text>
+        <View key={i} style={styles.card} testID={`${testPrefix}-${i}`}>
+          <View style={styles.row}>
+            <View style={styles.field}>
+              <Text style={styles.lbl}>Min Qty</Text>
+              <TextInput
+                testID={`${testPrefix}-qty-${i}`}
+                value={t.min_qty ? String(t.min_qty) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, min_qty: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.lbl}>Harga</Text>
+              <TextInput
+                testID={`${testPrefix}-price-${i}`}
+                value={t.price ? String(t.price) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, price: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <Pressable onPress={() => onChange(tiers.filter((_, xi) => xi !== i))} style={styles.del} testID={`${testPrefix}-remove-${i}`}>
+              <Ionicons name="close" size={18} color={colors.error} />
+            </Pressable>
+          </View>
+          <View style={styles.noteField}>
+            <Text style={styles.lbl}>Keterangan (tampil di Cek Harga)</Text>
             <TextInput
-              testID={`${testPrefix}-qty-${i}`}
-              value={t.min_qty ? String(t.min_qty) : ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, min_qty: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
-              keyboardType="numeric"
+              testID={`${testPrefix}-note-${i}`}
+              value={t.note ?? ""}
+              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, note: v } : x)))}
               style={styles.input}
-              placeholder="0"
+              placeholder="mis. 1 renceng 4500"
               placeholderTextColor={colors.muted}
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.lbl}>Harga</Text>
-            <TextInput
-              testID={`${testPrefix}-price-${i}`}
-              value={t.price ? String(t.price) : ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, price: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
-              keyboardType="numeric"
-              style={styles.input}
-              placeholder="0"
-              placeholderTextColor={colors.muted}
-            />
-          </View>
-          <Pressable onPress={() => onChange(tiers.filter((_, xi) => xi !== i))} style={styles.del} testID={`${testPrefix}-remove-${i}`}>
-            <Ionicons name="close" size={18} color={colors.error} />
-          </Pressable>
         </View>
       ))}
     </View>
@@ -67,7 +80,9 @@ const styles = StyleSheet.create({
   addBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingVertical: 4, paddingHorizontal: 8 },
   addTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   empty: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 4 },
-  row: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, marginTop: spacing.sm },
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.sm, marginTop: spacing.sm },
+  row: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
+  noteField: { marginTop: spacing.sm },
   field: { flex: 1 },
   lbl: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm, marginBottom: 4 },
   input: { backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 44, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },

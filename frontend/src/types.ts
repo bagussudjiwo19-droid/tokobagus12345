@@ -1,4 +1,4 @@
-export type Tier = { min_qty: number; price: number };
+export type Tier = { min_qty: number; price: number; note?: string };
 
 export type Variation = {
   id: string;

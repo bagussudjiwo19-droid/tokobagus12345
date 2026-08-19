@@ -827,3 +827,11 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 - BARU `app/pengaturan-suara.tsx` (modal, terdaftar _layout): pilih Tingkat Volume (Normal/Keras/Maksimal) + pilih bunyi tiap kejadian (Barang Masuk/Berhasil, Gagal/Tidak Masuk, Transaksi Lunas) dari 9 opsi + tombol "Coba" (preview). Simpan otomatis ke Settings + sfx.reload(). Diakses via ikon speaker di header Riwayat (riwayat-suara).
 - DIVERIFIKASI (screenshot preview): layar tampil lengkap (volume, 3 kejadian, 9 bunyi, radio+Coba), pilih Maksimal + Koin tersimpan. SFX/preview HANYA berbunyi di HP/build (bukan web) — diberi toast pengingat.
 - CATATAN: FRONTEND-only → user REDEPLOY. Tips toko ramai: pakai volume Maksimal + naikkan volume media HP / speaker Bluetooth.
+
+## Session Log (fork) — KETERANGAN per tingkatan HARGA GROSIR + tombol hapus kalkulator
+- `CalculatorModal.tsx`: tombol backspace (⌫) sudah ada; tambah style `bsBtn` (posisi absolut pojok kiri-atas display, bulat, tema Soft Rose). Verified screenshot.
+- `src/types.ts`: `Tier` tambah field opsional `note?: string` → tersimpan penuh di SQLite (localdb createProduct/updateProduct simpan objek tier apa adanya; filter save `min_qty>0` tetap membawa note). Permanen setelah tutup/buka.
+- TierEditor (DUA tempat: inline di `produk-form.tsx` + komponen `components/TierEditor.tsx` utk variasi): tiap tingkatan kini kartu → baris1 [Min Qty][Harga]+hapus, baris2 input **Keterangan (tampil di Cek Harga)** melebar penuh (placeholder "mis. 1 renceng 4500"). Style baru: produk-form `tierCard/tierNoteField`; komponen `card/noteField`.
+- `cek-harga.tsx` tampilan hasil grosir: per tingkatan → bila `note` terisi tampilkan note (style `grosirNote`, putih tebal, full-width green pill, TANPA harga di kanan); bila kosong FALLBACK ke "Mulai X unit" + harga (layout lama). Diurutkan min_qty kecil→besar (sudah ada sort di showResult).
+- `cek-harga.tsx` speakPrice (TTS Miko): bila note terisi → bacakan note (mis. "1 renceng 4500."); bila kosong → kalimat lama "Beli X harganya Y rupiah."
+- DIVERIFIKASI e2e (screenshot 1 sesi): buat "RexonaCek" grosir tier [1,500,"1pcs 500"] & [10,4500,"1 renceng 4500"] → Cek Harga tampil dua pill "1pcs 500" & "1 renceng 4500". Lint clean. TIDAK menyentuh scanner/keranjang/kalkulator-logika/pembayaran/harga normal. Frontend-only → user REDEPLOY. TTS hanya di build APK.

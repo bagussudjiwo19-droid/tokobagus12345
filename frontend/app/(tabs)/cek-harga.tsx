@@ -295,7 +295,11 @@ export default function CekHargaScreen() {
       parts.push(`${clean(name)}.`, `Harga ${terbilang(price).trim()} rupiah.`);
       const u = unit && unit !== "pcs" ? ` ${unit}` : "";
       tiers.forEach((t) => {
-        parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
+        if (t.note && t.note.trim()) {
+          parts.push(`${clean(t.note)}.`);
+        } else {
+          parts.push(`Beli ${t.min_qty}${u} harganya ${terbilang(t.price).trim()} rupiah.`);
+        }
       });
     }
     if (closingOn) {
@@ -658,16 +662,25 @@ export default function CekHargaScreen() {
                   <Text style={styles.grosirHead}>HARGA GROSIR</Text>
                   <View style={styles.dashGreen} />
                 </View>
-                {result.tiers.map((t, i) => (
-                  <View key={i} style={styles.grosirPill}>
-                    <View style={styles.grosirLeft}>
-                      <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
+                {result.tiers.map((t, i) => {
+                  const hasNote = !!(t.note && t.note.trim());
+                  return (
+                    <View key={i} style={styles.grosirPill}>
+                      <View style={styles.grosirLeft}>
+                        {hasNote ? (
+                          <Text style={styles.grosirNote} numberOfLines={2}>{t.note!.trim()}</Text>
+                        ) : (
+                          <Text style={styles.grosirQty}>Mulai {t.min_qty} {result.unit}</Text>
+                        )}
+                      </View>
+                      {!hasNote && (
+                        <View style={styles.grosirRight}>
+                          <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
+                        </View>
+                      )}
                     </View>
-                    <View style={styles.grosirRight}>
-                      <Text style={styles.grosirPrice}>{rupiah(t.price)}</Text>
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             )}
               </>
@@ -1125,6 +1138,7 @@ const styles = StyleSheet.create({
   grosirLeft: { flex: 1, backgroundColor: colors.success, paddingVertical: 16, paddingHorizontal: 18, justifyContent: "center" },
   grosirRight: { minWidth: 128, backgroundColor: "#FFFFFF", paddingVertical: 16, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
   grosirQty: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.base },
+  grosirNote: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.xl, letterSpacing: 0.3 },
   grosirPrice: { color: colors.success, fontFamily: font.display, fontSize: 26, letterSpacing: 0.5 },
 
   countdownRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.xl },

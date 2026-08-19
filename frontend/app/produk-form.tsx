@@ -598,34 +598,47 @@ function TierEditor({
         </Pressable>
       </View>
       {tiers.map((t, i) => (
-        <View key={i} style={styles.tierRow} testID={`${testPrefix}-${i}`}>
-          <View style={styles.tierField}>
-            <Text style={styles.tierLbl}>Min Qty</Text>
+        <View key={i} style={styles.tierCard} testID={`${testPrefix}-${i}`}>
+          <View style={styles.tierRow}>
+            <View style={styles.tierField}>
+              <Text style={styles.tierLbl}>Min Qty</Text>
+              <TextInput
+                testID={`${testPrefix}-qty-${i}`}
+                value={t.min_qty ? String(t.min_qty) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, min_qty: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
+                keyboardType="numeric"
+                style={styles.tierInput}
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={styles.tierField}>
+              <Text style={styles.tierLbl}>Harga</Text>
+              <TextInput
+                testID={`${testPrefix}-price-${i}`}
+                value={t.price ? String(t.price) : ""}
+                onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, price: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
+                keyboardType="numeric"
+                style={styles.tierInput}
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <Pressable onPress={() => onChange(tiers.filter((_, xi) => xi !== i))} style={styles.tierDel} testID={`${testPrefix}-remove-${i}`}>
+              <Ionicons name="close" size={18} color={colors.error} />
+            </Pressable>
+          </View>
+          <View style={styles.tierNoteField}>
+            <Text style={styles.tierLbl}>Keterangan (tampil di Cek Harga)</Text>
             <TextInput
-              testID={`${testPrefix}-qty-${i}`}
-              value={t.min_qty ? String(t.min_qty) : ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, min_qty: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
-              keyboardType="numeric"
+              testID={`${testPrefix}-note-${i}`}
+              value={t.note ?? ""}
+              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, note: v } : x)))}
               style={styles.tierInput}
-              placeholder="0"
+              placeholder="mis. 1 renceng 4500"
               placeholderTextColor={colors.muted}
             />
           </View>
-          <View style={styles.tierField}>
-            <Text style={styles.tierLbl}>Harga</Text>
-            <TextInput
-              testID={`${testPrefix}-price-${i}`}
-              value={t.price ? String(t.price) : ""}
-              onChangeText={(v) => onChange(tiers.map((x, xi) => (xi === i ? { ...x, price: Number(v.replace(/[^\d]/g, "")) || 0 } : x)))}
-              keyboardType="numeric"
-              style={styles.tierInput}
-              placeholder="0"
-              placeholderTextColor={colors.muted}
-            />
-          </View>
-          <Pressable onPress={() => onChange(tiers.filter((_, xi) => xi !== i))} style={styles.tierDel} testID={`${testPrefix}-remove-${i}`}>
-            <Ionicons name="close" size={18} color={colors.error} />
-          </Pressable>
         </View>
       ))}
     </View>
@@ -661,7 +674,9 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   addSmall: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 6, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.brandTertiary },
   addSmallTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
-  tierRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, marginBottom: spacing.sm },
+  tierCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.sm, marginBottom: spacing.sm },
+  tierRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
+  tierNoteField: { marginTop: spacing.sm },
   tierField: { flex: 1 },
   tierLbl: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginBottom: 4 },
   tierInput: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, height: 44, color: colors.onSurface, fontFamily: font.regular, fontSize: fontSize.lg },
