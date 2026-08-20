@@ -1,5 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Jumlah Cepat: ubah dari TAMBAH → SET (tetapkan jumlah langsung)
+- Permintaan user: tombol Jumlah Cepat (3/5/6/12/dst) harus MENETAPKAN jumlah = angka tombol, BUKAN menambah. Contoh: 12 klik 3 → 3 (bukan 15); 3 klik 3 → tetap 3; 5 klik 12 → 12. Konfirmasi baru: "Yakin mengubah jumlah menjadi N item?" [Batal] [Ya, Ubah ke N]. Reset tetap berfungsi. Jangan ubah −/+, aksi lain, scanner/fokus.
+- `app/(tabs)/index.tsx`: `confirmQuickAdd` → `confirmQuickSet(key,currentQty,q)`: title `Yakin mengubah jumlah menjadi ${q} item?`, yesLabel `Ya, Ubah ke ${q}`, onYes → simpan snapshot `quickPrev[key]=currentQty` (hanya bila belum ada) lalu `cart.setQty(key, q)` (SET). State `quickAdded` (akumulasi tambah) diganti `quickPrev` (snapshot jumlah sebelum Jumlah Cepat). `confirmQuickReset(key)`: kembalikan `cart.setQty(key, quickPrev[key])` lalu hapus snapshot; tombol Reset tampil saat `quickPrev[key]!==undefined`. confirmState tambah field `yesLabel` (default "Ya"). Tombol −/+/hapus/duplikat/scanner TIDAK diubah.
+- DIVERIFIKASI (screenshot e2e web, produk "3 pcs abc kecap manis" quick_qty=3): scan→qty1; +×5→qty6; klik 3 → modal "Yakin mengubah jumlah menjadi 3 item? / Batal / Ya, Ubah ke 3" → qty jadi 3 (SET, bukan 9); klik 3 lagi → tetap 3; Reset → kembali ke 6. Lint bersih (hanya warning duplicate-import lama). Frontend-only → user REDEPLOY.
+
+
 ## Session Log (fork) — FIX fokus scanner setelah edit Jumlah (keyboard tutup → langsung siap scan)
 - Keluhan user (HP): sesudah menyentuh Jumlah, mengubah angka, lalu tekan Enter/Selesai, fokus TIDAK kembali ke Scanner Barcode → scan berikutnya tak terbaca sampai memicu ulang.
 - ROOT CAUSE: saat kolom Jumlah blur, kode lama memacu fokus-ulang scanner hanya SEKALI ~40ms setelah blur — PADAHAL keyboard Android masih dalam animasi menutup (~250–300ms). requestFocus saat keyboard sedang menutup sering TIDAK menempel → view penangkap HID (ExpoKeyEventView) tak jadi fokus.

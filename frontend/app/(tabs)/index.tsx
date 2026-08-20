@@ -140,34 +140,36 @@ export default function TransaksiScreen() {
     return () => sub.remove();
   }, []);
 
-  // Melacak total penambahan via tombol Jumlah Cepat per-baris (key). Dipakai tombol
-  // Reset Penambahan Jumlah untuk mengembalikan qty ke jumlah sebelum penambahan cepat.
-  // Perubahan via − 1 + TIDAK dihitung di sini.
-  const [quickAdded, setQuickAdded] = useState<Record<string, number>>({});
-  const [confirmState, setConfirmState] = useState<{ title: string; msg?: string; onYes: () => void } | null>(null);
+  // Snapshot jumlah SEBELUM tombol Jumlah Cepat dipakai (per baris key). Dipakai
+  // tombol Reset untuk mengembalikan jumlah ke nilai sebelum di-SET oleh Jumlah Cepat.
+  const [quickPrev, setQuickPrev] = useState<Record<string, number>>({});
+  const [confirmState, setConfirmState] = useState<{ title: string; msg?: string; yesLabel?: string; onYes: () => void } | null>(null);
 
-  const confirmQuickAdd = useCallback((key: string, currentQty: number, q: number) => {
+  // Jumlah Cepat = SET jumlah LANGSUNG ke angka tombol (BUKAN menambah).
+  // Contoh: 12 lalu klik 3 → jadi 3 (bukan 15); 3 klik 3 → tetap 3.
+  const confirmQuickSet = useCallback((key: string, currentQty: number, q: number) => {
     setConfirmState({
-      title: `Yakin menambah ${q} item?`,
+      title: `Yakin mengubah jumlah menjadi ${q} item?`,
+      yesLabel: `Ya, Ubah ke ${q}`,
       onYes: () => {
-        cart.setQty(key, currentQty + q);
-        setQuickAdded((m) => ({ ...m, [key]: (m[key] || 0) + q }));
+        setQuickPrev((m) => (m[key] === undefined ? { ...m, [key]: currentQty } : m));
+        cart.setQty(key, q);
       },
     });
   }, [cart]);
 
-  const confirmQuickReset = useCallback((key: string, currentQty: number) => {
+  const confirmQuickReset = useCallback((key: string) => {
     setConfirmState({
-      title: "Yakin reset penambahan jumlah?",
-      msg: "Jumlah akan dikembalikan ke jumlah awal sebelum penambahan cepat.",
+      title: "Yakin reset jumlah cepat?",
+      msg: "Jumlah akan dikembalikan ke nilai sebelum tombol Jumlah Cepat dipakai.",
+      yesLabel: "Ya, Reset",
       onYes: () => {
-        const added = quickAdded[key] || 0;
-        const target = Math.max(1, currentQty - added);
-        cart.setQty(key, target);
-        setQuickAdded((m) => ({ ...m, [key]: 0 }));
+        const target = quickPrev[key];
+        if (target !== undefined) cart.setQty(key, target);
+        setQuickPrev((m) => { const nx = { ...m }; delete nx[key]; return nx; });
       },
     });
-  }, [cart, quickAdded]);
+  }, [cart, quickPrev]);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
   // Anti-dobel: satu tap variasi hanya boleh menambah satu item. Reset tiap kali
@@ -472,7 +474,7 @@ export default function TransaksiScreen() {
                   if (!p) return null;
                   const qs = [p.quick_qty, p.quick_qty2, p.quick_qty3].filter((n): n is number => !!n && n > 0);
                   if (qs.length === 0) return null;
-                  const added = quickAdded[l.key] || 0;
+                  const hasPrev = quickPrev[l.key] !== undefined;
                   return (
                     <>
                       {qs.map((q, qi) => (
@@ -481,17 +483,17 @@ export default function TransaksiScreen() {
                           style={styles.quickBtn}
                           testID={`cart-quick-${l.key}-${qi}`}
                           hitSlop={4}
-                          onPress={() => confirmQuickAdd(l.key, l.quantity, q)}
+                          onPress={() => confirmQuickSet(l.key, l.quantity, q)}
                         >
                           <Text style={styles.quickTxt}>{q}</Text>
                         </Pressable>
                       ))}
-                      {added > 0 && (
+                      {hasPrev && (
                         <Pressable
                           style={styles.quickResetBtn}
                           testID={`cart-quick-reset-${l.key}`}
                           hitSlop={4}
-                          onPress={() => confirmQuickReset(l.key, l.quantity)}
+                          onPress={() => confirmQuickReset(l.key)}
                         >
                           <Ionicons name="refresh" size={16} color={colors.error} />
                         </Pressable>
@@ -651,7 +653,7 @@ export default function TransaksiScreen() {
                 onPress={() => { const fn = confirmState?.onYes; setConfirmState(null); fn?.(); }}
                 testID="quick-confirm-yes"
               >
-                <Text style={styles.cfBtnPrimaryTxt}>Ya</Text>
+                <Text style={styles.cfBtnPrimaryTxt}>{confirmState?.yesLabel ?? "Ya"}</Text>
               </Pressable>
             </View>
           </View>
