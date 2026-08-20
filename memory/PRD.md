@@ -1,5 +1,13 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX fokus lompat ke kolom Jumlah item LAIN setelah Enter (auto-advance Android)
+- Keluhan user (HP/produksi): setelah edit Jumlah item-1 lalu tekan ✓/Enter, kursor malah pindah & memilih kolom Jumlah item LAIN (mis. item-2), keyboard tetap terbuka → scanner tak siap. Screenshot: item-2 qty ter-highlight saat keyboard masih muncul.
+- ROOT CAUSE: perilaku ANDROID — saat sebuah EditText di-`blur()` (via onSubmitEditing), sistem otomatis memindahkan fokus ke EditText berikutnya yang focusable-in-touch-mode (kolom Jumlah item lain) → item lain ter-fokus + `selectTextOnFocus` menyorotnya + IME muncul lagi. Fix fokus sebelumnya (keyboardDidHide→refocus scanner) TAK menembak ini karena keyboard tak pernah benar-benar tertutup (langsung pindah ke item lain).
+- FIX `app/(tabs)/index.tsx` (QtyInput): variabel modul `suppressQtyFocusUntil`. onSubmitEditing → set `suppressQtyFocusUntil=now+700`, blur, `Keyboard.dismiss()`. onTouchStart → catat `touchedRef=now`. onFocus → bila `now<suppressQtyFocusUntil` DAN `now-touchedRef>400` (fokus datang TANPA sentuhan pengguna = auto-advance) → `blur()`+`Keyboard.dismiss()` dan JANGAN set qtyEditing. Sentuhan asli (tap kolom lain) tetap diizinkan (touchedRef fresh). Hasil: Enter/✓ → semua kolom Jumlah lepas fokus → keyboard tutup → keyboardDidHide (fix sebelumnya) pacu fokus ke scanner.
+- Tombol −/+/Jumlah Cepat/Hapus/Duplikat/scanner TIDAK diubah.
+- DIVERIFIKASI (screenshot e2e web, 2 item): edit item-1 qty→Enter → activeElement = "scan-mode-input" (bukan kolom jumlah lain); tap manual item-2 → fokus ke cart-qty item-2 (tap tetap jalan); edit item-2→Enter → tidak melompat ke kolom jumlah mana pun, q1=4 & q2=7 tersimpan. Lint bersih (warning duplicate-import lama). CATATAN: auto-advance = bug KHUSUS Android → validasi final di build APK. Frontend-only → user REDEPLOY + build APK.
+
+
 ## Session Log (fork) — Pengenalan suara HYBRID Cek Harga (online utama → fallback offline otomatis)
 - Permintaan user: buat STT hybrid untuk Cek Harga. Internet ada → ONLINE (lebih akurat); tak ada internet / online gagal → OTOMATIS OFFLINE (mesin STT HP), tanpa ubah pengaturan manual. Fallback Online→gagal→Offline; online balik → boleh online lagi. Cek kemampuan offline id-ID dulu (tidak asumsi semua HP punya). Hasil teks masuk ke pencarian produk yang SAMA seperti ketik. Indikator kecil 🟢 Online / 🟠 Offline. Jangan ubah scanner/transaksi/keranjang/Cek Harga/DB — hanya sistem input suara + fallback.
 - `src/useVoiceSearch.ts` DITULIS ULANG (hybrid): 

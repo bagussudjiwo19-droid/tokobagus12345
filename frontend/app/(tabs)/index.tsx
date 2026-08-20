@@ -698,9 +698,16 @@ export default function TransaksiScreen() {
   );
 }
 
+// Jendela waktu (ms epoch) untuk MENOLAK fokus otomatis (auto-advance Android) ke
+// kolom Jumlah lain setelah submit. Dibagikan antar semua QtyInput.
+let suppressQtyFocusUntil = 0;
+
 function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; onCommit: (n: number) => void; onFocusChange?: (focused: boolean) => void; testID?: string }) {
   const [txt, setTxt] = useState(String(value));
   const inputRef = useRef<TextInput>(null);
+  // Waktu terakhir kolom INI disentuh pengguna. Dipakai membedakan fokus dari
+  // sentuhan asli vs auto-advance Android (yang tak didahului sentuhan).
+  const touchedRef = useRef(0);
   useEffect(() => { setTxt(String(value)); }, [value]);
   // Saat keyboard ditutup (Done/Back Android/ketuk area lain), bila kolom ini masih
   // fokus → lepas fokus supaya "selesai mengetik" → scanner aktif lagi (via onBlur).
@@ -730,10 +737,29 @@ function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; o
       ref={inputRef}
       value={txt}
       onChangeText={(t) => setTxt(sanitize(t))}
-      onFocus={() => onFocusChange?.(true)}
+      onTouchStart={() => { touchedRef.current = Date.now(); }}
+      onFocus={() => {
+        const now = Date.now();
+        // CEGAH AUTO-ADVANCE ANDROID: setelah kolom lain di-submit (blur), Android
+        // otomatis memindahkan fokus ke EditText jumlah berikutnya. Bila fokus ini
+        // TIDAK didahului sentuhan pengguna pada kolom ini (dalam jendela suppress)
+        // → tolak: lepas fokus & tutup keyboard, JANGAN tandai sedang mengetik.
+        if (now < suppressQtyFocusUntil && now - touchedRef.current > 400) {
+          inputRef.current?.blur();
+          Keyboard.dismiss();
+          return;
+        }
+        onFocusChange?.(true);
+      }}
       onEndEditing={commit}
       onBlur={() => { commit(); onFocusChange?.(false); }}
-      onSubmitEditing={() => inputRef.current?.blur()}
+      onSubmitEditing={() => {
+        // Buka jendela suppress → tolak auto-advance ke kolom jumlah lain, lalu
+        // lepas fokus & tutup keyboard → scanner siap menerima barcode.
+        suppressQtyFocusUntil = Date.now() + 700;
+        inputRef.current?.blur();
+        Keyboard.dismiss();
+      }}
       blurOnSubmit
       keyboardType="decimal-pad"
       returnKeyType="done"
