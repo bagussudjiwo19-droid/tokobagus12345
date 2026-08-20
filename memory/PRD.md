@@ -1,5 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Ikon Kalkulator di header "Ubah Produk" (kiri ikon tempat sampah)
+- Permintaan user: tambah ikon Kalkulator di samping (kiri) ikon Hapus/tempat sampah pada header Ubah Produk, sejajar horizontal, sebagai tombol UI. Ikon tempat sampah & Simpan Perubahan TIDAK diubah; jangan ubah posisi bagian lain; belum ubah fungsi harga/data.
+- `app/produk-form.tsx`: header dirombak jadi 3 bagian agar judul tetap CENTER — `hSide` kiri (width 88, berisi tombol close) + `hTitle` (flex:1 textAlign center) + `hSide hSideRight` kanan (width 88, row justify flex-end) berisi [tombol Kalkulator `form-calc` (Ionicons calculator-outline, warna brand)] lalu [tombol Hapus `form-delete` (tak diubah)]. Import `CalculatorModal` + state `calcOpen`; tombol calc → buka `<CalculatorModal visible onClose>` (kalkulator mandiri, TIDAK menyentuh harga/data produk — konsisten dgn kalkulator di Transaksi). Style: hBtn tetap 40, tambah hSide/hSideRight, hTitle jadi flex:1 center.
+- DIVERIFIKASI (screenshot e2e web): buka Ubah Produk → ikon kalkulator tampil di kiri ikon tempat sampah (kanan atas), judul "Ubah Produk" tetap center; tap → modal "Kalkulator" terbuka. Simpan Perubahan & fungsi lain utuh. Lint bersih. Frontend-only → user REDEPLOY.
+
+
 ## Session Log (fork) — Hapus tombol Reset Jumlah Cepat
 - Permintaan user: hilangkan tombol Reset perintah jumlah cepat.
 - `app/(tabs)/index.tsx`: hapus render tombol reset (`cart-quick-reset-*`) + state `quickPrev` + fungsi `confirmQuickReset`. `confirmQuickSet` disederhanakan → hanya `cart.setQty(key, q)` (tanpa snapshot). Tombol Jumlah Cepat (SET) & konfirmasi tetap. Style `quickResetBtn` dibiarkan (tak dipakai, tak mengganggu).

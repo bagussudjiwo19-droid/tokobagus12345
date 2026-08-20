@@ -15,6 +15,7 @@ import { mikoBus } from "@/src/mikoBus";
 import { rupiah } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
 import type { Product, Tier, Variation } from "@/src/types";
+import CalculatorModal from "@/components/CalculatorModal";
 
 const UNITS = ["pcs", "kg", "sak"];
 let vid = 0;
@@ -28,6 +29,7 @@ export default function ProdukFormScreen() {
   const cart = useCart();
   const unlimited = useUnlimitedStock();
   const toast = useToast();
+  const [calcOpen, setCalcOpen] = useState(false);
 
   // Dibuka dari tombol "Tambah Item" di Transaksi → tampilkan pilihan simpan:
   // "Transaksi Saat Ini" (item sementara → keranjang, tidak masuk DB) atau
@@ -347,13 +349,20 @@ export default function ProdukFormScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.back()} style={styles.hBtn} testID="form-close">
-          <Ionicons name="close" size={24} color={colors.onSurface} />
-        </Pressable>
-        <Text style={styles.hTitle}>{editing ? "Ubah Produk" : "Tambah Produk"}</Text>
-        <Pressable onPress={del} disabled={!editing} style={styles.hBtn} testID="form-delete">
-          {editing && <Ionicons name="trash" size={22} color={colors.error} />}
-        </Pressable>
+        <View style={styles.hSide}>
+          <Pressable onPress={() => router.back()} style={styles.hBtn} testID="form-close">
+            <Ionicons name="close" size={24} color={colors.onSurface} />
+          </Pressable>
+        </View>
+        <Text style={styles.hTitle} numberOfLines={1}>{editing ? "Ubah Produk" : "Tambah Produk"}</Text>
+        <View style={[styles.hSide, styles.hSideRight]}>
+          <Pressable onPress={() => setCalcOpen(true)} style={styles.hBtn} testID="form-calc" hitSlop={6}>
+            <Ionicons name="calculator-outline" size={22} color={colors.brand} />
+          </Pressable>
+          <Pressable onPress={del} disabled={!editing} style={styles.hBtn} testID="form-delete">
+            {editing && <Ionicons name="trash" size={22} color={colors.error} />}
+          </Pressable>
+        </View>
       </View>
 
       <KeyboardAwareScrollView
@@ -617,6 +626,7 @@ export default function ProdukFormScreen() {
           </Pressable>
         </View>
       </KeyboardStickyView>
+      <CalculatorModal visible={calcOpen} onClose={() => setCalcOpen(false)} />
     </View>
   );
 }
@@ -752,7 +762,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   hBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  hTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
+  hSide: { width: 88, flexDirection: "row", alignItems: "center" },
+  hSideRight: { justifyContent: "flex-end" },
+  hTitle: { flex: 1, textAlign: "center", color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
   label: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base, marginBottom: 6 },
   helperTxt: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 6 },
   quickRow: { flexDirection: "row", gap: spacing.sm },
