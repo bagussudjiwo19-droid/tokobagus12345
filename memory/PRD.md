@@ -1,5 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — REVISI "Pindahkan variasi ke grosir": nama + HARGA berpasangan
+- Permintaan user: tombol "Pindahkan nama variasi ke grosir" harus memindahkan tiap variasi BERPASANGAN → Nama Variasi = Nama Tampilan (disp_name), Harga Jual = Harga Tampilan (disp_price) pada baris grosir yang SAMA. Min Qty & Harga (grosir) tetap KOSONG. Jangan memindahkan Harga Jual ke kolom Harga grosir. Setelah dipindah, Daftar Harga Variasi dikosongkan. Jangan ubah Harga Beli/Jual utama/Jumlah Cepat/barcode. Nama & harga tampilan WAJIB tetap pasangan (nama var-1 tak boleh dapat harga var-2).
+- `app/produk-form.tsx` `moveVariationNamesToGrosir()`: dulu hanya set `disp_name` dari nama (harga tak ikut). Kini map tiap variasi → `{ min_qty:0, price:0, disp_name: nama, disp_price: sell_price||undefined }` dari OBJEK variasi yang sama (bukan array names terpisah) → pasangan terjaga. Label tombol → "Pindahkan variasi ke grosir"; hint diperbarui (berlaku utk mode Variasi & Variasi Barcode). Filter save tiers tetap simpan baris yang punya disp_name walau min_qty=0.
+- DIVERIFIKASI (screenshot e2e web, produk seed "Sabun giv 72gram" 1pcs/Rp3000 + 2pcs/Rp5500): tekan Pindahkan → grosir jadi 2 baris — baris0 Nama Tampilan "1pcs" + Harga Tampilan 3000, baris1 "2pcs" + 5500 (pasangan benar, tak tertukar), Min Qty & Harga grosir KOSONG, Daftar Variasi dikosongkan, toast "2 variasi dipindahkan ke grosir". Lint bersih. Frontend-only → user REDEPLOY.
+
+
 ## Session Log (fork) — REVERT: hapus tahap "Daftar Pesanan", Bayar langsung ke Pembayaran
 - Permintaan user: hapus fitur pengecekan (Daftar Pesanan), kembalikan alur seperti sebelum fitur itu ada.
 - `app/(tabs)/index.tsx`: tombol Bayar `router.push("/daftar-pesanan")` → kembali `router.push("/checkout?step=pay")`.
@@ -919,3 +925,9 @@ User uploaded a `.7z` containing an APK of an existing Indonesian POS app "Toko 
 ## Session Log (fork) — GANTI dataset dengan backup user (toko-bagus-backup-2026-08-20)
 - File seed `assets/seed/toko_bagus_backup.json` DIGANTI dengan backup user (format sama: app=kasir-warung v1). Lama: 2261 produk/123 tx → Baru: 375 produk/103 tx. Preview (DEV, loadSeedIntoMemory) kini pakai data baru. DIVERIFIKASI screenshot Produk (3 pcs abc kecap manis 8994907003634, 3tebu, 76 royal apel...).
 - Untuk HP (build produksi, DB lokal terpisah): user WAJIB pakai fitur **Backup & Pulihkan** (`app/backup.tsx`, tombol testID backup-import) → pilih file backup → "Ya, Pulihkan". importBackup() GANTI TOTAL data lama (products/transactions/settings/printer) + persist, aman (rollback bila gagal). Agent tak bisa sentuh data device.
+
+## Session Log (fork) — Tombol "Pindahkan nama variasi ke grosir" (Ubah Produk)
+- `produk-form.tsx`: tombol `form-move-var-to-grosir` (mode variasi) & `form-move-vb-to-grosir` (varbarcode), muncul bila variations>0. Handler `moveVariationNamesToGrosir()`: ambil NAMA variasi (semua, trim) → newTiers=[{min_qty:0,price:0,disp_name:nama}] → setTiers (KOSONGKAN grosir dulu, isi ulang), setVariations([]), setPriceType("grosir"), toast. TANPA konversi harga (harga variasi TIDAK dipindah; disp_price kosong).
+- Aturan simpan (line ~135) DIUBAH: `tiers.filter(t => t.min_qty>0 || (t.disp_name && t.disp_name.trim()))` → baris grosir dgn Nama Tampilan tetap tersimpan meski Min Qty & Harga kosong.
+- Perubahan hanya di state form (belum tersimpan sampai tekan Simpan → reversible dgn keluar tanpa simpan). Tak ubah Harga Beli/Jual/Jumlah Cepat/Barcode produk/transaksi.
+- DIVERIFIKASI e2e 1 sesi (screenshot): variasi 1pcs/4pcs/12pcs (harga 2500/9500/25000) → tombol → grosir: dispname 1pcs/4pcs/12pcs, qty/price/dispprice KOSONG, "Daftar Harga Variasi" hilang. Lint clean. Frontend-only → user REDEPLOY.

@@ -132,7 +132,7 @@ export default function ProdukFormScreen() {
       buy_price: num(buyPrice),
       sell_price: num(sellPrice),
       stock: num(stock),
-      tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0) : [],
+      tiers: priceType === "grosir" ? tiers.filter((t) => t.min_qty > 0 || (!!t.disp_name && !!t.disp_name.trim())) : [],
       variations: (priceType === "variasi" || priceType === "biasa" || priceType === "varbarcode")
         ? variations.map((v) => ({
             ...v,
@@ -184,6 +184,28 @@ export default function ProdukFormScreen() {
   };
 
   const hasVar = variations.length > 0;
+
+  // Pindahkan tiap variasi lama → satu baris Harga Bertingkat (grosir) SECARA BERPASANGAN:
+  //   Nama Variasi  → Nama Tampilan (disp_name)
+  //   Harga Jual    → Harga Tampilan (disp_price)
+  // Min Qty & Harga (grosir) dibiarkan KOSONG. Pasangan nama–harga TIDAK boleh tertukar
+  // antar-baris. Grosir dikosongkan lalu diisi ulang; Daftar Variasi dikosongkan.
+  const moveVariationNamesToGrosir = () => {
+    const rows = variations
+      .map((v) => ({ name: (v.name || "").trim(), price: Number(v.sell_price) || 0 }))
+      .filter((r) => r.name.length > 0);
+    if (rows.length === 0) { toast.show("Tidak ada variasi untuk dipindahkan", "error"); return; }
+    const newTiers: Tier[] = rows.map((r) => ({
+      min_qty: 0,
+      price: 0,
+      disp_name: r.name,
+      disp_price: r.price || undefined,
+    }));
+    setTiers(newTiers);
+    setVariations([]);
+    setPriceType("grosir");
+    toast.show(`${rows.length} variasi dipindahkan ke grosir`, "success");
+  };
 
   // Tambah 1 baris variasi (nama + harga jual). Dipakai di mode Biasa & Variasi.
   const addVarRow = () =>
@@ -507,6 +529,15 @@ export default function ProdukFormScreen() {
             <Text style={styles.addSmallTxt}>Tambah Variasi Harga</Text>
           </Pressable>
         </View>
+        {variations.length > 0 && (
+          <>
+            <Pressable style={styles.moveBtn} onPress={moveVariationNamesToGrosir} testID="form-move-var-to-grosir">
+              <Ionicons name="swap-horizontal" size={18} color={colors.brand} />
+              <Text style={styles.moveBtnTxt}>Pindahkan variasi ke grosir</Text>
+            </Pressable>
+            <Text style={styles.childHint}>Memindahkan tiap variasi ke Harga Bertingkat (grosir): Nama Variasi → Nama Tampilan, Harga Jual → Harga Tampilan (berpasangan). Min Qty & Harga grosir dikosongkan; Daftar Variasi akan dikosongkan.</Text>
+          </>
+        )}
         {variations.length === 0 && childVariations.length === 0 && (
           <Text style={styles.childHint}>Belum ada variasi. Ketuk &quot;Tambah Variasi Harga&quot; untuk mulai.</Text>
         )}
@@ -561,6 +592,15 @@ export default function ProdukFormScreen() {
               <Text style={styles.addSmallTxt}>Tambah Variasi Barcode</Text>
             </Pressable>
           </View>
+          {variations.length > 0 && (
+            <>
+              <Pressable style={styles.moveBtn} onPress={moveVariationNamesToGrosir} testID="form-move-vb-to-grosir">
+                <Ionicons name="swap-horizontal" size={18} color={colors.brand} />
+                <Text style={styles.moveBtnTxt}>Pindahkan variasi ke grosir</Text>
+              </Pressable>
+              <Text style={styles.childHint}>Memindahkan tiap variasi ke Harga Bertingkat (grosir): Nama Variasi → Nama Tampilan, Harga Jual → Harga Tampilan (berpasangan). Barcode variasi tidak ikut; Daftar Variasi akan dikosongkan.</Text>
+            </>
+          )}
           {variations.length === 0 && (
             <Text style={styles.childHint}>Ketuk &quot;Tambah Variasi Barcode&quot; untuk membuat variasi (mis. 600ml → barcode → Rp3.000).</Text>
           )}
@@ -740,6 +780,8 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
   addSmall: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 6, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.brandTertiary },
   addSmallTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
+  moveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.surface },
+  moveBtnTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
   tierCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.sm, marginBottom: spacing.sm },
   tierRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
   tierNoteField: { marginTop: spacing.sm },
