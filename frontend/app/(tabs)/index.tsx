@@ -140,9 +140,6 @@ export default function TransaksiScreen() {
     return () => sub.remove();
   }, []);
 
-  // Snapshot jumlah SEBELUM tombol Jumlah Cepat dipakai (per baris key). Dipakai
-  // tombol Reset untuk mengembalikan jumlah ke nilai sebelum di-SET oleh Jumlah Cepat.
-  const [quickPrev, setQuickPrev] = useState<Record<string, number>>({});
   const [confirmState, setConfirmState] = useState<{ title: string; msg?: string; yesLabel?: string; onYes: () => void } | null>(null);
 
   // Jumlah Cepat = SET jumlah LANGSUNG ke angka tombol (BUKAN menambah).
@@ -151,25 +148,9 @@ export default function TransaksiScreen() {
     setConfirmState({
       title: `Yakin mengubah jumlah menjadi ${q} item?`,
       yesLabel: `Ya, Ubah ke ${q}`,
-      onYes: () => {
-        setQuickPrev((m) => (m[key] === undefined ? { ...m, [key]: currentQty } : m));
-        cart.setQty(key, q);
-      },
+      onYes: () => { cart.setQty(key, q); },
     });
   }, [cart]);
-
-  const confirmQuickReset = useCallback((key: string) => {
-    setConfirmState({
-      title: "Yakin reset jumlah cepat?",
-      msg: "Jumlah akan dikembalikan ke nilai sebelum tombol Jumlah Cepat dipakai.",
-      yesLabel: "Ya, Reset",
-      onYes: () => {
-        const target = quickPrev[key];
-        if (target !== undefined) cart.setQty(key, target);
-        setQuickPrev((m) => { const nx = { ...m }; delete nx[key]; return nx; });
-      },
-    });
-  }, [cart, quickPrev]);
   const variantForRef = useRef<Product | null>(null);
   variantForRef.current = variantFor;
   // Anti-dobel: satu tap variasi hanya boleh menambah satu item. Reset tiap kali
@@ -474,7 +455,6 @@ export default function TransaksiScreen() {
                   if (!p) return null;
                   const qs = [p.quick_qty, p.quick_qty2, p.quick_qty3].filter((n): n is number => !!n && n > 0);
                   if (qs.length === 0) return null;
-                  const hasPrev = quickPrev[l.key] !== undefined;
                   return (
                     <>
                       {qs.map((q, qi) => (
@@ -488,16 +468,6 @@ export default function TransaksiScreen() {
                           <Text style={styles.quickTxt}>{q}</Text>
                         </Pressable>
                       ))}
-                      {hasPrev && (
-                        <Pressable
-                          style={styles.quickResetBtn}
-                          testID={`cart-quick-reset-${l.key}`}
-                          hitSlop={4}
-                          onPress={() => confirmQuickReset(l.key)}
-                        >
-                          <Ionicons name="refresh" size={16} color={colors.error} />
-                        </Pressable>
-                      )}
                     </>
                   );
                 })()}

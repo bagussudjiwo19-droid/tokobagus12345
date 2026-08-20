@@ -1,5 +1,11 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Hapus tombol Reset Jumlah Cepat
+- Permintaan user: hilangkan tombol Reset perintah jumlah cepat.
+- `app/(tabs)/index.tsx`: hapus render tombol reset (`cart-quick-reset-*`) + state `quickPrev` + fungsi `confirmQuickReset`. `confirmQuickSet` disederhanakan → hanya `cart.setQty(key, q)` (tanpa snapshot). Tombol Jumlah Cepat (SET) & konfirmasi tetap. Style `quickResetBtn` dibiarkan (tak dipakai, tak mengganggu).
+- DIVERIFIKASI (screenshot e2e web): scan produk quick_qty=3 → klik 3 → qty jadi 3, TIDAK ada tombol reset (count 0). Lint bersih (warning duplicate-import lama). Frontend-only → user REDEPLOY.
+
+
 ## Session Log (fork) — Jumlah Cepat: ubah dari TAMBAH → SET (tetapkan jumlah langsung)
 - Permintaan user: tombol Jumlah Cepat (3/5/6/12/dst) harus MENETAPKAN jumlah = angka tombol, BUKAN menambah. Contoh: 12 klik 3 → 3 (bukan 15); 3 klik 3 → tetap 3; 5 klik 12 → 12. Konfirmasi baru: "Yakin mengubah jumlah menjadi N item?" [Batal] [Ya, Ubah ke N]. Reset tetap berfungsi. Jangan ubah −/+, aksi lain, scanner/fokus.
 - `app/(tabs)/index.tsx`: `confirmQuickAdd` → `confirmQuickSet(key,currentQty,q)`: title `Yakin mengubah jumlah menjadi ${q} item?`, yesLabel `Ya, Ubah ke ${q}`, onYes → simpan snapshot `quickPrev[key]=currentQty` (hanya bila belum ada) lalu `cart.setQty(key, q)` (SET). State `quickAdded` (akumulasi tambah) diganti `quickPrev` (snapshot jumlah sebelum Jumlah Cepat). `confirmQuickReset(key)`: kembalikan `cart.setQty(key, quickPrev[key])` lalu hapus snapshot; tombol Reset tampil saat `quickPrev[key]!==undefined`. confirmState tambah field `yesLabel` (default "Ya"). Tombol −/+/hapus/duplikat/scanner TIDAK diubah.
