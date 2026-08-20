@@ -112,12 +112,17 @@ export default function HardwareScanner({ enabled, refocusSignal = 0, onScan }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
 
-  // Refokus setelah popup variasi / tombol Pintasan menutup (fokus bisa berpindah).
+  // Refokus setelah popup variasi / tombol Pintasan menutup ATAU setelah selesai
+  // mengetik Jumlah (keyboard menutup). Karena animasi keyboard Android ~250-300ms
+  // membuat requestFocus tunggal sering "tidak menempel", kita coba BEBERAPA KALI
+  // (60/300/600ms) sampai view penangkap benar-benar memegang fokus lagi.
   useEffect(() => {
     if (!enabled || refocusSignal <= 0) return;
     stopListening();
-    const t = setTimeout(() => { if (enabledRef.current) startListening(); }, 40);
-    return () => clearTimeout(t);
+    const timers = [60, 300, 600].map((d) =>
+      setTimeout(() => { if (enabledRef.current) startListening(); }, d),
+    );
+    return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refocusSignal]);
 

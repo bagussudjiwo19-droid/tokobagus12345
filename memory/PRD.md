@@ -1,5 +1,14 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — FIX fokus scanner setelah edit Jumlah (keyboard tutup → langsung siap scan)
+- Keluhan user (HP): sesudah menyentuh Jumlah, mengubah angka, lalu tekan Enter/Selesai, fokus TIDAK kembali ke Scanner Barcode → scan berikutnya tak terbaca sampai memicu ulang.
+- ROOT CAUSE: saat kolom Jumlah blur, kode lama memacu fokus-ulang scanner hanya SEKALI ~40ms setelah blur — PADAHAL keyboard Android masih dalam animasi menutup (~250–300ms). requestFocus saat keyboard sedang menutup sering TIDAK menempel → view penangkap HID (ExpoKeyEventView) tak jadi fokus.
+- FIX `components/HardwareScanner.tsx`: efek `refocusSignal` kini stopListening lalu startListening BEBERAPA KALI (60/300/600ms) — retry menang melawan animasi keyboard sampai view benar-benar pegang fokus.
+- FIX `app/(tabs)/index.tsx`: `onQtyFocusChange(false)` tetap memacu refocusSignal awal + set `justEditedQtyRef=true`. TAMBAH listener `Keyboard.addListener("keyboardDidHide")`: bila baru selesai edit Jumlah & masih di layar Transaksi & tanpa popup variasi & tak sedang mengetik kolom lain → pacu `refocusSignal` (native) / fokuskan inputRef (web) SETELAH keyboard benar-benar tertutup. QtyInput tetap: onSubmitEditing→blur, onBlur→commit+onFocusChange(false).
+- TIDAK menyentuh −, +, Jumlah Cepat, Reset, Hapus, Duplikat, atau fungsi transaksi. Fokus-otomatis hanya setelah edit manual + Enter/Done.
+- DIVERIFIKASI (screenshot e2e web): scan → pilih variasi → edit qty jadi 5 → Enter → qty tersimpan (Rp15.000) & document.activeElement = "scan-mode-input" (fokus balik ke scanner). CATATAN: perilaku fokus scanner HID native-only → user WAJIB Publish → build APK → uji di HP. Frontend-only.
+
+
 ## Session Log (fork) — FITUR BARU: Restore Aman Produk (tambah data saja, tak pernah menimpa)
 - Permintaan user: restore data produk mode AMAN. Baca produk dari file; bandingkan dgn produk yang ADA memakai Nama & Barcode. Bila NAMA sama ATAU BARCODE sama → LEWATI (jangan import, jangan timpa, jangan duplikat). Hanya produk benar-benar baru (nama beda DAN barcode beda) yang dibuat. Jangan ubah harga/stok/barcode/nama/kategori/variasi produk lama. Tampilkan ringkasan (ditambahkan / dilewati / total) + daftar produk dilewati beserta alasan (Nama sama / Barcode sama / Nama dan barcode sama). Konfirmasi sebelum mulai. Jangan sentuh transaksi/keranjang/scanner/harga.
 - Keputusan user: (1a) tombol BARU di halaman Backup, restore lama (replace) tetap ada. (2b) barcode dicocokkan = barcode utama + barcode tambahan (barcodes[]) + barcode variasi. (3a) induk + anak/variasi = SATU paket (induk dilewati → anak ikut dilewati). (4a) nama dibandingkan abaikan huruf besar/kecil & spasi berlebih. Hanya menyentuh data Produk.

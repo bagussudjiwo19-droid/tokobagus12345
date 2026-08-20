@@ -110,11 +110,34 @@ export default function TransaksiScreen() {
   // pacu refocusSignal (mekanisme yang sama dipakai setelah popup) → siap scan lagi.
   const [qtyEditing, setQtyEditing] = useState(false);
   const qtyEditingRef = useRef(false);
+  // Ditandai true saat kolom Jumlah baru selesai diedit (blur/Enter). Dipakai oleh
+  // listener keyboardDidHide di bawah untuk memacu fokus scanner SETELAH keyboard
+  // benar-benar tertutup (bukan saat masih animasi menutup → requestFocus tak menempel).
+  const justEditedQtyRef = useRef(false);
   const onQtyFocusChange = useCallback((focused: boolean) => {
     setQtyEditing(focused);
     qtyEditingRef.current = focused;
     kbdRef.current = focused; // beritahu penjaga keyboard: ini ketik manual, jangan ditutup
-    if (!focused) setRefocusSignal((n) => n + 1); // selesai → scanner rebut fokus lagi
+    if (!focused) {
+      justEditedQtyRef.current = true;      // tunggu keyboardDidHide untuk refokus andal
+      setRefocusSignal((n) => n + 1);        // percobaan awal (di-retry oleh HardwareScanner)
+    }
+  }, []);
+
+  // Setelah keyboard HP benar-benar TERTUTUP menyusul edit Jumlah → pacu fokus
+  // kembali ke scanner (view penangkap HID) agar langsung siap scan berikutnya,
+  // tanpa perlu menyentuh kolom scanner lagi. Hanya saat masih di layar Transaksi
+  // & tidak ada popup variasi & tidak sedang mengetik kolom lain.
+  useEffect(() => {
+    const sub = Keyboard.addListener("keyboardDidHide", () => {
+      if (!justEditedQtyRef.current) return;
+      justEditedQtyRef.current = false;
+      if (screenFocusedRef.current && !variantForRef.current && !qtyEditingRef.current) {
+        if (Platform.OS === "web") inputRef.current?.focus();
+        else setRefocusSignal((n) => n + 1);
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   // Melacak total penambahan via tombol Jumlah Cepat per-baris (key). Dipakai tombol
