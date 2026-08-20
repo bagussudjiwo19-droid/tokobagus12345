@@ -1,5 +1,19 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Pengenalan suara HYBRID Cek Harga (online utama → fallback offline otomatis)
+- Permintaan user: buat STT hybrid untuk Cek Harga. Internet ada → ONLINE (lebih akurat); tak ada internet / online gagal → OTOMATIS OFFLINE (mesin STT HP), tanpa ubah pengaturan manual. Fallback Online→gagal→Offline; online balik → boleh online lagi. Cek kemampuan offline id-ID dulu (tidak asumsi semua HP punya). Hasil teks masuk ke pencarian produk yang SAMA seperti ketik. Indikator kecil 🟢 Online / 🟠 Offline. Jangan ubah scanner/transaksi/keranjang/Cek Harga/DB — hanya sistem input suara + fallback.
+- `src/useVoiceSearch.ts` DITULIS ULANG (hybrid): 
+  - `probeOnline()` cek konektivitas cepat (HEAD ke gstatic/clients3 generate_204, timeout 1.5s, AbortController) — tak bergantung 1 server.
+  - `hasIdOfflinePack()` cek `supportsOnDeviceRecognition()` + `getSupportedLocales({androidRecognitionServicePackage:"com.google.android.as"}).installedLocales` mengandung "id".
+  - `start()`: minta izin → cek offline-capable → probe internet → pilih mesin AWAL: online bila ada internet, else offline (bila tersedia), else tetap online (agar error jelas). 
+  - `beginRecognition(mode)`: `Mod.start({lang:"id-ID", requiresOnDeviceRecognition: mode==="offline", (offline→androidRecognitionServicePackage com.google.android.as)})`.
+  - FALLBACK OTOMATIS di listener "error": bila mode online & belum coba offline & offline tersedia & `isNetworkErr` (network/server/unavailable/busy/connection, BUKAN no-speech) → restart offline tanpa menampilkan error. Gagal start online juga → offline sekali.
+  - Expose `mode: "online"|"offline"|null` untuk indikator.
+- `app/(tabs)/cek-harga.tsx`: saat `voice.listening` tampilkan badge `cekharga-voice-mode` → 🟢 Online (hijau) / 🟠 Offline (oranye) sesuai `voice.mode`. Pesan error NO_ID_PACK diperjelas (butuh paket bahasa offline & online tak tersedia) + tombol unduh paket tetap. Pencarian hasil suara TETAP lewat `doVoiceSearch` (jalur pencarian produk yang sama). Scanner/transaksi/DB tak disentuh.
+- app.json: tak perlu izin baru (INTERNET default; RECORD_AUDIO & plugin STT sudah ada dari fitur offline sebelumnya).
+- DIVERIFIKASI (screenshot web): Cek Harga render normal (ikon mic ada), TANPA red-box; bundle Metro bersih; lint bersih. CATATAN: STT native-only (Mod=null di web) → indikator 🟢/🟠 & fallback hanya bisa diuji di build APK. Frontend-only → user WAJIB Publish → build APK → uji: (a) online normal, (b) matikan internet → otomatis offline (badge 🟠), (c) HP tanpa paket id offline → pesan unduh.
+
+
 ## Session Log (fork) — Ikon Kalkulator di header "Ubah Produk" (kiri ikon tempat sampah)
 - Permintaan user: tambah ikon Kalkulator di samping (kiri) ikon Hapus/tempat sampah pada header Ubah Produk, sejajar horizontal, sebagai tombol UI. Ikon tempat sampah & Simpan Perubahan TIDAK diubah; jangan ubah posisi bagian lain; belum ubah fungsi harga/data.
 - `app/produk-form.tsx`: header dirombak jadi 3 bagian agar judul tetap CENTER — `hSide` kiri (width 88, berisi tombol close) + `hTitle` (flex:1 textAlign center) + `hSide hSideRight` kanan (width 88, row justify flex-end) berisi [tombol Kalkulator `form-calc` (Ionicons calculator-outline, warna brand)] lalu [tombol Hapus `form-delete` (tak diubah)]. Import `CalculatorModal` + state `calcOpen`; tombol calc → buka `<CalculatorModal visible onClose>` (kalkulator mandiri, TIDAK menyentuh harga/data produk — konsisten dgn kalkulator di Transaksi). Style: hBtn tetap 40, tambah hSide/hSideRight, hTitle jadi flex:1 center.

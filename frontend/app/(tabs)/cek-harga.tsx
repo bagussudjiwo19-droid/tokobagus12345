@@ -895,7 +895,14 @@ export default function CekHargaScreen() {
             </View>
 
             {voice.listening && (
-              <Text style={styles.voiceListening} testID="cekharga-voice-listening">🎙️ Mendengarkan… silakan sebutkan nama barang</Text>
+              <View style={styles.voiceListenRow} testID="cekharga-voice-listening">
+                <Text style={styles.voiceListening}>🎙️ Mendengarkan… silakan sebutkan nama barang</Text>
+                {!!voice.mode && (
+                  <View style={[styles.voiceModeBadge, voice.mode === "online" ? styles.voiceModeOnline : styles.voiceModeOffline]} testID="cekharga-voice-mode">
+                    <Text style={styles.voiceModeTxt}>{voice.mode === "online" ? "🟢 Online" : "🟠 Offline"}</Text>
+                  </View>
+                )}
+              </View>
             )}
             {!!voiceHint && !voice.listening && (
               <View style={styles.voiceHintBox} testID="cekharga-voice-hint">
@@ -1150,6 +1157,11 @@ const styles = StyleSheet.create({
   micBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.surfaceSecondary, borderWidth: 1.5, borderColor: colors.brand, alignItems: "center", justifyContent: "center" },
   micBtnActive: { backgroundColor: colors.brand, borderColor: colors.brand },
   voiceListening: { marginTop: spacing.sm, color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, textAlign: "center" },
+  voiceListenRow: { marginTop: spacing.sm, alignItems: "center", gap: spacing.xs },
+  voiceModeBadge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1 },
+  voiceModeOnline: { backgroundColor: "#E6F6EC", borderColor: "#A7DDB5" },
+  voiceModeOffline: { backgroundColor: "#FFF1E0", borderColor: "#F5CFA0" },
+  voiceModeTxt: { fontFamily: font.bold, fontSize: 12, color: colors.onSurface },
   voiceHintBox: { marginTop: spacing.sm, width: "100%", maxWidth: 420, backgroundColor: colors.surfaceTertiary, borderRadius: radius.lg, padding: spacing.md, alignItems: "center" },
   voiceHintTxt: { color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.base, textAlign: "center" },
   voiceHintBtn: { marginTop: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
