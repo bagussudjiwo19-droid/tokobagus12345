@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +21,9 @@ export default function BackupScreen() {
   const { reload } = useData();
   const [autoList, setAutoList] = React.useState<AutoBackupFile[]>([]);
   const [lastAuto, setLastAuto] = React.useState<string | null>(null);
+  const [safeResult, setSafeResult] = React.useState<
+    { total: number; added: number; skipped: number; skippedList: { name: string; reason: string }[] } | null
+  >(null);
 
   const refreshAuto = React.useCallback(async () => {
     setAutoList(await listAutoBackups());
@@ -84,6 +87,39 @@ export default function BackupScreen() {
     } catch (e: any) { toast.show(e?.message || "Gagal membaca file backup", "error"); }
   };
 
+  // RESTORE AMAN: hanya menambah produk baru, tidak pernah menimpa data lama.
+  const runSafeRestore = (data: any) => {
+    if (!data || !Array.isArray(data.products)) { toast.show("File tidak valid.", "error"); return; }
+    Alert.alert(
+      "Restore data produk?",
+      "Produk yang sudah memiliki nama atau barcode yang sama akan dilewati dan tidak akan ditimpa.",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Ya, Restore",
+          onPress: async () => {
+            try {
+              const r = await api.safeImportProducts(data);
+              await reload();
+              setSafeResult({ total: r.total, added: r.added, skipped: r.skipped, skippedList: r.skippedList });
+              toast.show(`Restore selesai: ${r.added} ditambahkan, ${r.skipped} dilewati`, "success");
+              if (r.added > 0) mikoBus.emit({ type: "restore_ok" });
+            } catch (e: any) { toast.show(e?.message || "Gagal melakukan restore", "error"); }
+          },
+        },
+      ],
+    );
+  };
+
+  const safeRestoreFromFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const content = await FileSystem.readAsStringAsync(res.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
+      runSafeRestore(JSON.parse(content));
+    } catch (e: any) { toast.show(e?.message || "Gagal membaca file", "error"); }
+  };
+
   const backupNow = async () => {
     try {
       const uri = await runAutoBackup();
@@ -143,6 +179,17 @@ export default function BackupScreen() {
 
         <View style={{ height: spacing.xl }} />
 
+        <Text style={styles.sectionLabel}>RESTORE AMAN (TAMBAH DATA SAJA)</Text>
+        <Text style={styles.sectionDesc}>
+          Menambahkan produk BARU dari file tanpa menimpa data lama. Produk yang namanya ATAU barcode-nya sudah ada akan dilewati. Aman untuk menggabungkan data dari HP lain.
+        </Text>
+        <Pressable style={styles.safeBtn} onPress={safeRestoreFromFile} testID="backup-safe-restore">
+          <Ionicons name="shield-checkmark-outline" size={22} color={colors.brand} />
+          <Text style={styles.safeBtnTxt}>Restore Aman dari File</Text>
+        </Pressable>
+
+        <View style={{ height: spacing.xl }} />
+
         {/* AUTO BACKUP — otomatis sekali sehari, simpan 5 terakhir, selalu nyala */}
         <View style={styles.autoHeaderRow}>
           <Text style={styles.sectionLabel}>BACKUP OTOMATIS</Text>
@@ -180,6 +227,50 @@ export default function BackupScreen() {
           <Text style={styles.emptyAuto}>Belum ada cadangan otomatis. Cadangan pertama dibuat otomatis saat aplikasi dibuka di HP.</Text>
         )}
       </ScrollView>
+
+      {/* Ringkasan hasil Restore Aman */}
+      <Modal visible={!!safeResult} transparent animationType="fade" onRequestClose={() => setSafeResult(null)}>
+        <View style={styles.mBackdrop}>
+          <View style={styles.mCard}>
+            <View style={styles.mHead}>
+              <Ionicons name="shield-checkmark" size={24} color={colors.brand} />
+              <Text style={styles.mTitle}>Ringkasan Restore</Text>
+            </View>
+            {safeResult && (
+              <>
+                <View style={styles.mStatRow}>
+                  <Text style={styles.mStatLbl}>Berhasil ditambahkan</Text>
+                  <Text style={[styles.mStatVal, { color: colors.success }]} testID="safe-added">{safeResult.added}</Text>
+                </View>
+                <View style={styles.mStatRow}>
+                  <Text style={styles.mStatLbl}>Dilewati (sudah ada)</Text>
+                  <Text style={[styles.mStatVal, { color: colors.brand }]} testID="safe-skipped">{safeResult.skipped}</Text>
+                </View>
+                <View style={styles.mStatRow}>
+                  <Text style={styles.mStatLbl}>Total data restore</Text>
+                  <Text style={styles.mStatVal} testID="safe-total">{safeResult.total}</Text>
+                </View>
+                {safeResult.skippedList.length > 0 && (
+                  <>
+                    <Text style={styles.mListLabel}>Produk yang dilewati</Text>
+                    <ScrollView style={styles.mList}>
+                      {safeResult.skippedList.map((s, i) => (
+                        <View key={`${s.name}-${i}`} style={styles.mListItem}>
+                          <Text style={styles.mListName} numberOfLines={1}>{s.name}</Text>
+                          <View style={styles.mReasonPill}><Text style={styles.mReasonTxt}>{s.reason}</Text></View>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+              </>
+            )}
+            <Pressable style={styles.mCloseBtn} onPress={() => setSafeResult(null)} testID="safe-summary-close">
+              <Text style={styles.mCloseTxt}>Tutup</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -197,6 +288,23 @@ const styles = StyleSheet.create({
   redBtnTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   darkBtn: { height: 56, borderRadius: radius.lg, backgroundColor: colors.surfaceInverse, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
   darkBtnTxt: { color: colors.onSurfaceInverse, fontFamily: font.bold, fontSize: fontSize.lg },
+  safeBtn: { height: 56, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.brandTertiary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  safeBtnTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
+  mBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  mCard: { width: "100%", maxWidth: 420, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, maxHeight: "80%" },
+  mHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
+  mTitle: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.xl },
+  mStatRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  mStatLbl: { color: colors.onSurfaceSecondary, fontFamily: font.medium, fontSize: fontSize.base },
+  mStatVal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
+  mListLabel: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base, marginTop: spacing.md, marginBottom: spacing.sm },
+  mList: { maxHeight: 240 },
+  mListItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  mListName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.sm },
+  mReasonPill: { backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
+  mReasonTxt: { color: colors.brand, fontFamily: font.medium, fontSize: 11 },
+  mCloseBtn: { marginTop: spacing.lg, height: 48, borderRadius: radius.lg, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  mCloseTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.base },
   autoHeaderRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
   onBadge: { backgroundColor: "#E7F6EC", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 2 },
   onBadgeTxt: { color: colors.success, fontFamily: font.bold, fontSize: 11, letterSpacing: 0.5 },

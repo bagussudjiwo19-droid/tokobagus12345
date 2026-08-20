@@ -45,4 +45,8 @@ export const api = {
   exportBackup: (): Promise<any> => local.exportBackup(),
   importBackup: (data: any): Promise<{ ok: boolean; products: number; transactions: number }> =>
     local.importBackup(data),
+  safeImportProducts: (
+    data: any,
+  ): Promise<{ ok: boolean; total: number; added: number; skipped: number; skippedList: { name: string; reason: string }[] }> =>
+    local.safeImportProducts(data),
 };

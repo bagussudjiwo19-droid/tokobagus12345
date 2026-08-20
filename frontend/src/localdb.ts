@@ -497,6 +497,131 @@ export const local = {
     return { ok: true, products: newProducts.size, transactions: newTx.length };
   },
 
+  // RESTORE AMAN (tambah data saja). TIDAK PERNAH menimpa/menghapus produk lama.
+  // Sebuah produk dari file DILEWATI bila NAMA (abaikan huruf besar/kecil & spasi)
+  // ATAU salah satu barcode-nya (barcode utama + barcode tambahan + barcode variasi)
+  // sudah dipakai produk yang ADA. Produk induk + anak/variasinya diperlakukan sebagai
+  // SATU paket (induk dilewati → anak ikut dilewati). Hanya menyentuh data Produk;
+  // transaksi, pengaturan, printer TIDAK diubah.
+  async safeImportProducts(data: any): Promise<{
+    ok: boolean; total: number; added: number; skipped: number;
+    skippedList: { name: string; reason: string }[];
+  }> {
+    await ensureInit();
+    if (!data || typeof data !== "object") throw new Error("File tidak valid atau rusak.");
+    const inProducts = data.products;
+    if (!Array.isArray(inProducts)) throw new Error("File tidak valid (data produk tidak ditemukan).");
+    if (inProducts.length === 0) throw new Error("File tidak berisi produk.");
+
+    const norm = (s: any) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+    const barcodesOf = (p: any): string[] => {
+      const out: string[] = [];
+      if (p?.barcode) out.push(String(p.barcode).trim());
+      (Array.isArray(p?.barcodes) ? p.barcodes : []).forEach((b: any) => { if (b) out.push(String(b).trim()); });
+      (Array.isArray(p?.variations) ? p.variations : []).forEach((v: any) => { if (v?.barcode) out.push(String(v.barcode).trim()); });
+      return out.filter(Boolean);
+    };
+
+    // Identitas produk yang SUDAH ADA (data utama — tidak boleh disentuh).
+    const existNames = new Set<string>();
+    const existBarcodes = new Set<string>();
+    for (const p of products.values()) {
+      if (p.name) existNames.add(norm(p.name));
+      for (const b of barcodesOf(p)) existBarcodes.add(b);
+    }
+
+    // Normalisasi + index produk dari file, lalu kelompokkan induk + anak.
+    const normalizeIncoming = (raw: any): any => {
+      if (!raw || typeof raw !== "object" || !raw.name) throw new Error("File rusak: data produk tidak sesuai format.");
+      const p = { ...raw };
+      delete p._id;
+      if (!p.id) p.id = genId();
+      p.tiers = Array.isArray(p.tiers) ? p.tiers : [];
+      p.variations = Array.isArray(p.variations) ? p.variations : [];
+      p.stock = typeof p.stock === "number" ? p.stock : Number(p.stock) || 0;
+      p.buy_price = typeof p.buy_price === "number" ? p.buy_price : Number(p.buy_price) || 0;
+      p.sell_price = typeof p.sell_price === "number" ? p.sell_price : Number(p.sell_price) || 0;
+      p.unit = p.unit || "pcs";
+      p.category = p.category ?? "";
+      p.parent_id = p.parent_id ?? null;
+      p.barcode = p.barcode ?? null;
+      p.barcodes = Array.isArray(p.barcodes) ? p.barcodes.filter((b: any) => !!b) : [];
+      p.inherit_tiers = !!p.inherit_tiers;
+      return p;
+    };
+
+    const items: any[] = inProducts.map(normalizeIncoming);
+    const byId = new Map<string, any>();
+    for (const it of items) byId.set(it.id, it);
+
+    // Cari root (induk paling atas) dalam kumpulan file untuk tiap produk.
+    const rootOf = (it: any): string => {
+      const seen = new Set<string>();
+      let cur = it;
+      while (cur && cur.parent_id && byId.has(cur.parent_id) && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        cur = byId.get(cur.parent_id);
+      }
+      return cur.id;
+    };
+    const groups = new Map<string, any[]>();
+    for (const it of items) {
+      const r = rootOf(it);
+      if (!groups.has(r)) groups.set(r, []);
+      groups.get(r)!.push(it);
+    }
+
+    let added = 0;
+    const skippedList: { name: string; reason: string }[] = [];
+    const toPersist: Product[] = [];
+
+    for (const [rootId, group] of groups) {
+      const root = byId.get(rootId) || group[0];
+      const nameHit = existNames.has(norm(root.name));
+      let barcodeHit = false;
+      for (const g of group) {
+        for (const b of barcodesOf(g)) { if (existBarcodes.has(b)) { barcodeHit = true; break; } }
+        if (barcodeHit) break;
+      }
+      if (nameHit || barcodeHit) {
+        const reason = nameHit && barcodeHit ? "Nama dan barcode sama" : nameHit ? "Nama sama" : "Barcode sama";
+        skippedList.push({ name: root.name, reason });
+        continue;
+      }
+
+      // Impor seluruh grup. Remap id yang bentrok dengan id produk yang sudah ada.
+      const idMap = new Map<string, string>();
+      for (const g of group) {
+        let newId = g.id;
+        if (products.has(newId)) { newId = genId(); }
+        idMap.set(g.id, newId);
+      }
+      for (const g of group) {
+        const nid = idMap.get(g.id)!;
+        const parentNew = g.parent_id && idMap.has(g.parent_id) ? idMap.get(g.parent_id)! : (g.parent_id ?? null);
+        const prod: Product = {
+          ...g,
+          id: nid,
+          parent_id: parentNew,
+          created_at: g.created_at || nowIso(),
+          updated_at: nowIso(),
+        } as Product;
+        products.set(prod.id, prod);
+        toPersist.push(prod);
+        added++;
+      }
+      // Daftarkan identitas grup baru agar grup berikutnya di file tak jadi duplikat.
+      existNames.add(norm(root.name));
+      for (const g of group) for (const b of barcodesOf(g)) existBarcodes.add(b);
+    }
+
+    for (const prod of toPersist) await putProduct(prod);
+    if (added > 0) notifyChange();
+
+    return { ok: true, total: items.length, added, skipped: items.length - added, skippedList };
+  },
+
+
   // ------------------------- SINKRONISASI CLOUD -------------------------
   // Kumpulkan perubahan lokal setelah `sinceMs` (jam HP ini) untuk dikirim ke server.
   async collectDirty(sinceMs: number): Promise<{ products: any[]; transactions: any[]; settings: any }> {
