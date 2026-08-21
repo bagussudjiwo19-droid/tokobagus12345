@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -104,41 +103,6 @@ export default function TransaksiScreen() {
   // masih di halaman Transaksi & tanpa popup → fokuskan lagi otomatis.
   const screenFocusedRef = useRef(false);
   const [screenActive, setScreenActive] = useState(false);
-  // Saat kolom Jumlah sedang diketik → scanner "diistirahatkan" agar keyboard HP
-  // tidak direbut fokusnya (tidak kedip buka-tutup). Setelah selesai (blur),
-  // scanner otomatis merebut fokus lagi (enabled true → startListening) + kita
-  // pacu refocusSignal (mekanisme yang sama dipakai setelah popup) → siap scan lagi.
-  const [qtyEditing, setQtyEditing] = useState(false);
-  const qtyEditingRef = useRef(false);
-  // Ditandai true saat kolom Jumlah baru selesai diedit (blur/Enter). Dipakai oleh
-  // listener keyboardDidHide di bawah untuk memacu fokus scanner SETELAH keyboard
-  // benar-benar tertutup (bukan saat masih animasi menutup → requestFocus tak menempel).
-  const justEditedQtyRef = useRef(false);
-  const onQtyFocusChange = useCallback((focused: boolean) => {
-    setQtyEditing(focused);
-    qtyEditingRef.current = focused;
-    kbdRef.current = focused; // beritahu penjaga keyboard: ini ketik manual, jangan ditutup
-    if (!focused) {
-      justEditedQtyRef.current = true;      // tunggu keyboardDidHide untuk refokus andal
-      setRefocusSignal((n) => n + 1);        // percobaan awal (di-retry oleh HardwareScanner)
-    }
-  }, []);
-
-  // Setelah keyboard HP benar-benar TERTUTUP menyusul edit Jumlah → pacu fokus
-  // kembali ke scanner (view penangkap HID) agar langsung siap scan berikutnya,
-  // tanpa perlu menyentuh kolom scanner lagi. Hanya saat masih di layar Transaksi
-  // & tidak ada popup variasi & tidak sedang mengetik kolom lain.
-  useEffect(() => {
-    const sub = Keyboard.addListener("keyboardDidHide", () => {
-      if (!justEditedQtyRef.current) return;
-      justEditedQtyRef.current = false;
-      if (screenFocusedRef.current && !variantForRef.current && !qtyEditingRef.current) {
-        if (Platform.OS === "web") inputRef.current?.focus();
-        else setRefocusSignal((n) => n + 1);
-      }
-    });
-    return () => sub.remove();
-  }, []);
 
   const [confirmState, setConfirmState] = useState<{ title: string; msg?: string; yesLabel?: string; onYes: () => void } | null>(null);
 
@@ -159,7 +123,7 @@ export default function TransaksiScreen() {
   useEffect(() => { if (variantFor) pickingRef.current = false; }, [variantFor]);
   const keepScanFocused = useCallback(() => {
     setTimeout(() => {
-      if (screenFocusedRef.current && !variantForRef.current && !qtyEditingRef.current) inputRef.current?.focus();
+      if (screenFocusedRef.current && !variantForRef.current) inputRef.current?.focus();
     }, 60);
   }, []);
   const loadSlots = useCallback(async () => {
@@ -391,7 +355,7 @@ export default function TransaksiScreen() {
               placeholderTextColor={colors.muted}
               style={styles.scanModeInput}
             />
-            <HardwareScanner enabled={screenActive && !qtyEditing} refocusSignal={refocusSignal} onScan={submitBarcode} />
+            <HardwareScanner enabled={screenActive} refocusSignal={refocusSignal} onScan={submitBarcode} />
             <View style={styles.readyDot} />
           </View>
           {scanNotif && (
@@ -507,17 +471,25 @@ export default function TransaksiScreen() {
                 );
               })()}
 
-              {/* Baris 2: harga×qty · stepper · subtotal */}
+              {/* Baris 2: harga×qty · [+0,25] · stepper · subtotal */}
               <View style={styles.line2}>
                 <Pressable style={styles.unitWrap} onPress={() => openEditPrice(l)} testID={`edit-price-${l.key}`}>
-                  <Text style={styles.unitTxt} numberOfLines={1}>{rupiah(l.price)} x {l.quantity}</Text>
+                  <Text style={styles.unitTxt} numberOfLines={1}>{rupiah(l.price)} x {fmtQty(l.quantity)}</Text>
                   <Ionicons name="create-outline" size={12} color={colors.brand} />
+                </Pressable>
+                <Pressable
+                  style={styles.quarterBtn}
+                  testID={`cart-plus025-${l.key}`}
+                  hitSlop={6}
+                  onPress={() => cart.setQty(l.key, Math.round((l.quantity + 0.25) * 1000) / 1000)}
+                >
+                  <Text style={styles.quarterTxt}>+0,25</Text>
                 </Pressable>
                 <View style={styles.qtyBox}>
                   <Pressable onPress={() => cart.dec(l.key)} style={styles.qtyBtn} testID={`cart-dec-${l.key}`}>
                     <Ionicons name="remove" size={18} color={colors.brand} />
                   </Pressable>
-                  <QtyInput value={l.quantity} onCommit={(n) => cart.setQty(l.key, n)} onFocusChange={onQtyFocusChange} testID={`cart-qty-${l.key}`} />
+                  <Text style={styles.qtyVal} testID={`cart-qty-${l.key}`}>{fmtQty(l.quantity)}</Text>
                   <Pressable onPress={() => cart.inc(l.key)} style={styles.qtyBtn} testID={`cart-inc-${l.key}`}>
                     <Ionicons name="add" size={18} color={colors.brand} />
                   </Pressable>
@@ -698,76 +670,11 @@ export default function TransaksiScreen() {
   );
 }
 
-// Jendela waktu (ms epoch) untuk MENOLAK fokus otomatis (auto-advance Android) ke
-// kolom Jumlah lain setelah submit. Dibagikan antar semua QtyInput.
-let suppressQtyFocusUntil = 0;
-
-function QtyInput({ value, onCommit, onFocusChange, testID }: { value: number; onCommit: (n: number) => void; onFocusChange?: (focused: boolean) => void; testID?: string }) {
-  const [txt, setTxt] = useState(String(value));
-  const inputRef = useRef<TextInput>(null);
-  // Waktu terakhir kolom INI disentuh pengguna. Dipakai membedakan fokus dari
-  // sentuhan asli vs auto-advance Android (yang tak didahului sentuhan).
-  const touchedRef = useRef(0);
-  useEffect(() => { setTxt(String(value)); }, [value]);
-  // Saat keyboard ditutup (Done/Back Android/ketuk area lain), bila kolom ini masih
-  // fokus → lepas fokus supaya "selesai mengetik" → scanner aktif lagi (via onBlur).
-  useEffect(() => {
-    const sub = Keyboard.addListener("keyboardDidHide", () => {
-      if (inputRef.current?.isFocused()) inputRef.current?.blur();
-    });
-    return () => sub.remove();
-  }, []);
-  // Bersihkan input: hanya angka + satu pemisah desimal (titik/koma → titik).
-  const sanitize = (t: string) => {
-    let s = t.replace(",", ".").replace(/[^\d.]/g, "");
-    const i = s.indexOf(".");
-    if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, "");
-    return s;
-  };
-  const commit = () => {
-    const n = Number(txt.replace(",", "."));
-    // Jumlah harus > 0 (boleh desimal spt 0.5). Bila kosong/0 → kembalikan nilai lama.
-    if (!Number.isFinite(n) || n <= 0) { setTxt(String(value)); return; }
-    const rounded = Math.round(n * 1000) / 1000; // maksimal 3 desimal
-    setTxt(String(rounded));
-    if (rounded !== value) onCommit(rounded);
-  };
-  return (
-    <TextInput
-      ref={inputRef}
-      value={txt}
-      onChangeText={(t) => setTxt(sanitize(t))}
-      onTouchStart={() => { touchedRef.current = Date.now(); }}
-      onFocus={() => {
-        const now = Date.now();
-        // CEGAH AUTO-ADVANCE ANDROID: setelah kolom lain di-submit (blur), Android
-        // otomatis memindahkan fokus ke EditText jumlah berikutnya. Bila fokus ini
-        // TIDAK didahului sentuhan pengguna pada kolom ini (dalam jendela suppress)
-        // → tolak: lepas fokus & tutup keyboard, JANGAN tandai sedang mengetik.
-        if (now < suppressQtyFocusUntil && now - touchedRef.current > 400) {
-          inputRef.current?.blur();
-          Keyboard.dismiss();
-          return;
-        }
-        onFocusChange?.(true);
-      }}
-      onEndEditing={commit}
-      onBlur={() => { commit(); onFocusChange?.(false); }}
-      onSubmitEditing={() => {
-        // Buka jendela suppress → tolak auto-advance ke kolom jumlah lain, lalu
-        // lepas fokus & tutup keyboard → scanner siap menerima barcode.
-        suppressQtyFocusUntil = Date.now() + 700;
-        inputRef.current?.blur();
-        Keyboard.dismiss();
-      }}
-      blurOnSubmit
-      keyboardType="decimal-pad"
-      returnKeyType="done"
-      selectTextOnFocus
-      style={styles.qtyInput}
-      testID={testID}
-    />
-  );
+// Format jumlah gaya Indonesia: bilangan bulat tanpa desimal, pecahan pakai koma.
+// mis. 1 → "1", 0.25 → "0,25", 1.5 → "1,5".
+function fmtQty(n: number): string {
+  const r = Math.round((Number(n) || 0) * 1000) / 1000;
+  return String(r).replace(".", ",");
 }
 
 const styles = StyleSheet.create({
@@ -848,6 +755,9 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: "row", alignItems: "center", backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, padding: 3, gap: 3 },
   qtyBtn: { width: 30, height: 30, borderRadius: radius.pill, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
   qtyInput: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 36, width: 44, height: 30, paddingVertical: 0, textAlign: "center" },
+  qtyVal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 36, textAlign: "center" },
+  quarterBtn: { height: 30, paddingHorizontal: 10, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.brand, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  quarterTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   lineNameGrosir: { color: colors.success },
   lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.base, minWidth: 64, textAlign: "right" },

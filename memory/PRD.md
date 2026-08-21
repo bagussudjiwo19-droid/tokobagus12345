@@ -1,5 +1,17 @@
 # PRD — Toko Bagus (Kasir Warung / POS)
 
+## Session Log (fork) — Nonaktifkan edit jumlah manual (tanpa keyboard) + tombol +0,25 (hilangkan konflik scanner)
+- Keluhan user: scanner masih "merebut" kolom jumlah. Akar: kolom jumlah = TextInput yang bisa diketik → keyboard vs penangkap fokus scanner HID selalu berebut di Android. Solusi user (disetujui): matikan edit manual jumlah (tanpa keyboard) + tombol kecil +0,25.
+- Keputusan user (layout): Jumlah Cepat 3/6/12 tetap di samping ikon hapus (SET, tak berubah). Ikon edit harga tetap di bawah nama/harga. Tombol +0,25 di SAMPING ikon edit harga. Tombol −/+ tetap di area jumlah, masing-masing −1/+1. Edit manual jumlah DINONAKTIFKAN.
+- `app/(tabs)/index.tsx`:
+  - HAPUS komponen `QtyInput` (TextInput editable) + `suppressQtyFocusUntil` + state `qtyEditing/qtyEditingRef/justEditedQtyRef` + `onQtyFocusChange` + listener keyboardDidHide (parent) + import `Keyboard`. `keepScanFocused` tak lagi cek qtyEditing. `HardwareScanner enabled={screenActive}` (dulu `&& !qtyEditing`).
+  - Kolom jumlah kini `<Text style={qtyVal} testID cart-qty-{key}>{fmtQty(l.quantity)}</Text>` (display-only, tak fokus/tak keyboard). Helper `fmtQty` (koma desimal ID: 0,25/0,5/1).
+  - Tombol BARU `cart-plus025-{key}` (pill pink `quarterBtn`/`quarterTxt`, teks "+0,25") di line2 setelah unitWrap (samping ikon edit harga) → `cart.setQty(key, round((qty+0.25)*1000)/1000)` (MENAMBAH 0,25, bukan set). Tak memfokus input/tak memunculkan keyboard → scanner tetap siap.
+  - `unitTxt` "Rp x {qty}" & subtotal pakai fmtQty. Tombol −/+ tetap `cart.dec/inc` (langkah 1).
+- Scanner/harga/keranjang/transaksi/Jumlah Cepat (SET) TIDAK diubah.
+- DIVERIFIKASI (screenshot e2e web): scan → qty 1; +0,25 ×4 → 2 (tiap tap +0,25) & activeElement TETAP scan-mode-input (tanpa keyboard); − → 1; + → 2; tap kolom jumlah → active tetap scan-mode-input (tak buka input). Lint bersih (warning duplicate-import lama). CATATAN: manfaat utama (tanpa konflik keyboard-scanner) berlaku di build APK. Frontend-only → user REDEPLOY + build APK.
+
+
 ## Session Log (fork) — FIX fokus lompat ke kolom Jumlah item LAIN setelah Enter (auto-advance Android)
 - Keluhan user (HP/produksi): setelah edit Jumlah item-1 lalu tekan ✓/Enter, kursor malah pindah & memilih kolom Jumlah item LAIN (mis. item-2), keyboard tetap terbuka → scanner tak siap. Screenshot: item-2 qty ter-highlight saat keyboard masih muncul.
 - ROOT CAUSE: perilaku ANDROID — saat sebuah EditText di-`blur()` (via onSubmitEditing), sistem otomatis memindahkan fokus ke EditText berikutnya yang focusable-in-touch-mode (kolom Jumlah item lain) → item lain ter-fokus + `selectTextOnFocus` menyorotnya + IME muncul lagi. Fix fokus sebelumnya (keyboardDidHide→refocus scanner) TAK menembak ini karena keyboard tak pernah benar-benar tertutup (langsung pindah ke item lain).
