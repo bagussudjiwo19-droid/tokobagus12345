@@ -32,6 +32,14 @@ dist
 
 # Environment files (comprehensive coverage)
 
+# Secrets / credential env files — JANGAN commit. Template .env.example TETAP dilacak.
+.env
+backend/.env
+frontend/.env
+*.env
+!.env.example
+!**/.env.example
+
 *token.json*
 *credentials.json*
 

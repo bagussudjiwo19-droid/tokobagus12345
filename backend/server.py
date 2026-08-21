@@ -627,7 +627,12 @@ async def sync_push(body: dict = Body(...)):
 # Asisten percakapan Miko. Fakta produk (harga/stok) DIKIRIM dari HP (DB lokal
 # Kasir) lalu disuntik ke prompt → model DILARANG mengarang angka. Offline →
 # HP otomatis memakai mesin offline (tanpa endpoint ini).
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+#
+# PORTABILITAS: penyedia AI bisa DIGANTI lewat environment variable (tanpa ubah
+# kode). Default memakai Emergent (untuk pengembangan). Untuk server sendiri,
+# set LLM_PROVIDER=openai_compatible + LLM_BASE_URL + LLM_API_KEY + LLM_MODEL
+# (mendukung OpenAI, Groq, OpenRouter, Ollama, dsb. yang OpenAI-compatible).
+import httpx
 
 MIKO_MODEL = ("gemini", "gemini-3-flash-preview")
 
@@ -707,12 +712,49 @@ def _miko_system(shop_name: Optional[str], facts: List[MikoFact]) -> str:
     )
 
 
-@api_router.post("/miko/chat")
-async def miko_chat(payload: MikoChatIn):
+async def _llm_reply(system_message: str, user_text: str, session_id: str) -> str:
+    """Kirim ke penyedia LLM sesuai konfigurasi env. Mengembalikan teks balasan.
+
+    - LLM_PROVIDER=openai_compatible → panggil endpoint OpenAI-compatible milik Anda
+      (LLM_BASE_URL, LLM_API_KEY, LLM_MODEL). TANPA ketergantungan Emergent.
+    - selain itu (default) → pakai Emergent (emergentintegrations + EMERGENT_LLM_KEY).
+    """
+    provider = os.environ.get("LLM_PROVIDER", "emergent").strip().lower()
+
+    if provider in ("openai", "openai_compatible", "custom"):
+        base = os.environ.get("LLM_BASE_URL", "").rstrip("/")
+        key = os.environ.get("LLM_API_KEY", "")
+        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+        if not base or not key:
+            raise HTTPException(status_code=503, detail="LLM_BASE_URL/LLM_API_KEY belum diatur")
+        url = base + "/chat/completions"
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_text},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 220,
+        }
+        async with httpx.AsyncClient(timeout=30) as hc:
+            r = await hc.post(url, json=payload, headers={"Authorization": f"Bearer {key}"})
+            r.raise_for_status()
+            data = r.json()
+        return (data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+
+    # Default: Emergent (impor DITUNDA agar server sendiri tak wajib punya library ini).
     key = os.environ.get("EMERGENT_LLM_KEY")
     if not key:
         raise HTTPException(status_code=503, detail="LLM key belum diatur")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    chat = LlmChat(api_key=key, session_id=session_id, system_message=system_message).with_model(*MIKO_MODEL)
+    reply = await chat.send_message(UserMessage(text=user_text))
+    return (reply or "").strip()
 
+
+@api_router.post("/miko/chat")
+async def miko_chat(payload: MikoChatIn):
     # Rangkai konteks percakapan sebelumnya + pesan sekarang jadi satu teks.
     convo = ""
     for t in payload.history[-6:]:
@@ -722,20 +764,17 @@ async def miko_chat(payload: MikoChatIn):
         (f"[Percakapan sebelumnya]\n{convo}\n" if convo else "")
         + f"[Pesan pelanggan sekarang]\nPelanggan: {payload.message}\n\nJawab sebagai Miko:"
     )
-
-    chat = LlmChat(
-        api_key=key,
-        session_id=payload.session_id,
-        system_message=_miko_system(payload.shop_name, payload.facts),
-    ).with_model(*MIKO_MODEL)
+    system_message = _miko_system(payload.shop_name, payload.facts)
 
     try:
-        reply = await chat.send_message(UserMessage(text=user_text))
+        reply = await _llm_reply(system_message, user_text, payload.session_id)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"miko_chat error: {e}")
         raise HTTPException(status_code=502, detail="AI sedang sibuk")
 
-    return {"reply": (reply or "").strip()}
+    return {"reply": reply}
 
 
 app.include_router(api_router)

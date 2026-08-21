@@ -1,0 +1,35 @@
+# ============================================================================
+# Toko Bagus Kasir — Self-host stack (MongoDB + Backend API)
+# Jalankan di VPS Anda:  docker compose up -d
+# Frontend (Expo) TIDAK di sini — di-build terpisah menunjuk ke API ini.
+# ============================================================================
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    # Port TIDAK diexpose ke publik (hanya diakses backend via jaringan internal).
+    # Untuk akses admin lokal, buka comment di bawah:
+    # ports:
+    #   - "27017:27017"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: "mongodb://mongo:27017"
+      DB_NAME: "toko_bagus"
+      # --- AI Miko opsional: isi bila mau (lihat backend/.env.example) ---
+      LLM_PROVIDER: "${LLM_PROVIDER:-emergent}"
+      EMERGENT_LLM_KEY: "${EMERGENT_LLM_KEY:-}"
+      LLM_BASE_URL: "${LLM_BASE_URL:-}"
+      LLM_API_KEY: "${LLM_API_KEY:-}"
+      LLM_MODEL: "${LLM_MODEL:-}"
+    ports:
+      - "8001:8001"
+
+volumes:
+  mongo_data:

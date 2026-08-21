@@ -1,0 +1,17 @@
+# Backend Toko Bagus Kasir — image portable (jalankan di VPS mana pun)
+FROM python:3.11-slim
+
+WORKDIR /app/backend
+
+# Dependensi sistem minimal
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8001
+# Server mengikat 0.0.0.0:8001 (ubah port lewat orchestrator bila perlu)
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
