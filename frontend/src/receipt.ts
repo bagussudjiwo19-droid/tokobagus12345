@@ -117,6 +117,43 @@ export function buildReceiptText(tx: Transaction, s: Settings): string {
 }
 
 
+// Struk versi teks WhatsApp (tanpa kode ESC/POS). Rapi dibaca di chat, memakai
+// pengaturan tampilan struk yang sama (nama toko, item, diskon, total, dll).
+export function buildReceiptWhatsApp(tx: Transaction, s: Settings): string {
+  const L: string[] = [];
+  if (s.showShopName && s.shopName) L.push(`*${s.shopName.toUpperCase()}*`);
+  if (s.showAddress && s.address) L.push(s.address);
+  if (s.showPhone && s.phone) L.push(s.phone);
+  L.push("--------------------------------");
+  if (s.showTxNumber) L.push(`Id Transaksi : ${shortTxNo(tx.id)}`);
+  if (s.showDateTime) L.push(`Tanggal : ${receiptDateTime(tx.created_at)}`);
+  if (s.showCashier && s.cashier) L.push(`Kasir : ${s.cashier}`);
+  L.push("--------------------------------");
+  for (const it of tx.items) {
+    const unit = (it.unit || "").trim();
+    const suffix = unit && unit.toLowerCase() !== "pcs" ? `, ${unit}` : "";
+    const name = (s.showItemName ? it.name : "") + suffix;
+    L.push(name);
+    L.push(`  ${qtyStr(it.quantity)} x Rp${numberID(it.price)} = Rp${numberID(it.subtotal)}`);
+  }
+  L.push("--------------------------------");
+  const discount = tx.discount || 0;
+  if (discount > 0) {
+    if (s.showSubtotal) L.push(`Subtotal : Rp${numberID(tx.total + discount)}`);
+    if (s.showDiscount) L.push(`Diskon : -Rp${numberID(discount)}`);
+  }
+  if (s.showTotal) L.push(`*Total : Rp${numberID(tx.total)}*`);
+  if (s.showCashPaid) L.push(`Dibayar : Rp${numberID(tx.cash_paid)}`);
+  const shortfall = Math.max(0, (tx.total || 0) - (tx.cash_paid || 0));
+  if (shortfall > 0) L.push(`Pembayaran Kurang : Rp${numberID(shortfall)}`);
+  else if (s.showChange) L.push(`Kembalian : Rp${numberID(tx.change)}`);
+  L.push("--------------------------------");
+  if (s.showNote && s.note) L.push(s.note);
+  if (s.showThanks && s.thanks) L.push(s.thanks);
+  return L.join("\n");
+}
+
+
 const GS = "\x1D";
 
 // Bangun perintah ESC/POS untuk mencetak label BARCODE produk sebanyak `qty`.

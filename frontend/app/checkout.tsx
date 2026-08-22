@@ -28,6 +28,7 @@ import { buildReceiptText } from "@/src/receipt";
 import { speakPaymentDone } from "@/src/voice";
 import { mikoBus } from "@/src/mikoBus";
 import { sfx } from "@/src/sfx";
+import WhatsAppReceiptButton from "@/components/WhatsAppReceiptButton";
 
 type Step = "cart" | "pay" | "done";
 
@@ -371,6 +372,7 @@ export default function CheckoutScreen() {
           <ActionBtn icon="share-social" label="Bagikan" onPress={shareReceipt} testID="receipt-share" />
           <ActionBtn icon="print" label="Cetak Struk" onPress={printReceipt} testID="receipt-print" />
         </View>
+        <WhatsAppReceiptButton tx={tx} settings={settings} testID="receipt-whatsapp" />
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable testID="checkout-new-tx" onPress={closeAll} style={styles.primaryBtn}>

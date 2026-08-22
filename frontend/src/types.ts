@@ -93,6 +93,7 @@ export type Settings = {
   quickSlots?: (string | null)[]; // 10 slot Pintasan Produk (menyimpan ID produk; null = kosong)
   hideMiko?: boolean; // sembunyikan maskot Miko di layar kasir (default: tampil)
   unlimitedStock?: boolean; // mode tanpa stok: sembunyikan angka & peringatan stok (default: aktif)
+  lowStockThreshold?: number; // ambang batas "Stok Menipis" (default 5) — produk dengan stok <= nilai ini ditandai
 };
 
 export type Printer = { address?: string | null; name?: string | null };

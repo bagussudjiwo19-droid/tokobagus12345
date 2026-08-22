@@ -47,6 +47,7 @@ const DEFAULT_SETTINGS: Settings = {
   quickSlots: [],
   hideMiko: false,
   unlimitedStock: true,
+  lowStockThreshold: 5,
 };
 
 function nowIso(): string { return new Date().toISOString(); }

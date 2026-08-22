@@ -26,6 +26,7 @@ import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
 import { mikoBus } from "@/src/mikoBus";
+import WhatsAppReceiptButton from "@/components/WhatsAppReceiptButton";
 
 type FilterKey = "today" | "yesterday" | "month" | "date" | "all";
 const FILTERS: { key: FilterKey; label: string }[] = [
@@ -93,6 +94,22 @@ export default function RiwayatScreen() {
   }, [txs, filter, pickDate]);
 
   const omzet = useMemo(() => filtered.reduce((s, t) => s + (t.total || 0), 0), [filtered]);
+
+  // Barang terlaris (berdasarkan JUMLAH UNIT terjual) pada periode terpilih.
+  const topItems = useMemo(() => {
+    const m = new Map<string, { name: string; qty: number }>();
+    for (const t of filtered) {
+      for (const it of t.items || []) {
+        const key = it.name || "(tanpa nama)";
+        const cur = m.get(key) || { name: key, qty: 0 };
+        cur.qty += it.quantity || 0;
+        m.set(key, cur);
+      }
+    }
+    return Array.from(m.values()).sort((a, b) => b.qty - a.qty).slice(0, 3);
+  }, [filtered]);
+
+  const fmtQty = (q: number) => (Number.isInteger(q) ? String(q) : String(q).replace(".", ","));
   const periodLabel =
     filter === "today" ? "Hari Ini"
     : filter === "yesterday" ? "Kemarin"
@@ -243,6 +260,22 @@ export default function RiwayatScreen() {
         <Text style={styles.sumValue}>{rupiah(omzet)}</Text>
       </View>
 
+      {topItems.length > 0 && (
+        <View style={styles.topCard} testID="riwayat-top-items">
+          <View style={styles.topHead}>
+            <Ionicons name="trophy-outline" size={16} color={colors.brand} />
+            <Text style={styles.topTitle}>Terlaris {periodLabel}</Text>
+          </View>
+          {topItems.map((it, i) => (
+            <View key={it.name} style={styles.topRow} testID={`riwayat-top-${i}`}>
+              <View style={styles.topRank}><Text style={styles.topRankTxt}>{i + 1}</Text></View>
+              <Text style={styles.topName} numberOfLines={1}>{it.name}</Text>
+              <Text style={styles.topQty}>{fmtQty(it.qty)} terjual</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       {loading ? (
         <View style={styles.centerFill}><ActivityIndicator color={colors.brand} size="large" /></View>
       ) : (
@@ -288,6 +321,7 @@ export default function RiwayatScreen() {
               <Text style={styles.actionTxt}>Cetak Struk</Text>
             </Pressable>
           </View>
+          <WhatsAppReceiptButton tx={selected} settings={settings} testID="riwayat-whatsapp" />
           {selected && Math.max(0, (selected.total || 0) - (selected.cash_paid || 0)) > 0 && (
             <Pressable style={styles.lunasiBtn} testID="riwayat-lunasi" onPress={payOff}>
               <Ionicons name="checkmark-done" size={20} color={colors.onBrandPrimary} />
@@ -333,6 +367,14 @@ const styles = StyleSheet.create({
   stepDateTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   sumLabel: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.base, opacity: 0.95 },
   sumValue: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 34, marginTop: 2 },
+  topCard: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.md, gap: spacing.sm },
+  topHead: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  topTitle: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  topRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  topRank: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  topRankTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
+  topName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  topQty: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   rowThumb: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   rowUnpaid: { borderColor: colors.error, borderWidth: 1.5 },

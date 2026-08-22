@@ -14,9 +14,13 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Pilihan mesin DB server: "mongo" (default, tak berubah) atau "postgres" (self-host).
+DB_ENGINE = os.environ.get("DB_ENGINE", "mongo").strip().lower()
+
+# MongoDB dibuat OPSIONAL agar server bisa jalan Postgres-only (tanpa MONGO_URL).
+mongo_url = os.environ.get("MONGO_URL")
+client = AsyncIOMotorClient(mongo_url) if mongo_url else None
+db = client[os.environ.get("DB_NAME", "toko_bagus")] if client else None
 
 app = FastAPI(title="Toko Bagus API")
 api_router = APIRouter(prefix="/api")
@@ -559,6 +563,9 @@ async def sync_pull(store: str, since: int = 0):
     # bukan updated_at (jam HP pengirim). Ini mencegah produk "terlewat" akibat
     # beda jam antar-HP. since==0 = ambil SEMUA (bootstrap HP baru); since>0 =
     # hanya yang ditulis server setelah cursor terakhir.
+    if DB_ENGINE == "postgres":
+        import pg_store
+        return await pg_store.pull(store, since)
     pq = {"store": store}
     tq = {"store": store}
     if since > 0:
@@ -583,6 +590,9 @@ async def sync_push(body: dict = Body(...)):
     store = body.get("store")
     if not store:
         raise HTTPException(status_code=400, detail="Kode Toko wajib diisi")
+    if DB_ENGINE == "postgres":
+        import pg_store
+        return await pg_store.push(store, body.get("products") or [], body.get("transactions") or [], body.get("settings"))
     srv = _ms()  # stempel jam SERVER untuk semua data yang benar-benar ditulis
     for p in (body.get("products") or []):
         pid = p.get("id")
