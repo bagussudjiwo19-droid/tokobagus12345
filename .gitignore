@@ -92,3 +92,8 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Data sinkronisasi berukuran besar — JANGAN di-push ke GitHub (bisa membuat push gagal).
+# Tetap tersimpan lokal. Hasilkan ulang kapan saja dengan: migration/scripts/export_data.py
+# (Data utama tetap dilacak: products.json, transactions.json, app_backup.json, dll.)
+migration/data/s_products.json

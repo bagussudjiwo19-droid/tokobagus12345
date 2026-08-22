@@ -22,7 +22,7 @@ migration/
    ├─ transactions.json     #    123 transaksi
    ├─ settings.json         #      1 pengaturan
    ├─ printer.json          #      1 printer
-   ├─ s_products.json       #  23134 (sinkronisasi per Kode Toko)
+   ├─ s_products.json       #  23134 (sinkronisasi per Kode Toko) — TIDAK ikut ke GitHub (ukuran besar)
    ├─ s_transactions.json   #    993 (sinkronisasi)
    ├─ s_settings.json       #      3 (sinkronisasi)
    ├─ app_backup.json       # backup format APLIKASI (untuk Restore lewat UI / /api/backup/import)
@@ -30,6 +30,13 @@ migration/
 ```
 Semua file `*.json` di `data/` memakai *Extended JSON* (lossless) sehingga tipe
 data terjaga saat di-impor ulang. `app_backup.json` memakai format backup aplikasi.
+
+> **Catatan ukuran file:** `s_products.json` (~13 MB) sengaja **TIDAK ikut** di-push
+> ke GitHub (di-`.gitignore`) agar proses "Save to GitHub" tidak gagal karena file besar.
+> File ini **tetap tersimpan lokal** dan bersifat **opsional** (hanya data sinkronisasi
+> multi-HP). Untuk membuatnya lagi kapan saja, jalankan di project lama:
+> `cd migration/scripts && python3 export_data.py`. Data utama (produk, transaksi,
+> pengaturan, printer) tetap lengkap di `products.json`/`transactions.json`/`app_backup.json`.
 
 ---
 
