@@ -19,6 +19,7 @@ import { mikoBus } from "@/src/mikoBus";
 import { startAutoSync } from "@/src/sync";
 import { api } from "@/src/api";
 import Miko from "@/components/Miko";
+import ShareIntentHandler from "@/components/ShareIntentHandler";
 
 // Disable logbox errors etc so that users can see the app
 // and agent works as expected.
@@ -107,6 +108,7 @@ export default function RootLayout() {
                   <Stack.Screen name="pengaturan-suara" options={{ presentation: "modal" }} />
                   <Stack.Screen name="baca-bukti" options={{ presentation: "modal" }} />
                 </Stack>
+                <ShareIntentHandler />
                 {!mikoHidden && !(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>
             </CartProvider>
