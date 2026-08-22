@@ -573,6 +573,7 @@ async def sync_pull(store: str, since: int = 0):
         tq["srv_at"] = {"$gt": since}
     prods = await db.s_products.find(pq).to_list(1000000)
     txs = await db.s_transactions.find(tq).to_list(1000000)
+    bqs = await db.s_bukti.find(tq).to_list(1000000)
     sett = await db.s_settings.find_one({"store": store})
     settings = None
     if sett and (since == 0 or int(sett.get("srv_at", 0)) > since):
@@ -581,6 +582,7 @@ async def sync_pull(store: str, since: int = 0):
         "now": _ms(),
         "products": [{"id": p["id"], "doc": p.get("doc"), "updated_at": int(p.get("updated_at", 0)), "deleted": bool(p.get("deleted", False))} for p in prods],
         "transactions": [{"id": t["id"], "doc": t.get("doc"), "updated_at": int(t.get("updated_at", 0))} for t in txs],
+        "bukti": [{"id": b["id"], "doc": b.get("doc"), "updated_at": int(b.get("updated_at", 0))} for b in bqs],
         "settings": settings,
     }
 
@@ -620,6 +622,19 @@ async def sync_push(body: dict = Body(...)):
             {"$set": {"store": store, "id": tid, "doc": t.get("doc"), "updated_at": upd, "srv_at": srv}},
             upsert=True,
         )
+    for b in (body.get("bukti") or []):
+        bid = b.get("id")
+        if not bid:
+            continue
+        upd = int(b.get("updated_at") or 0)
+        existing = await db.s_bukti.find_one({"store": store, "id": bid})
+        if existing and int(existing.get("updated_at", 0)) > upd:
+            continue
+        await db.s_bukti.update_one(
+            {"store": store, "id": bid},
+            {"$set": {"store": store, "id": bid, "doc": b.get("doc"), "updated_at": upd, "srv_at": srv}},
+            upsert=True,
+        )
     sett = body.get("settings")
     if sett and sett.get("doc") is not None:
         upd = int(sett.get("updated_at") or 0)
@@ -631,6 +646,153 @@ async def sync_push(body: dict = Body(...)):
                 upsert=True,
             )
     return {"ok": True, "now": srv}
+
+
+# ----------------------------- OCR BUKTI PEMBAYARAN (AI Vision) ---------------
+# Membaca screenshot bukti pembayaran (ShopeePay/GoPay/DANA/OVO/QRIS/transfer bank)
+# dan mengekstrak field terstruktur. ATURAN UTAMA: JANGAN menebak. Field yang
+# tidak terbaca jelas dikembalikan value=null + confident=false agar HP menandai
+# untuk dicek pengguna. Model: Gemini 3 Flash (default) / penyedia OpenAI-compatible.
+OCR_MODEL = ("gemini", "gemini-3-flash-preview")
+
+OCR_SYSTEM = (
+    "Kamu adalah mesin OCR untuk BUKTI PEMBAYARAN digital Indonesia "
+    "(ShopeePay, GoPay, DANA, OVO, QRIS, LinkAja, transfer bank, m-banking, dll). "
+    "Tugasmu HANYA membaca teks yang BENAR-BENAR terlihat pada gambar lalu "
+    "mengembalikan data terstruktur. DILARANG KERAS menebak, mengarang, atau "
+    "melengkapi angka yang tidak jelas. Jika sebuah field tidak terbaca dengan "
+    "yakin, kembalikan value null dan confident=false. Jawab HANYA JSON, tanpa "
+    "penjelasan, tanpa markdown."
+)
+
+OCR_PROMPT = (
+    "Ekstrak informasi dari gambar bukti pembayaran ini. Kembalikan HANYA JSON "
+    "dengan bentuk PERSIS seperti ini (tanpa teks lain):\n"
+    "{\n"
+    '  "method":    {"value": <string metode/aplikasi pembayaran, mis. "ShopeePay"|"GoPay"|"DANA"|"OVO"|"QRIS"|"Transfer BCA"> atau null, "confident": <true|false>},\n'
+    '  "recipient": {"value": <string nama penerima/merchant/toko tujuan> atau null, "confident": <true|false>},\n'
+    '  "amount":    {"value": <bilangan bulat rupiah TANPA titik/koma, nominal total yang dibayar> atau null, "confident": <true|false>},\n'
+    '  "date":      {"value": <string tanggal apa adanya seperti tertulis> atau null, "confident": <true|false>},\n'
+    '  "time":      {"value": <string waktu, mis. "14:35" atau "14:35:20"> atau null, "confident": <true|false>},\n'
+    '  "ref":       {"value": <string nomor referensi/ID transaksi> atau null, "confident": <true|false>}\n'
+    "}\n"
+    "ATURAN: (1) amount adalah nominal pembayaran UTAMA, bukan saldo/biaya admin. "
+    "(2) Jika ragu pada sebuah field, WAJIB value=null dan confident=false — jangan menebak. "
+    "(3) Jangan menambah field lain."
+)
+
+
+class OcrBuktiIn(BaseModel):
+    image_base64: str
+    mime_type: Optional[str] = "image/jpeg"
+
+
+def _parse_ocr_json(text: str) -> dict:
+    t = (text or "").strip()
+    # Buang pagar kode markdown bila ada.
+    if t.startswith("```"):
+        t = t.strip("`")
+        if t.lower().startswith("json"):
+            t = t[4:]
+    # Ambil blok {...} pertama.
+    i, j = t.find("{"), t.rfind("}")
+    if i != -1 and j != -1 and j > i:
+        t = t[i:j + 1]
+    return json.loads(t)
+
+
+def _norm_field(f: Any) -> Dict[str, Any]:
+    # Normalkan tiap field ke {value, confident} yang aman.
+    if isinstance(f, dict):
+        val = f.get("value", None)
+        conf = bool(f.get("confident", False))
+    else:
+        val = f
+        conf = False
+    if isinstance(val, str) and val.strip().lower() in ("", "null", "none", "-", "tidak yakin", "tidak terbaca"):
+        val = None
+    if val is None:
+        conf = False
+    return {"value": val, "confident": conf}
+
+
+async def _ocr_vision(system_message: str, prompt: str, image_b64: str, mime: str) -> str:
+    provider = os.environ.get("LLM_PROVIDER", "emergent").strip().lower()
+
+    if provider in ("openai", "openai_compatible", "custom"):
+        base = os.environ.get("LLM_BASE_URL", "").rstrip("/")
+        key = os.environ.get("LLM_API_KEY", "")
+        model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+        if not base or not key:
+            raise HTTPException(status_code=503, detail="LLM_BASE_URL/LLM_API_KEY belum diatur")
+        url = base + "/chat/completions"
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{image_b64}"}},
+                ]},
+            ],
+            "temperature": 0,
+            "max_tokens": 500,
+        }
+        async with httpx.AsyncClient(timeout=45) as hc:
+            r = await hc.post(url, json=payload, headers={"Authorization": f"Bearer {key}"})
+            r.raise_for_status()
+            data = r.json()
+        return (data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+
+    # Default: Emergent (Gemini 3 Flash vision).
+    key = os.environ.get("EMERGENT_LLM_KEY")
+    if not key:
+        raise HTTPException(status_code=503, detail="LLM key belum diatur")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    chat = LlmChat(api_key=key, session_id=f"ocr-{uuid.uuid4()}", system_message=system_message).with_model(*OCR_MODEL)
+    img = ImageContent(image_base64=image_b64)
+    reply = await chat.send_message(UserMessage(text=prompt, file_contents=[img]))
+    return (reply or "").strip()
+
+
+@api_router.post("/ocr/bukti")
+async def ocr_bukti(payload: OcrBuktiIn):
+    """OCR bukti pembayaran → JSON terstruktur. Field ragu = value null + confident false."""
+    if not payload.image_base64:
+        raise HTTPException(status_code=400, detail="Gambar kosong")
+    # Buang prefix data URI bila ikut terkirim.
+    b64 = payload.image_base64
+    if "," in b64 and b64.strip().lower().startswith("data:"):
+        b64 = b64.split(",", 1)[1]
+    mime = payload.mime_type or "image/jpeg"
+
+    try:
+        raw = await _ocr_vision(OCR_SYSTEM, OCR_PROMPT, b64, mime)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ocr_bukti llm error: {e}")
+        raise HTTPException(status_code=502, detail="AI pembaca gambar sedang sibuk")
+
+    try:
+        parsed = _parse_ocr_json(raw)
+    except Exception:
+        logger.error(f"ocr_bukti parse error, raw={raw[:300]}")
+        raise HTTPException(status_code=502, detail="Gagal membaca hasil AI. Coba lagi atau isi manual.")
+
+    fields = {k: _norm_field(parsed.get(k)) for k in ("method", "recipient", "amount", "date", "time", "ref")}
+    # amount harus bilangan bulat; bila tidak, tandai ragu.
+    amt = fields["amount"]["value"]
+    if amt is not None:
+        try:
+            digits = str(amt)
+            digits = "".join(ch for ch in digits if ch.isdigit())
+            fields["amount"]["value"] = int(digits) if digits else None
+            if not digits:
+                fields["amount"]["confident"] = False
+        except Exception:
+            fields["amount"] = {"value": None, "confident": False}
+    return {"fields": fields}
 
 
 # ----------------------------- MIKO CHAT (AI online) --------------------------
@@ -807,6 +969,8 @@ async def on_startup():
     await db.s_products.create_index([("store", 1), ("updated_at", 1)])
     await db.s_transactions.create_index([("store", 1), ("id", 1)])
     await db.s_transactions.create_index([("store", 1), ("updated_at", 1)])
+    await db.s_bukti.create_index([("store", 1), ("id", 1)])
+    await db.s_bukti.create_index([("store", 1), ("updated_at", 1)])
     await db.s_settings.create_index("store")
     await seed_if_empty()
 

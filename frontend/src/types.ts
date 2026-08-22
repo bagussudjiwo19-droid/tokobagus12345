@@ -55,6 +55,22 @@ export type Transaction = {
   updated_at?: string;
 };
 
+// Bukti Pembayaran (SALINAN dari screenshot e-wallet/bank via OCR). Dicatat
+// TERPISAH dari penjualan — tidak dihitung di omzet/laporan/laba.
+export type Bukti = {
+  id: string;
+  method: string;      // metode/aplikasi pembayaran (ShopeePay, GoPay, dll)
+  recipient: string;   // nama penerima/merchant
+  amount: number;      // nominal (rupiah, bulat)
+  date: string;        // tanggal apa adanya seperti terbaca
+  time: string;        // waktu
+  ref: string;         // nomor referensi/ID transaksi
+  customer: string;    // nama pelanggan (diisi kasir, opsional)
+  image_uri?: string | null; // path gambar sumber (lokal saja, tidak disinkron)
+  created_at: string;
+  updated_at?: string;
+};
+
 export type Settings = {
   shopName: string;
   address: string;

@@ -75,21 +75,25 @@ async function pushBody(store: string, body: any): Promise<void> {
 
 // Kirim perubahan lokal ke server SECARA BERTAHAP (chunk) supaya tidak
 // menembus batas ukuran body proxy. Settings dititipkan di request pertama.
-async function pushDirty(store: string, dirty: { products: any[]; transactions: any[]; settings: any }): Promise<void> {
+async function pushDirty(store: string, dirty: { products: any[]; transactions: any[]; bukti: any[]; settings: any }): Promise<void> {
   let settingsSent = false;
   const takeSettings = () => { if (settingsSent) return null; settingsSent = true; return dirty.settings || null; };
 
   for (let i = 0; i < dirty.products.length; i += PUSH_CHUNK) {
     const chunk = dirty.products.slice(i, i + PUSH_CHUNK);
-    await pushBody(store, { products: chunk, transactions: [], settings: takeSettings() });
+    await pushBody(store, { products: chunk, transactions: [], bukti: [], settings: takeSettings() });
   }
   for (let i = 0; i < dirty.transactions.length; i += PUSH_CHUNK) {
     const chunk = dirty.transactions.slice(i, i + PUSH_CHUNK);
-    await pushBody(store, { products: [], transactions: chunk, settings: takeSettings() });
+    await pushBody(store, { products: [], transactions: chunk, bukti: [], settings: takeSettings() });
+  }
+  for (let i = 0; i < dirty.bukti.length; i += PUSH_CHUNK) {
+    const chunk = dirty.bukti.slice(i, i + PUSH_CHUNK);
+    await pushBody(store, { products: [], transactions: [], bukti: chunk, settings: takeSettings() });
   }
   // Belum ada apa pun yang terkirim, tetapi settings berubah → kirim sendiri.
   if (!settingsSent && dirty.settings) {
-    await pushBody(store, { products: [], transactions: [], settings: dirty.settings });
+    await pushBody(store, { products: [], transactions: [], bukti: [], settings: dirty.settings });
   }
 }
 
@@ -105,7 +109,7 @@ export async function syncOnce(): Promise<SyncStatus> {
     const lastPush = Number(await AsyncStorage.getItem(K_LAST_PUSH)) || 0;
     const startedAt = Date.now();
     const dirty = await local.collectDirty(lastPush);
-    if (dirty.products.length || dirty.transactions.length || dirty.settings) {
+    if (dirty.products.length || dirty.transactions.length || dirty.bukti.length || dirty.settings) {
       await pushDirty(store, dirty);
     }
     await AsyncStorage.setItem(K_LAST_PUSH, String(startedAt));

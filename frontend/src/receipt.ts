@@ -1,4 +1,4 @@
-import type { Settings, Transaction } from "./types";
+import type { Settings, Transaction, Bukti } from "./types";
 import { numberID, receiptDateTime, shortTxNo } from "./format";
 
 // Lebar kertas thermal 58mm ≈ 32 karakter. Beri margin kiri 1 karakter agar
@@ -14,6 +14,7 @@ const ESC = "\x1B";
 const C_CENTER = ESC + "\x61\x01"; // rata tengah (dilakukan oleh printer)
 const C_LEFT = ESC + "\x61\x00"; // kembali rata kiri
 const C_BIG_BOLD = ESC + "\x21\x18"; // dobel tinggi + tebal (nama toko)
+const C_BOLD = ESC + "\x21\x08"; // tebal ukuran normal (judul agar muat 58mm)
 const C_NORMAL = ESC + "\x21\x00"; // ukuran normal + tebal mati
 
 function center(text: string): string {
@@ -155,6 +156,81 @@ export function buildReceiptWhatsApp(tx: Transaction, s: Settings): string {
 
 
 const GS = "\x1D";
+
+// ---------------- BUKTI PEMBAYARAN (SALINAN dari screenshot) ----------------
+// Struk thermal 58mm untuk salinan bukti pembayaran hasil OCR. Judul teratas
+// "BUKTI TRANSAKSI TOKO BAGUS". Data murni dari yang dibaca/diperiksa pengguna.
+function labeledWrapped(label: string, value: string): string[] {
+  const out = [line(label)];
+  const v = (value || "-").trim() || "-";
+  for (const w of wrapWords(v, CW - 2)) out.push(line("  " + w));
+  return out;
+}
+
+export function buildBuktiReceiptText(b: Bukti, s: Settings): string {
+  const L: string[] = [];
+  L.push(C_CENTER + C_BOLD + center("BUKTI TRANSAKSI").trimStart());
+  L.push(center("TOKO BAGUS").trimStart() + C_NORMAL);
+  if (s.showShopName && s.shopName) L.push(C_CENTER + center(s.shopName).trimStart() + C_LEFT);
+  if (s.showAddress && s.address) for (const w of wrapWords(s.address, CW)) L.push(C_CENTER + center(w).trimStart() + C_LEFT);
+  if (s.showPhone && s.phone) L.push(C_CENTER + center(s.phone).trimStart() + C_LEFT);
+  L.push(LINE);
+  L.push(twoCols("Metode", (b.method || "-")));
+  L.push(...labeledWrapped("Penerima :", b.recipient));
+  L.push(LINE);
+  L.push(C_BOLD + twoCols("NOMINAL", "Rp" + numberID(b.amount || 0)) + C_NORMAL);
+  L.push(LINE);
+  L.push(twoCols("Tanggal", (b.date || "-")));
+  L.push(twoCols("Waktu", (b.time || "-")));
+  L.push(...labeledWrapped("No. Ref  :", b.ref));
+  if (b.customer && b.customer.trim()) L.push(...labeledWrapped("Pelanggan:", b.customer));
+  L.push(LINE);
+  L.push(C_CENTER + center("Salinan bukti pembayaran").trimStart());
+  if (s.showThanks && s.thanks) L.push(center(s.thanks).trimStart());
+  L.push(C_LEFT);
+  return L.join("\n") + "\n\n\n";
+}
+
+// Versi HTML untuk simpan PDF (ekspo-print). Tampilan mirip struk 58mm.
+export function buildBuktiReceiptHTML(b: Bukti, s: Settings): string {
+  const esc = (t: string) => (t || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+  const row = (k: string, v: string) => `<div class="row"><span>${esc(k)}</span><span class="v">${esc(v || "-")}</span></div>`;
+  const idText = s.showShopName && s.shopName ? `<div class="c b">${esc(s.shopName)}</div>` : "";
+  const addr = s.showAddress && s.address ? `<div class="c s">${esc(s.address)}</div>` : "";
+  const phone = s.showPhone && s.phone ? `<div class="c s">${esc(s.phone)}</div>` : "";
+  return `<!doctype html><html><head><meta charset="utf-8"/>
+<style>
+  @page { margin: 6px; }
+  * { font-family: 'Courier New', monospace; }
+  body { width: 220px; margin: 0 auto; color: #000; }
+  .c { text-align: center; }
+  .b { font-weight: 700; }
+  .title { font-weight: 700; font-size: 15px; text-align: center; }
+  .s { font-size: 11px; }
+  hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+  .row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
+  .row .v { text-align: right; max-width: 130px; word-break: break-word; }
+  .amt { display:flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+</style></head><body>
+  <div class="title">BUKTI TRANSAKSI TOKO BAGUS</div>
+  ${idText}${addr}${phone}
+  <hr/>
+  ${row("Metode", b.method)}
+  ${row("Penerima", b.recipient)}
+  <hr/>
+  <div class="amt"><span>NOMINAL</span><span>Rp${numberID(b.amount || 0)}</span></div>
+  <hr/>
+  ${row("Tanggal", b.date)}
+  ${row("Waktu", b.time)}
+  ${row("No. Ref", b.ref)}
+  ${b.customer ? row("Pelanggan", b.customer) : ""}
+  <hr/>
+  <div class="c s">Salinan bukti pembayaran</div>
+  ${s.showThanks && s.thanks ? `<div class="c s">${esc(s.thanks)}</div>` : ""}
+</body></html>`;
+}
+
+
 
 // Bangun perintah ESC/POS untuk mencetak label BARCODE produk sebanyak `qty`.
 // Tiap label: nama produk (tengah, tebal) + barcode CODE128 + angka barcode.

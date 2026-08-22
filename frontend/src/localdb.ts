@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import type { Product, Transaction, TxItem, Settings, Printer } from "./types";
+import type { Product, Transaction, TxItem, Settings, Printer, Bukti } from "./types";
 // Data awal (bekal offline) — dibundel ke aplikasi. Dipakai HANYA saat pertama
 // kali (database lokal masih kosong). Setelahnya data dibaca dari DB lokal HP.
 import seed from "../assets/seed/toko_bagus_backup.json";
@@ -17,6 +17,7 @@ let db: any = null;
 // Salinan di memori (sumber baca cepat).
 let products = new Map<string, Product>();
 let transactions: Transaction[] = []; // urut terbaru → terlama
+let buktiList: Bukti[] = []; // Bukti Pembayaran (terbaru → terlama)
 let settings: Settings | null = null;
 let printer: Printer = { address: null, name: null };
 // Sinkronisasi cloud: catatan penghapusan (tombstone) & waktu ubah pengaturan.
@@ -54,6 +55,7 @@ function nowIso(): string { return new Date().toISOString(); }
 function genId(): string { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; }
 function clone<T>(v: T): T { return JSON.parse(JSON.stringify(v)); }
 function sortTx() { transactions.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0)); }
+function sortBukti() { buktiList.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0)); }
 
 // --------------------------- Init & Seed ---------------------------
 export function ensureInit(): Promise<void> {
@@ -70,6 +72,7 @@ async function init(): Promise<void> {
       "PRAGMA journal_mode = WAL;" +
       "CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY NOT NULL, doc TEXT NOT NULL);" +
       "CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY NOT NULL, created_at TEXT, doc TEXT NOT NULL);" +
+      "CREATE TABLE IF NOT EXISTS bukti (id TEXT PRIMARY KEY NOT NULL, created_at TEXT, doc TEXT NOT NULL);" +
       "CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY NOT NULL, v TEXT NOT NULL);",
     );
     const row = await db.getFirstAsync("SELECT COUNT(*) as c FROM products");
@@ -88,6 +91,7 @@ async function init(): Promise<void> {
 function loadSeedIntoMemory(): void {
   products = new Map();
   transactions = [];
+  buktiList = [];
   // PRODUKSI (APK publish): __DEV__ = false → database produk KOSONG.
   // Pemilik toko mengisi lewat Restore/Import. Dev/preview tetap pakai seed
   // agar mudah diuji. Struktur DB & fitur tidak berubah.
@@ -112,6 +116,9 @@ async function loadFromDb(): Promise<void> {
   const trows = await db.getAllAsync("SELECT doc FROM transactions ORDER BY created_at DESC");
   transactions = trows.map((r: any) => JSON.parse(r.doc) as Transaction);
   sortTx();
+  const brows = await db.getAllAsync("SELECT doc FROM bukti ORDER BY created_at DESC");
+  buktiList = brows.map((r: any) => JSON.parse(r.doc) as Bukti);
+  sortBukti();
   const s = await db.getFirstAsync("SELECT v FROM kv WHERE k = 'settings'");
   settings = { ...DEFAULT_SETTINGS, ...(s ? JSON.parse(s.v) : {}) };
   const pr = await db.getFirstAsync("SELECT v FROM kv WHERE k = 'printer'");
@@ -132,6 +139,10 @@ async function persistAll(): Promise<void> {
     for (const t of transactions) {
       await db.runAsync("INSERT OR REPLACE INTO transactions (id, created_at, doc) VALUES (?, ?, ?)", t.id, t.created_at, JSON.stringify(t));
     }
+    await db.execAsync("DELETE FROM bukti;");
+    for (const b of buktiList) {
+      await db.runAsync("INSERT OR REPLACE INTO bukti (id, created_at, doc) VALUES (?, ?, ?)", b.id, b.created_at, JSON.stringify(b));
+    }
     await db.runAsync("INSERT OR REPLACE INTO kv (k, v) VALUES ('settings', ?)", JSON.stringify(settings || DEFAULT_SETTINGS));
     await db.runAsync("INSERT OR REPLACE INTO kv (k, v) VALUES ('printer', ?)", JSON.stringify(printer));
   });
@@ -146,6 +157,12 @@ async function removeProduct(id: string): Promise<void> {
 }
 async function putTx(t: Transaction): Promise<void> {
   if (isNative && db) await db.runAsync("INSERT OR REPLACE INTO transactions (id, created_at, doc) VALUES (?, ?, ?)", t.id, t.created_at, JSON.stringify(t));
+}
+async function putBukti(b: Bukti): Promise<void> {
+  if (isNative && db) await db.runAsync("INSERT OR REPLACE INTO bukti (id, created_at, doc) VALUES (?, ?, ?)", b.id, b.created_at, JSON.stringify(b));
+}
+async function removeBuktiRow(id: string): Promise<void> {
+  if (isNative && db) await db.runAsync("DELETE FROM bukti WHERE id = ?", id);
 }
 async function putKv(k: string, v: any): Promise<void> {
   if (isNative && db) await db.runAsync("INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)", k, JSON.stringify(v));
@@ -293,6 +310,45 @@ export const local = {
     const t = transactions.find((x) => x.id === id);
     if (!t) throw new Error("Transaksi tidak ditemukan");
     return clone(t);
+  },
+
+  // ------------------------- BUKTI PEMBAYARAN -------------------------
+  async getBukti(limit = 500): Promise<Bukti[]> {
+    await ensureInit();
+    return buktiList.slice(0, limit).map(clone);
+  },
+
+  async saveBukti(payload: Omit<Bukti, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string }): Promise<Bukti> {
+    await ensureInit();
+    const now = nowIso();
+    const existing = payload.id ? buktiList.find((x) => x.id === payload.id) : null;
+    const b: Bukti = {
+      id: payload.id || genId(),
+      method: payload.method || "",
+      recipient: payload.recipient || "",
+      amount: payload.amount || 0,
+      date: payload.date || "",
+      time: payload.time || "",
+      ref: payload.ref || "",
+      customer: payload.customer || "",
+      image_uri: payload.image_uri ?? null,
+      created_at: existing?.created_at || payload.created_at || now,
+      updated_at: now,
+    };
+    const idx = buktiList.findIndex((x) => x.id === b.id);
+    if (idx >= 0) buktiList[idx] = b; else buktiList.unshift(b);
+    sortBukti();
+    await putBukti(b);
+    notifyChange();
+    return clone(b);
+  },
+
+  async deleteBukti(id: string): Promise<{ ok: boolean }> {
+    await ensureInit();
+    buktiList = buktiList.filter((x) => x.id !== id);
+    await removeBuktiRow(id);
+    notifyChange();
+    return { ok: true };
   },
 
   async createTransaction(payload: { items: TxItem[]; total: number; discount?: number; cash_paid: number; change: number }): Promise<Transaction> {
@@ -625,7 +681,7 @@ export const local = {
 
   // ------------------------- SINKRONISASI CLOUD -------------------------
   // Kumpulkan perubahan lokal setelah `sinceMs` (jam HP ini) untuk dikirim ke server.
-  async collectDirty(sinceMs: number): Promise<{ products: any[]; transactions: any[]; settings: any }> {
+  async collectDirty(sinceMs: number): Promise<{ products: any[]; transactions: any[]; bukti: any[]; settings: any }> {
     await ensureInit();
     const outP: any[] = [];
     for (const pr of products.values()) {
@@ -638,13 +694,19 @@ export const local = {
       const ms = Date.parse((tx as any).updated_at || tx.created_at || "") || 0;
       if (ms > sinceMs) outT.push({ id: tx.id, doc: tx, updated_at: ms });
     }
+    const outB: any[] = [];
+    for (const b of buktiList) {
+      const ms = Date.parse(b.updated_at || b.created_at || "") || 0;
+      // Gambar sumber hanya lokal → jangan disinkron (hemat & privasi).
+      if (ms > sinceMs) { const { image_uri, ...doc } = b; outB.push({ id: b.id, doc, updated_at: ms }); }
+    }
     let outS: any = null;
     if (settingsUpdatedAt > sinceMs && settings) outS = { doc: settings, updated_at: settingsUpdatedAt };
-    return { products: outP, transactions: outT, settings: outS };
+    return { products: outP, transactions: outT, bukti: outB, settings: outS };
   },
 
   // Terapkan data dari server (LWW). Kembalikan true bila ada perubahan.
-  async applyRemote(remote: { products?: any[]; transactions?: any[]; settings?: any }): Promise<boolean> {
+  async applyRemote(remote: { products?: any[]; transactions?: any[]; bukti?: any[]; settings?: any }): Promise<boolean> {
     await ensureInit();
     let changed = false;
     for (const rp of remote.products || []) {
@@ -672,6 +734,18 @@ export const local = {
         changed = true;
       }
     }
+    for (const rb of remote.bukti || []) {
+      const idx = buktiList.findIndex((x) => x.id === rb.id);
+      const local = idx >= 0 ? buktiList[idx] : null;
+      const lms = local ? (Date.parse(local.updated_at || local.created_at || "") || 0) : -1;
+      if ((!local || rb.updated_at > lms) && rb.doc) {
+        const doc = rb.doc as Bukti;
+        if (idx >= 0) buktiList[idx] = { ...doc, image_uri: local?.image_uri ?? null };
+        else buktiList.push(doc);
+        await putBukti(buktiList.find((x) => x.id === rb.id) as Bukti);
+        changed = true;
+      }
+    }
     if (remote.settings && remote.settings.doc) {
       settings = { ...DEFAULT_SETTINGS, ...remote.settings.doc };
       settingsUpdatedAt = Number(remote.settings.updated_at) || settingsUpdatedAt;
@@ -679,7 +753,7 @@ export const local = {
       await putKv("settings_updated_at", settingsUpdatedAt);
       changed = true;
     }
-    if (changed) { sortTx(); notifyChange(); }
+    if (changed) { sortTx(); sortBukti(); notifyChange(); }
     return changed;
   },
 

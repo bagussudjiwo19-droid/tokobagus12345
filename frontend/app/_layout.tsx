@@ -105,6 +105,7 @@ export default function RootLayout() {
                   <Stack.Screen name="kelola-stok" options={{ presentation: "modal" }} />
                   <Stack.Screen name="admin-pin" options={{ presentation: "modal" }} />
                   <Stack.Screen name="pengaturan-suara" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="baca-bukti" options={{ presentation: "modal" }} />
                 </Stack>
                 {!mikoHidden && !(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>

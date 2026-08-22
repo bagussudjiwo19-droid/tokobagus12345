@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -20,9 +21,9 @@ import AppHeader from "@/components/AppHeader";
 import { api } from "@/src/api";
 import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
-import { rupiah, formatDateID } from "@/src/format";
+import { rupiah, formatDateID, numberID } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
-import type { Settings, Transaction } from "@/src/types";
+import type { Settings, Transaction, Bukti } from "@/src/types";
 import ReceiptPreview from "@/components/ReceiptPreview";
 import { isBluetoothAvailable, printText, NATIVE_ONLY_MSG } from "@/src/printer";
 import { buildReceiptText } from "@/src/receipt";
@@ -56,6 +57,8 @@ export default function RiwayatScreen() {
   const toast = useToast();
   const cart = useCart();
   const [txs, setTxs] = useState<Transaction[]>([]);
+  const [bukti, setBukti] = useState<Bukti[]>([]);
+  const [showBukti, setShowBukti] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -68,8 +71,8 @@ export default function RiwayatScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [t, s, p] = await Promise.all([api.getTransactions(5000), api.getSettings(), api.getPrinter()]);
-      setTxs(t); setSettings(s); setPrinter(p);
+      const [t, s, p, b] = await Promise.all([api.getTransactions(5000), api.getSettings(), api.getPrinter(), api.getBukti(2000)]);
+      setTxs(t); setSettings(s); setPrinter(p); setBukti(b);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
 
@@ -96,6 +99,16 @@ export default function RiwayatScreen() {
   }, [txs, filter, pickDate]);
 
   const omzet = useMemo(() => filtered.reduce((s, t) => s + (t.total || 0), 0), [filtered]);
+
+  // Bukti Pembayaran disaring dengan periode yang sama (berdasarkan created_at).
+  const filteredBukti = useMemo(() => {
+    const now = new Date();
+    if (filter === "all") return bukti;
+    if (filter === "today") return bukti.filter((b) => sameDay(b.created_at, now));
+    if (filter === "yesterday") { const y = new Date(now); y.setDate(y.getDate() - 1); return bukti.filter((b) => sameDay(b.created_at, y)); }
+    if (filter === "month") return bukti.filter((b) => { const x = new Date(b.created_at); return x.getFullYear() === now.getFullYear() && x.getMonth() === now.getMonth(); });
+    return bukti.filter((b) => sameDay(b.created_at, pickDate));
+  }, [bukti, filter, pickDate]);
 
   // Barang terlaris (berdasarkan JUMLAH UNIT terjual) pada periode terpilih.
   const topItems = useMemo(() => {
@@ -138,6 +151,39 @@ export default function RiwayatScreen() {
   };
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+
+  // Buka bukti untuk cetak ulang / bagikan (prefill data ke layar Baca Bukti).
+  const openBukti = (b: Bukti) => {
+    router.push({ pathname: "/baca-bukti", params: {
+      id: b.id, method: b.method, recipient: b.recipient, amount: String(b.amount),
+      date: b.date, time: b.time, ref: b.ref, customer: b.customer,
+    } });
+  };
+  const removeBukti = (b: Bukti) => {
+    Alert.alert("Hapus Bukti?", "Salinan bukti pembayaran ini akan dihapus.", [
+      { text: "Batal", style: "cancel" },
+      { text: "Hapus", style: "destructive", onPress: async () => { await api.deleteBukti(b.id); toast.show("Bukti dihapus", "success"); await load(); } },
+    ]);
+  };
+
+  const renderBukti = ({ item }: { item: Bukti }) => (
+    <Pressable style={styles.buktiRow} onPress={() => openBukti(item)} onLongPress={() => removeBukti(item)} testID={`riwayat-bukti-${item.id}`}>
+      <View style={styles.buktiThumb}><Ionicons name="card-outline" size={20} color={colors.brand} /></View>
+      <View style={{ flex: 1 }}>
+        <View style={styles.rowTopLine}>
+          <Text style={styles.rowDate} numberOfLines={1}>{item.method || "Pembayaran"}</Text>
+          <View style={styles.buktiBadge}><Text style={styles.buktiBadgeTxt}>BUKTI</Text></View>
+        </View>
+        <Text style={styles.rowSub} numberOfLines={1}>
+          {formatDateID(item.created_at)}{item.customer ? ` · ${item.customer}` : ""}
+        </Text>
+      </View>
+      <View style={{ alignItems: "flex-end" }}>
+        <Text style={styles.rowTotal}>Rp{numberID(item.amount || 0)}</Text>
+        <Text style={styles.buktiHintSmall}>Ketuk: cetak ulang</Text>
+      </View>
+    </Pressable>
+  );
 
   // Lunasi sisa: tandai transaksi bayar sebagian menjadi lunas (tanpa ubah item/stok/tanggal).
   const payOff = async () => {
@@ -210,6 +256,9 @@ export default function RiwayatScreen() {
           <Pressable style={styles.actionIcon} testID="riwayat-suara" onPress={() => router.push("/pengaturan-suara")}>
             <Ionicons name="volume-high-outline" size={20} color={colors.brand} />
           </Pressable>
+          <Pressable style={styles.actionIcon} testID="riwayat-bukti-scan" onPress={() => router.push("/baca-bukti")}>
+            <Ionicons name="camera-outline" size={20} color={colors.brand} />
+          </Pressable>
         </View>
       </View>
 
@@ -229,6 +278,14 @@ export default function RiwayatScreen() {
             <Text style={[styles.chipTxt, filter === f.key && styles.chipTxtActive]}>{f.label}</Text>
           </Pressable>
         ))}
+        <Pressable
+          testID="riwayat-filter-bukti"
+          onPress={() => setShowBukti((v) => !v)}
+          style={[styles.chip, showBukti && styles.chipActive]}
+        >
+          <Ionicons name="camera-outline" size={14} color={showBukti ? colors.onBrandPrimary : colors.onSurface} />
+          <Text style={[styles.chipTxt, showBukti && styles.chipTxtActive, { marginLeft: 4 }]}>Bukti Bayar</Text>
+        </Pressable>
       </ScrollView>
 
       {filter === "date" && (
@@ -254,12 +311,14 @@ export default function RiwayatScreen() {
         </View>
       )}
 
-      <View style={styles.summary} testID="riwayat-summary">
-        <Text style={styles.sumLabel}>{periodLabel} · {filtered.length} transaksi</Text>
-        <Text style={styles.sumValue}>{rupiah(omzet)}</Text>
-      </View>
+      {!showBukti && (
+        <View style={styles.summary} testID="riwayat-summary">
+          <Text style={styles.sumLabel}>{periodLabel} · {filtered.length} transaksi</Text>
+          <Text style={styles.sumValue}>{rupiah(omzet)}</Text>
+        </View>
+      )}
 
-      {topItems.length > 0 && (
+      {!showBukti && topItems.length > 0 && (
         <View style={styles.topCard} testID="riwayat-top-items">
           <View style={styles.topHead}>
             <Ionicons name="trophy-outline" size={16} color={colors.brand} />
@@ -275,8 +334,32 @@ export default function RiwayatScreen() {
         </View>
       )}
 
+      {showBukti && (
+        <View style={styles.buktiHint} testID="riwayat-bukti-hint">
+          <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
+          <Text style={styles.buktiHintTxt}>{periodLabel} · {filteredBukti.length} bukti · tidak dihitung di omzet</Text>
+        </View>
+      )}
+
       {loading ? (
         <View style={styles.centerFill}><ActivityIndicator color={colors.brand} size="large" /></View>
+      ) : showBukti ? (
+        <FlatList
+          data={filteredBukti}
+          keyExtractor={(b) => b.id}
+          renderItem={renderBukti}
+          style={{ flex: 1 }}
+          initialNumToRender={12}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}
+          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
+          ListEmptyComponent={
+            <View style={styles.centerFill}>
+              <Ionicons name="camera-outline" size={40} color={colors.muted} />
+              <Text style={styles.dim}>Belum ada bukti pembayaran pada periode ini</Text>
+            </View>
+          }
+        />
       ) : (
         <FlatList
           data={filtered}
@@ -362,7 +445,7 @@ const styles = StyleSheet.create({
   summary: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   chipScroll: { flexGrow: 0, flexShrink: 0 },
   chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
-  chip: { paddingHorizontal: spacing.md, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  chip: { flexDirection: "row", paddingHorizontal: spacing.md, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
   chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
   chipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   chipTxtActive: { color: colors.onBrandPrimary, fontFamily: font.bold },
