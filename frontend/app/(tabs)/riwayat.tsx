@@ -18,6 +18,7 @@ import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from "@g
 
 import AppHeader from "@/components/AppHeader";
 import { api } from "@/src/api";
+import { useCart } from "@/src/cart";
 import { useToast } from "@/src/toast";
 import { rupiah, formatDateID } from "@/src/format";
 import { colors, font, fontSize, radius, spacing } from "@/src/theme";
@@ -53,6 +54,7 @@ export default function RiwayatScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const toast = useToast();
+  const cart = useCart();
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -334,9 +336,14 @@ export default function RiwayatScreen() {
             style={styles.editBtn}
             testID="riwayat-edit"
             onPress={() => {
-              const id = selected?.id;
+              const tx = selected;
               sheetRef.current?.dismiss();
-              if (id) router.push({ pathname: "/edit-transaksi", params: { id } });
+              if (!tx) return;
+              // Alur baru: muat transaksi ke keranjang lalu buka layar Transaksi
+              // sebagai transaksi normal. Saat Bayar → transaksi LAMA diperbarui.
+              cart.loadForEdit(tx.id, tx.created_at, tx.items);
+              toast.show("Transaksi dimuat ke keranjang. Lanjutkan seperti biasa.", "info");
+              router.navigate("/");
             }}
           >
             <Ionicons name="create-outline" size={20} color={colors.onBrandPrimary} />

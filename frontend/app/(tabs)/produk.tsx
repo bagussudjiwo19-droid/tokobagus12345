@@ -18,6 +18,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/
 
 import { useData } from "@/src/data";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
+import { useLowStockThreshold } from "@/src/useLowStockThreshold";
 import { useToast } from "@/src/toast";
 import { api } from "@/src/api";
 import { mikoBus } from "@/src/mikoBus";
@@ -32,13 +33,13 @@ import type { Product, Printer } from "@/src/types";
 
 
 const ProdukRow = React.memo(function ProdukRow({
-  item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle, unlimited,
-}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; onPrint: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void; unlimited?: boolean }) {
+  item, childCount, onEdit, onMenu, onPrint, selectMode, checked, onToggle, unlimited, threshold,
+}: { item: Product; childCount: number; onEdit: (id: string) => void; onMenu: (p: Product) => void; onPrint: (p: Product) => void; selectMode?: boolean; checked?: boolean; onToggle?: (id: string) => void; unlimited?: boolean; threshold: number }) {
   const nestedCount = item.variations.length;
   const totalVar = nestedCount + childCount;
   const hasVar = totalVar > 0;
   const stock = nestedCount > 0 ? item.variations.reduce((s, v) => s + (v.stock || 0), 0) : item.stock;
-  const low = !unlimited && !hasVar && stock <= 5;
+  const low = !unlimited && !hasVar && stock <= threshold;
   const metaStock = unlimited ? "" : ` · Stok ${stock} ${item.unit}`;
   return (
     <Pressable
@@ -94,7 +95,9 @@ export default function ProdukScreen() {
   const toast = useToast();
   const { products, loading, reload } = useData();
   const unlimited = useUnlimitedStock();
+  const lowThreshold = useLowStockThreshold();
   const [query, setQuery] = useState("");
+  const [lowOnly, setLowOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [menuProduct, setMenuProduct] = useState<Product | null>(null);
   // Cetak Barcode
@@ -181,8 +184,16 @@ export default function ProdukScreen() {
 
   const filtered = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
-    if (!q) return roots;
-    return roots.filter((p) => {
+    let base = roots;
+    if (lowOnly && !unlimited) {
+      base = base.filter((p) => {
+        const kids = childrenByParent.get(p.id) || [];
+        const hasVar = p.variations.length + kids.length > 0;
+        return !hasVar && (p.stock ?? 0) <= lowThreshold;
+      });
+    }
+    if (!q) return base;
+    return base.filter((p) => {
       const kids = childrenByParent.get(p.id) || [];
       return (
         p.name.toLowerCase().includes(q) ||
@@ -193,9 +204,19 @@ export default function ProdukScreen() {
         kids.some((k) => k.name.toLowerCase().includes(q) || (k.barcode || "").toLowerCase().includes(q))
       );
     });
-  }, [roots, childrenByParent, deferredQuery]);
+  }, [roots, childrenByParent, deferredQuery, lowOnly, unlimited, lowThreshold]);
 
   const onRefresh = async () => { setRefreshing(true); await reload(); setRefreshing(false); };
+
+  // Jumlah produk stok menipis (untuk badge tombol filter).
+  const lowCount = useMemo(() => {
+    if (unlimited) return 0;
+    return roots.reduce((n, p) => {
+      const kids = childrenByParent.get(p.id) || [];
+      const hasVar = p.variations.length + kids.length > 0;
+      return n + (!hasVar && (p.stock ?? 0) <= lowThreshold ? 1 : 0);
+    }, 0);
+  }, [roots, childrenByParent, unlimited, lowThreshold]);
 
   const doDelete = async () => {
     if (!menuProduct) return;
@@ -302,9 +323,10 @@ export default function ProdukScreen() {
         checked={selected.has(item.id)}
         onToggle={toggleSelect}
         unlimited={unlimited}
+        threshold={lowThreshold}
       />
     ),
-    [openEdit, openMenu, openPrint, childrenByParent, selectMode, selected, toggleSelect, unlimited],
+    [openEdit, openMenu, openPrint, childrenByParent, selectMode, selected, toggleSelect, unlimited, lowThreshold],
   );
 
   return (
@@ -370,6 +392,24 @@ export default function ProdukScreen() {
         </View>
       </View>
 
+      {!unlimited && !selectMode && (
+        <View style={styles.filterRow}>
+          <Pressable
+            testID="produk-lowstock-filter"
+            onPress={() => setLowOnly((v) => !v)}
+            style={[styles.filterChip, lowOnly && styles.filterChipActive]}
+          >
+            <Ionicons name="alert-circle-outline" size={16} color={lowOnly ? colors.onBrandPrimary : colors.brand} />
+            <Text style={[styles.filterChipTxt, lowOnly && styles.filterChipTxtActive]}>Stok Menipis</Text>
+            {lowCount > 0 && (
+              <View style={[styles.filterBadge, lowOnly && styles.filterBadgeActive]}>
+                <Text style={[styles.filterBadgeTxt, lowOnly && styles.filterBadgeTxtActive]}>{lowCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      )}
+
       {scanResult && (
         <Pressable
           style={styles.scanCard}
@@ -408,8 +448,8 @@ export default function ProdukScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
           ListEmptyComponent={
             <View style={styles.centerFill}>
-              <Ionicons name="cube-outline" size={40} color={colors.muted} />
-              <Text style={styles.dim}>Belum ada produk</Text>
+              <Ionicons name={lowOnly ? "checkmark-circle-outline" : "cube-outline"} size={40} color={colors.muted} />
+              <Text style={styles.dim}>{lowOnly ? "Tidak ada produk yang stoknya menipis" : "Belum ada produk"}</Text>
             </View>
           }
         />
@@ -543,6 +583,15 @@ const styles = StyleSheet.create({
   confirmDelete: { flex: 1, height: 52, borderRadius: radius.pill, backgroundColor: colors.error, alignItems: "center", justifyContent: "center" },
   confirmDeleteTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   searchWrap: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  filterRow: { flexDirection: "row", paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  filterChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: spacing.md, height: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.brand, backgroundColor: colors.surfaceSecondary },
+  filterChipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  filterChipTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
+  filterChipTxtActive: { color: colors.onBrandPrimary },
+  filterBadge: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  filterBadgeActive: { backgroundColor: colors.onBrandPrimary },
+  filterBadgeTxt: { color: colors.brand, fontFamily: font.bold, fontSize: 11 },
+  filterBadgeTxtActive: { color: colors.brand },
   searchBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, paddingLeft: 6, paddingRight: spacing.md, height: 52, borderWidth: 1, borderColor: colors.border },
   searchBoxScan: { borderWidth: 2, borderColor: colors.borderStrong },
   searchInput: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.lg },

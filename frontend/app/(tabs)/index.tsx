@@ -25,6 +25,7 @@ import { scanNotifBus } from "@/src/scanNotifBus";
 import { sfx } from "@/src/sfx";
 import { useHideScanKeyboard } from "@/src/scanKeyboard";
 import { useUnlimitedStock } from "@/src/useUnlimitedStock";
+import { useLowStockThreshold } from "@/src/useLowStockThreshold";
 import { useBarcodeScan } from "@/src/useBarcodeScan";
 import HardwareScanner from "@/components/HardwareScanner";
 import CalculatorModal from "@/components/CalculatorModal";
@@ -44,6 +45,7 @@ export default function TransaksiScreen() {
   const cart = useCart();
   const { products, reload } = useData();
   const unlimited = useUnlimitedStock();
+  const lowThreshold = useLowStockThreshold();
   const toast = useToast();
   const inputRef = useRef<TextInput>(null);
   const kbdRef = useRef(false);
@@ -378,6 +380,21 @@ export default function TransaksiScreen() {
           )}
         </View>
 
+        {/* Banner mode edit transaksi */}
+        {cart.editTxId && (
+          <View style={styles.editBanner} testID="transaksi-edit-banner">
+            <Ionicons name="create-outline" size={16} color={colors.brand} />
+            <Text style={styles.editBannerTxt} numberOfLines={1}>Mengedit transaksi — tekan Bayar untuk simpan perubahan</Text>
+            <Pressable
+              testID="transaksi-edit-cancel"
+              hitSlop={8}
+              onPress={() => { cart.clear(); toast.show("Edit dibatalkan", "info"); }}
+            >
+              <Ionicons name="close-circle" size={18} color={colors.muted} />
+            </Pressable>
+          </View>
+        )}
+
         {/* Header daftar belanja */}
         <View style={styles.listHead}>
           <Text style={styles.listHeadTxt}>DAFTAR BELANJA</Text>
@@ -459,7 +476,7 @@ export default function TransaksiScreen() {
                 const st = l.variation_id
                   ? ((p.variations || []).find((v) => v.id === l.variation_id)?.stock ?? p.stock)
                   : p.stock;
-                if (st > 5) return null;
+                if (st > lowThreshold) return null;
                 const over = l.quantity > st;
                 return (
                   <View style={styles.lowWarn} testID={`cart-low-${l.key}`}>
@@ -541,7 +558,7 @@ export default function TransaksiScreen() {
             style={[styles.payBtn, cart.count === 0 && styles.payBtnDisabled]}
           >
             <Ionicons name="wallet-outline" size={18} color={colors.onBrandPrimary} />
-            <Text style={styles.payBtnTxt}>Bayar</Text>
+            <Text style={styles.payBtnTxt}>{cart.editTxId ? "Simpan" : "Bayar"}</Text>
           </Pressable>
         </View>
       </View>
@@ -742,6 +759,8 @@ const styles = StyleSheet.create({
   addBtnPrimaryTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   addBtnGhostTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.lg },
   listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm },
+  editBanner: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.brandTertiary, borderWidth: 1, borderColor: colors.brand },
+  editBannerTxt: { flex: 1, color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   listHeadTxt: { color: colors.muted, fontFamily: font.bold, fontSize: fontSize.xs, letterSpacing: 1.2 },
   listHeadCount: { color: colors.muted, fontFamily: font.medium, fontSize: fontSize.sm },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.xl },

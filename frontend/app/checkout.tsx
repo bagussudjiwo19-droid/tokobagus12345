@@ -100,22 +100,22 @@ export default function CheckoutScreen() {
     if (cart.lines.length === 0) return;
     setSaving(true);
     try {
-      const created = await api.createTransaction({
-        items: cart.lines.map((l) => ({
-          product_id: l.product_id,
-          variation_id: l.variation_id,
-          name: l.name,
-          barcode: l.barcode,
-          unit: l.unit,
-          price: l.price,
-          quantity: l.quantity,
-          subtotal: l.price * l.quantity,
-        })),
-        total,
-        discount,
-        cash_paid: cash,
-        change: Math.max(0, change),
-      });
+      const items = cart.lines.map((l) => ({
+        product_id: l.product_id,
+        variation_id: l.variation_id,
+        name: l.name,
+        barcode: l.barcode,
+        unit: l.unit,
+        price: l.price,
+        quantity: l.quantity,
+        subtotal: l.price * l.quantity,
+      }));
+      const payload = { items, total, discount, cash_paid: cash, change: Math.max(0, change) };
+      // Mode edit → perbarui transaksi lama (ID & tanggal asli dipertahankan,
+      // stok direkonsiliasi). Selain itu → buat transaksi baru.
+      const created = cart.editTxId
+        ? await api.updateTransaction(cart.editTxId, payload)
+        : await api.createTransaction(payload);
       setTx(created);
       setStep("done");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

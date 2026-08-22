@@ -1,0 +1,59 @@
+{
+  "summary": "Frontend-only regression for 5 new features on Toko Bagus (Expo/RN web preview @ EXPO_PUBLIC_BACKEND_URL). Found 1 CRITICAL bug (fatal red-screen crash: 'useToast must be used within ToastProvider') when opening ANY Riwayat detail sheet because WhatsAppReceiptButton uses useToast() at render time and is rendered inside @gorhom/bottom-sheet's Portal, which was mounted OUTSIDE ToastProvider due to provider order (BottomSheetModalProvider wrapped ToastProvider). Applied minimal fix by swapping provider order in /app/frontend/app/_layout.tsx so ToastProvider now wraps BottomSheetModalProvider. Post-fix all 5 features PASS: (1) -0,25/+0,25 buttons work, qty format uses comma (1,75; 1,5), lower bound clamped at 0,25 (never below). (2) 'Terlaris <periode>' card renders under riwayat-summary with up to 3 rows (riwayat-top-0/1/2) sorted by total units sold; header text updates with the active filter label ('Terlaris Semua Transaksi', 'Terlaris Bulan Ini', etc.). (3) Turning OFF Mode Unlimited in Pengaturan Suara reveals lowstock stepper (default 5, inc/dec 1..999); Produk tab then shows 'Stok Menipis' chip (produk-lowstock-filter) with badge count; toggling chip filters list to products with stock <= threshold; when Unlimited is ON the chip is hidden. (4a) In Riwayat detail sheet, 'riwayat-whatsapp' green button appears and opens a modal with wa-phone-input, wa-send, wa-cancel (post-fix, no crash). (4b) On checkout 'Transaksi Berhasil' screen 'receipt-whatsapp' button opens the same modal — no crash. (5) 'Edit Transaksi' loads the tx items into cart and navigates to Transaksi tab (URL stays at '/', NOT /edit-transaksi), shows transaksi-edit-banner with transaksi-edit-cancel; bayar-button label = 'Simpan'; qty +/- editable; pressing Simpan → Pembayaran → Selesaikan UPDATES the original tx (row count in Riwayat 'Semua' stayed at 103; original tx id still present); pressing transaksi-edit-cancel clears the cart, hides the banner, and reverts label to 'Bayar'. Deep-link WhatsApp URL (wa.me) intentionally not tested per spec (native-only).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "WhatsAppReceiptButton (rendered inside BottomSheetModal in Riwayat detail)",
+        "issue": "FATAL red-screen crash 'Error: useToast must be used within ToastProvider'. Root cause: WhatsAppReceiptButton.tsx calls useToast() at the top of the component; when rendered as a child of BottomSheetModal in riwayat.tsx, @gorhom/bottom-sheet portals it into the mount point provided by BottomSheetModalProvider — which was ABOVE ToastProvider in app/_layout.tsx, so the toast context is not reachable. Fixed by swapping provider order (see updated_files).",
+        "testID": "riwayat-whatsapp",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "riwayat (chip filter row)",
+        "issues": [
+          "On 390px viewport the horizontal filter chip row is exactly at the edge — 'Semua' chip sits at x≈315..388, so its right edge visually clips against the screen edge. Playwright element.click(force=True) does NOT reliably auto-scroll horizontal RN ScrollView; only a DOM el.click() via evaluate reliably fires the onPress. Real users will scroll — no functional block, but consider adding a bit of right padding or shortening chip labels for phones ≤ 360px."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {"component": "shadow* style props", "issue": "react-native-web console warning: 'shadow*' style props are deprecated. Use 'boxShadow'. Reference: /app/frontend/app/(tabs)/index.tsx (scanModeBox, addBtnPrimary, payBar), /app/frontend/app/(tabs)/produk.tsx (card, addBtn), /app/frontend/app/(tabs)/riwayat.tsx (summary, row)."},
+      {"component": "textShadow* style props", "issue": "react-native-web console warning: 'textShadow*' style props are deprecated. Use 'textShadow'."},
+      {"component": "props.pointerEvents", "issue": "react-native-web console warning: props.pointerEvents is deprecated. Use style.pointerEvents. Reference: /app/frontend/app/(tabs)/index.tsx <View pointerEvents=\"box-none\"> inside variant modal."},
+      {"component": "Animated useNativeDriver on web", "issue": "Console: 'Animated: useNativeDriver is not supported…' emitted by @gorhom/bottom-sheet / gesture-handler / Toast when running on web preview. Safe on native, noisy in web. Optional: guard local useNativeDriver:true with Platform.OS !== 'web'."},
+      {"component": "React 19 element.ref access", "issue": "Console error: 'Accessing element.ref was removed in React 19. ref is now a regular prop.' Emitted by react-native-web internals when opening BottomSheetModal or WhatsAppReceiptButton modal. Non-fatal but will need a react-native-web upgrade in future."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_17.json"],
+  "action_items": [
+    "REVIEW & KEEP FIX: I re-ordered providers in /app/frontend/app/_layout.tsx so ToastProvider now wraps BottomSheetModalProvider. This unblocks WhatsAppReceiptButton (and any future BottomSheet-hosted component that calls useToast). Please review — no behavioral changes expected because ToastProvider only exposes context; BottomSheetModalProvider does not depend on toast. Alternatively, refactor WhatsAppReceiptButton to lazy-load toast via useContext(ToastCtx) and no-op if missing.",
+    "OPTIONAL polish: Migrate shadow*/textShadow*/pointerEvents deprecated inline props to boxShadow/textShadow/style.pointerEvents to silence RN-web console warnings.",
+    "OPTIONAL: On 360-390px devices the 'Semua' filter chip in Riwayat is right-edge clipped; consider adding contentContainerStyle right padding or a small ScrollView 'scrollIndicator' hint."
+  ],
+  "critical_code_review_comments": [
+    "app/_layout.tsx (pre-fix): BottomSheetModalProvider wrapped ToastProvider. Because @gorhom/bottom-sheet uses @gorhom/portal to teleport its content out of the caller's JSX tree into the Provider's mount point, ANY component rendered inside BottomSheetModal that consumes a Context defined below BottomSheetModalProvider crashes. Guideline: put context providers used by BottomSheetModal children (Toast, Cart, Data, Theme) ABOVE BottomSheetModalProvider.",
+    "components/WhatsAppReceiptButton.tsx: useToast() is invoked unconditionally at the top of the component. Robustness suggestion: swallow undefined toast context (useContext with default noop) so mis-orderings do not red-screen the whole app.",
+    "app/(tabs)/index.tsx: cart-minus025 correctly clamps at Math.max(0.25, …) and rounds to 3 decimals; cart-plus025 rounds to 3 decimals; fmtQty converts '.' to ','. Passes acceptance.",
+    "app/(tabs)/riwayat.tsx topItems: uses Map<name, {name, qty}> summed over filtered items and slices to 3; renders with testID riwayat-top-0/1/2 and header 'Terlaris {periodLabel}'. Correct.",
+    "app/pengaturan-suara.tsx: lowstock-inc clamps at 999, lowstock-dec clamps at 1; stepper only visible when unlimitedStock === false. Correct.",
+    "app/(tabs)/produk.tsx produk-lowstock-filter: only rendered when !unlimited && !selectMode; badge count = roots with (no variations && stock <= threshold); filter applies to base list. Correct.",
+    "app/(tabs)/riwayat.tsx riwayat-edit onPress: dismisses sheet, calls cart.loadForEdit(tx.id, tx.created_at, tx.items) and router.navigate('/'). No navigation to /edit-transaksi. Correct.",
+    "src/cart.tsx loadForEdit: sets editTxId + editCreatedAt, seeds lines with tiers=[] so +/- doesn't recompute prices from tiers, keys use productId::variationId so same-scan increments correctly.",
+    "app/checkout.tsx confirmPay: branch on cart.editTxId → api.updateTransaction(id, payload) else api.createTransaction. Ensures no duplicate tx during edit save.",
+    "components/WhatsAppReceiptButton.tsx normalizePhone: strips non-digits, converts leading '0' → '62', '8...' → '628...'. Reasonable ID normalization.",
+    "app/_layout.tsx (post-fix): ToastProvider now wraps BottomSheetModalProvider. Verified render + interactions in Riwayat detail + Checkout success no longer red-screen.",
+    "OBSERVATION: /app/frontend/app/edit-transaksi.tsx is now orphan (no UI reference). Not deleted, per spec. Consider removing after regression settles."
+  ],
+  "updated_files": [
+    "/app/frontend/app/_layout.tsx (swapped provider order: ToastProvider now wraps BottomSheetModalProvider so BottomSheetModal children can consume ToastContext)"
+  ],
+  "success_rate": {"backend": "N/A (frontend only)", "frontend": "100% for all 5 features + Feature 5f cancel path after applying the provider-order fix"},
+  "seed_data_creation": "None persisted beyond the app's SQLite seed. Test used an existing seed product barcode 8994907003634 ('3 pcs abc kecap manis') for Feature 1 and an existing seed transaction for Features 5/4a.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "1) Provider order in _layout.tsx MUST keep ToastProvider ABOVE BottomSheetModalProvider — regressions here re-introduce the red-screen crash. 2) Riwayat chip 'riwayat-filter-all' sits at the right screen edge on 390px viewport; Playwright's click(force=True) does not scroll horizontal RN ScrollView reliably. Use page.evaluate() with el.click() or scroll_into_view_if_needed + explicit horizontal scroll to hit it. 3) The success screen and Riwayat detail sheet both render WhatsAppReceiptButton — both were verified. 4) After edit-save, the app produces NO new tx row (verified: 103 → 103) and preserves the original id. 5) Miko mascot bubble intercepts clicks in some flows (esp. /produk-form); use testID-scoped clicks, not text-anchored ones, and prefer force=True on tab labels (there are two 'Transaksi' Texts — header + tab bar — always click .last for tab navigation).",
+  "rca_of_issue": "CRITICAL red-screen crash RCA: (1) app/_layout.tsx wrapped ToastProvider INSIDE BottomSheetModalProvider. (2) @gorhom/bottom-sheet renders its Content through @gorhom/portal at the mount defined by BottomSheetModalProvider; the JSX children are teleported outside the caller's context tree. (3) On opening the Riwayat detail sheet, WhatsAppReceiptButton mounts and calls useToast(), which throws because ToastContext is not visible above the Portal mount point. Fix: reorder providers so all contexts consumed by BottomSheetModal descendants (Toast, Cart, Data) sit ABOVE BottomSheetModalProvider. Minimal diff verified via Playwright: Riwayat detail sheet opens, WA modal opens/cancels, and Edit Transaksi flow works end-to-end without crash."
+}

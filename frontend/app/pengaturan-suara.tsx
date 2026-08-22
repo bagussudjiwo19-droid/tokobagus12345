@@ -92,6 +92,38 @@ export default function PengaturanSuaraScreen() {
           />
         </View>
 
+        {/* Ambang batas Stok Menipis (dipakai di daftar Produk) */}
+        {!(s?.unlimitedStock ?? true) && (
+          <View style={styles.mikoRow}>
+            <View style={styles.mikoLeft}>
+              <View style={styles.mikoIcon}>
+                <Ionicons name="alert-circle-outline" size={22} color={colors.brand} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.mikoTitle}>Ambang Stok Menipis</Text>
+                <Text style={styles.mikoDesc}>Barang dengan stok sama/di bawah angka ini ditandai "menipis" di daftar Produk.</Text>
+              </View>
+            </View>
+            <View style={styles.stepBox}>
+              <Pressable
+                testID="lowstock-dec"
+                style={styles.stepBtn}
+                onPress={() => update({ lowStockThreshold: Math.max(1, (s?.lowStockThreshold ?? 5) - 1) })}
+              >
+                <Ionicons name="remove" size={18} color={colors.brand} />
+              </Pressable>
+              <Text style={styles.stepVal} testID="lowstock-value">{s?.lowStockThreshold ?? 5}</Text>
+              <Pressable
+                testID="lowstock-inc"
+                style={styles.stepBtn}
+                onPress={() => update({ lowStockThreshold: Math.min(999, (s?.lowStockThreshold ?? 5) + 1) })}
+              >
+                <Ionicons name="add" size={18} color={colors.brand} />
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         <View style={styles.infoBox}>
           <Ionicons name="volume-high-outline" size={22} color={colors.brand} />
           <Text style={styles.infoTxt}>Pilih bunyi & volume sesuai selera. Untuk toko ramai, pakai volume Maksimal. Suara hanya berbunyi di HP (bukan preview).</Text>
@@ -175,6 +207,9 @@ const styles = StyleSheet.create({
   mikoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   mikoTitle: { fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
   mikoDesc: { fontFamily: font.regular, fontSize: fontSize.xs, color: colors.muted, marginTop: 2, lineHeight: 16 },
+  stepBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceTertiary, borderRadius: radius.pill, paddingHorizontal: 4, paddingVertical: 2 },
+  stepBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceSecondary },
+  stepVal: { minWidth: 28, textAlign: "center", fontFamily: font.bold, fontSize: fontSize.lg, color: colors.onSurface },
   infoTxt: { flex: 1, color: colors.onSurfaceSecondary, fontFamily: font.regular, fontSize: fontSize.sm, lineHeight: 19 },
   section: { fontFamily: font.bold, fontSize: fontSize.base, color: colors.onSurface, marginBottom: spacing.sm },
   volRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.xl },

@@ -80,8 +80,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surface }}>
       <SafeAreaProvider>
         <KeyboardProvider>
-          <BottomSheetModalProvider>
           <ToastProvider>
+          <BottomSheetModalProvider>
             <CartProvider>
               <DataProvider>
                 <StatusBar style="dark" />
@@ -109,8 +109,8 @@ export default function RootLayout() {
                 {!mikoHidden && !(pathname || "").includes("cek-harga") && <Miko />}
               </DataProvider>
             </CartProvider>
+          </BottomSheetModalProvider>
           </ToastProvider>
-        </BottomSheetModalProvider>
         </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

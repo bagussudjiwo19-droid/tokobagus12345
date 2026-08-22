@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
-import type { CartLine, Product, Variation } from "./types";
+import type { CartLine, Product, Variation, TxItem } from "./types";
 import { resolvePricing, tierPrice } from "./pricing";
 
 type CartContextType = {
@@ -14,6 +14,11 @@ type CartContextType = {
   remove: (key: string) => void;
   setPrice: (key: string, price: number) => void;
   clear: () => void;
+  // Edit transaksi: muat isi transaksi lama ke keranjang. Saat Bayar, transaksi
+  // LAMA diperbarui (ID & tanggal asli dipertahankan), bukan dibuat baru.
+  editTxId: string | null;
+  editCreatedAt: string | null;
+  loadForEdit: (txId: string, createdAt: string, items: TxItem[]) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -24,6 +29,9 @@ function lineKey(productId: string, variationId?: string | null): string {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
+  // Mode edit: id & tanggal transaksi yang sedang diedit (null = transaksi baru).
+  const [editTxId, setEditTxId] = useState<string | null>(null);
+  const [editCreatedAt, setEditCreatedAt] = useState<string | null>(null);
 
   const recomputePrice = (line: CartLine, qty: number): number => {
     return tierPrice(line.base_price, line.tiers, qty);
@@ -120,7 +128,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const clear = useCallback(() => setLines([]), []);
+  const clear = useCallback(() => { setLines([]); setEditTxId(null); setEditCreatedAt(null); }, []);
+
+  // Muat isi transaksi lama menjadi baris keranjang. Harga dipertahankan apa
+  // adanya (tiers dikosongkan → +/- tidak mengubah harga). Barang katalog memakai
+  // key produk::variasi sehingga scan/pilih produk yang sama menambah qty.
+  const loadForEdit = useCallback((txId: string, createdAt: string, items: TxItem[]) => {
+    const next: CartLine[] = items.map((it, i) => {
+      const isManual = !it.product_id;
+      const key = isManual
+        ? `manual-${Date.now()}-${i}`
+        : lineKey(it.product_id as string, it.variation_id);
+      return {
+        key,
+        product_id: it.product_id ?? null,
+        variation_id: it.variation_id ?? null,
+        name: it.name,
+        barcode: it.barcode ?? null,
+        unit: it.unit || "pcs",
+        quantity: it.quantity,
+        base_price: it.price,
+        price: it.price,
+        tiers: [],
+        manual: isManual,
+      };
+    });
+    setLines(next);
+    setEditTxId(txId);
+    setEditCreatedAt(createdAt);
+  }, []);
 
   const count = useMemo(() => lines.reduce((s, l) => s + l.quantity, 0), [lines]);
   const total = useMemo(() => lines.reduce((s, l) => s + l.price * l.quantity, 0), [lines]);
@@ -137,6 +173,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     remove,
     setPrice,
     clear,
+    editTxId,
+    editCreatedAt,
+    loadForEdit,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
