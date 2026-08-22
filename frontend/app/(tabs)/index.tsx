@@ -495,14 +495,6 @@ export default function TransaksiScreen() {
                   <Ionicons name="create-outline" size={12} color={colors.brand} />
                 </Pressable>
                 <Pressable
-                  style={styles.quarterBtnMinus}
-                  testID={`cart-minus025-${l.key}`}
-                  hitSlop={6}
-                  onPress={() => cart.setQty(l.key, Math.max(0.25, Math.round((l.quantity - 0.25) * 1000) / 1000))}
-                >
-                  <Text style={styles.quarterTxtMinus}>−0,25</Text>
-                </Pressable>
-                <Pressable
                   style={styles.quarterBtn}
                   testID={`cart-plus025-${l.key}`}
                   hitSlop={6}
@@ -785,8 +777,6 @@ const styles = StyleSheet.create({
   qtyVal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base, minWidth: 36, textAlign: "center" },
   quarterBtn: { height: 22, paddingHorizontal: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.brand, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
   quarterTxt: { color: colors.brand, fontFamily: font.bold, fontSize: 10 },
-  quarterBtnMinus: { height: 22, paddingHorizontal: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.brand, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  quarterTxtMinus: { color: colors.brand, fontFamily: font.bold, fontSize: 10 },
   lineName: { flex: 1, color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
   lineNameGrosir: { color: colors.success },
   lineSub: { color: colors.onSurface, fontFamily: font.display, fontSize: fontSize.base, minWidth: 64, textAlign: "right" },

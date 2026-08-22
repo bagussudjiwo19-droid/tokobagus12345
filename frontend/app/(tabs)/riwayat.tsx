@@ -220,7 +220,7 @@ export default function RiwayatScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chipRow}
-        style={{ flexGrow: 0 }}
+        style={styles.chipScroll}
       >
         {FILTERS.map((f) => (
           <Pressable
@@ -285,12 +285,13 @@ export default function RiwayatScreen() {
           data={filtered}
           keyExtractor={(t) => t.id}
           renderItem={renderRow}
+          style={{ flex: 1 }}
           removeClippedSubviews
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
           windowSize={7}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 24 + insets.bottom }}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
           ListEmptyComponent={
             <View style={styles.centerFill}>
@@ -362,9 +363,10 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
   actions: { flexDirection: "row", gap: spacing.sm },
   actionIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
-  summary: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.brand, borderRadius: radius.xl, padding: spacing.lg, shadowColor: colors.brand, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.md },
-  chip: { paddingHorizontal: spacing.md, height: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
+  summary: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
+  chipScroll: { flexGrow: 0, flexShrink: 0 },
+  chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
+  chip: { paddingHorizontal: spacing.md, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
   chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
   chipTxt: { color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
   chipTxtActive: { color: colors.onBrandPrimary, fontFamily: font.bold },
@@ -372,27 +374,27 @@ const styles = StyleSheet.create({
   stepBtn: { width: 44, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" },
   stepDateBox: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
   stepDateTxt: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
-  sumLabel: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.base, opacity: 0.95 },
-  sumValue: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: 34, marginTop: 2 },
-  topCard: { marginHorizontal: spacing.lg, marginBottom: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.brandTertiary, padding: spacing.md, gap: spacing.sm },
-  topHead: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
-  topTitle: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.base },
+  sumLabel: { color: colors.onBrandPrimary, fontFamily: font.medium, fontSize: fontSize.sm, opacity: 0.95 },
+  sumValue: { color: colors.onBrandPrimary, fontFamily: font.display, fontSize: fontSize["2xl"], marginTop: 1 },
+  topCard: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.brandTertiary, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, gap: spacing.xs },
+  topHead: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 1 },
+  topTitle: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
   topRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  topRank: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
-  topRankTxt: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
-  topName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.base },
+  topRank: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center" },
+  topRankTxt: { color: colors.brand, fontFamily: font.bold, fontSize: 11 },
+  topName: { flex: 1, color: colors.onSurface, fontFamily: font.medium, fontSize: fontSize.sm },
   topQty: { color: colors.brand, fontFamily: font.bold, fontSize: fontSize.sm },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surfaceSecondary, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, shadowColor: "#B0757F", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
-  rowThumb: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, shadowColor: "#B0757F", shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  rowThumb: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   rowUnpaid: { borderColor: colors.error, borderWidth: 1.5 },
   rowTopLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   unpaidBadge: { backgroundColor: colors.error, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  unpaidBadgeTxt: { color: "#FFFFFF", fontFamily: font.bold, fontSize: fontSize.sm, letterSpacing: 0.5 },
-  rowDate: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  rowSub: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 2 },
-  rowTotal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.lg },
-  rowChange: { color: colors.success, fontFamily: font.medium, fontSize: fontSize.sm, marginTop: 2 },
-  rowKurang: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.sm, marginTop: 2 },
+  unpaidBadgeTxt: { color: "#FFFFFF", fontFamily: font.bold, fontSize: 10, letterSpacing: 0.5 },
+  rowDate: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
+  rowSub: { color: colors.muted, fontFamily: font.regular, fontSize: fontSize.sm, marginTop: 1 },
+  rowTotal: { color: colors.onSurface, fontFamily: font.bold, fontSize: fontSize.base },
+  rowChange: { color: colors.success, fontFamily: font.medium, fontSize: fontSize.sm, marginTop: 1 },
+  rowKurang: { color: colors.error, fontFamily: font.bold, fontSize: fontSize.sm, marginTop: 1 },
   lunasiBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, height: 52, borderRadius: radius.md, backgroundColor: colors.success, width: "100%", maxWidth: 320, marginTop: spacing.md },
   lunasiTxt: { color: colors.onBrandPrimary, fontFamily: font.bold, fontSize: fontSize.lg },
   centerFill: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: spacing.md },
