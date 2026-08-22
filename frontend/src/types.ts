@@ -55,17 +55,25 @@ export type Transaction = {
   updated_at?: string;
 };
 
-// Bukti Pembayaran (SALINAN dari screenshot e-wallet/bank via OCR). Dicatat
-// TERPISAH dari penjualan — tidak dihitung di omzet/laporan/laba.
+// Bukti Pembayaran (SALINAN dari screenshot e-wallet/bank via OCR / input manual).
+// Dicatat TERPISAH dari penjualan — tidak dihitung di omzet/laporan/laba.
+// STATUS bersifat internal toko (dari verifikasi kasir), BUKAN dari bukti bank.
 export type Bukti = {
   id: string;
-  method: string;      // metode/aplikasi pembayaran (ShopeePay, GoPay, dll)
-  recipient: string;   // nama penerima/merchant
-  amount: number;      // nominal (rupiah, bulat)
-  date: string;        // tanggal apa adanya seperti terbaca
-  time: string;        // waktu
-  ref: string;         // nomor referensi/ID transaksi
-  customer: string;    // nama pelanggan (diisi kasir, opsional)
+  status: string;            // internal: BERHASIL / TERVERIFIKASI / PENDING / GAGAL
+  amount: number;            // nominal / jumlah transfer (rupiah, bulat)
+  sender_name: string;       // Dari (nama pengirim)
+  sender_bank: string;       // Bank pengirim
+  sender_account: string;    // No. Tujuan / No. Rekening
+  recipient: string;         // Ke (penerima)
+  recipient_username: string;// Username tujuan
+  method: string;            // Metode transaksi
+  ref: string;               // No. Referensi
+  txno: string;              // No. Transaksi
+  product: string;           // Produk
+  date: string;              // tanggal apa adanya seperti terbaca
+  time: string;              // waktu
+  note: string;              // Catatan (opsional, internal)
   image_uri?: string | null; // path gambar sumber (lokal saja, tidak disinkron)
   created_at: string;
   updated_at?: string;
