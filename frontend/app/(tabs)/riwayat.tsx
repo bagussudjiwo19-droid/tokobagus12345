@@ -189,11 +189,8 @@ export default function RiwayatScreen() {
   return (
     <View style={styles.container}>
       <AppHeader />
-      <View style={styles.titleBlock}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Riwayat</Text>
-          <Text style={styles.subtitle}>Transaksi yang sudah tersimpan</Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Riwayat</Text>
         <View style={styles.actions}>
           <Pressable style={styles.actionIcon} testID="riwayat-sync" onPress={() => router.push("/sync-toko")}>
             <Ionicons name="cloud-outline" size={20} color={colors.brand} />
@@ -290,7 +287,7 @@ export default function RiwayatScreen() {
           initialNumToRender={12}
           maxToRenderPerBatch={12}
           windowSize={7}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 24 + insets.bottom }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
           ListEmptyComponent={
@@ -358,10 +355,9 @@ export default function RiwayatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  titleBlock: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  title: { fontFamily: font.display, fontSize: fontSize["3xl"], color: colors.onSurface },
-  subtitle: { fontFamily: font.regular, fontSize: fontSize.base, color: colors.muted, marginTop: 2 },
-  actions: { flexDirection: "row", gap: spacing.sm },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+  title: { fontFamily: font.display, fontSize: fontSize["2xl"], color: colors.onSurface },
+  actions: { flexDirection: "row", justifyContent: "space-between", marginTop: spacing.sm },
   actionIcon: { width: 42, height: 42, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   summary: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: spacing.md, shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   chipScroll: { flexGrow: 0, flexShrink: 0 },
