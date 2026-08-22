@@ -1,0 +1,128 @@
+[
+ {
+  "_id": {
+   "$oid": "6a80ae321e9015022f3b96c6"
+  },
+  "store": "TOKO-TEST",
+  "doc": {
+   "shopName": "Uji"
+  },
+  "updated_at": 900
+ },
+ {
+  "_id": {
+   "$oid": "6a80bd661e9015022f3c420b"
+  },
+  "store": "TOKO-3140-EYLV",
+  "doc": {
+   "shopName": "TOKO BAGUS",
+   "address": "jln mangir rt 4 rw 1 sumber bahagia",
+   "phone": "",
+   "cashier": "",
+   "note": "",
+   "thanks": "Terima kasih sudah berbelanja",
+   "showShopName": true,
+   "showAddress": true,
+   "showPhone": true,
+   "showLogo": false,
+   "showDateTime": true,
+   "showTxNumber": true,
+   "showQueue": true,
+   "showCashier": false,
+   "showQR": false,
+   "showItemName": true,
+   "showVariation": true,
+   "showBarcode": false,
+   "showUnitPrice": true,
+   "showQty": true,
+   "showSubtotal": true,
+   "showDiscount": true,
+   "showTotal": true,
+   "showCashPaid": true,
+   "showChange": true,
+   "voiceChange": true,
+   "readPrice": true,
+   "priceClosing": true,
+   "showNote": false,
+   "showThanks": true,
+   "sfxVolume": "keras",
+   "sfxOk": "sparkle",
+   "sfxFail": "oops",
+   "sfxPaid": "premium",
+   "quickSlots": [
+    "efe4347a-6591-41be-8a3a-086ba2a73f6e",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "hideMiko": false,
+   "unlimitedStock": true
+  },
+  "updated_at": 1787150791853,
+  "srv_at": 1787150832538
+ },
+ {
+  "_id": {
+   "$oid": "6a8572681daa5fa5a072b6ca"
+  },
+  "store": "TOKO123",
+  "doc": {
+   "shopName": "TOKO BAGUS",
+   "address": "jln mangir rt 4 rw 1 sumber bahagia",
+   "phone": "",
+   "cashier": "",
+   "note": "",
+   "thanks": "Terima kasih sudah berbelanja",
+   "showShopName": true,
+   "showAddress": true,
+   "showPhone": true,
+   "showLogo": false,
+   "showDateTime": true,
+   "showTxNumber": true,
+   "showQueue": true,
+   "showCashier": false,
+   "showQR": false,
+   "showItemName": true,
+   "showVariation": true,
+   "showBarcode": false,
+   "showUnitPrice": true,
+   "showQty": true,
+   "showSubtotal": true,
+   "showDiscount": true,
+   "showTotal": true,
+   "showCashPaid": true,
+   "showChange": true,
+   "voiceChange": true,
+   "readPrice": true,
+   "priceClosing": true,
+   "showNote": false,
+   "showThanks": true,
+   "sfxVolume": "keras",
+   "sfxOk": "sparkle",
+   "sfxFail": "oops",
+   "sfxPaid": "premium",
+   "quickSlots": [
+    "efe4347a-6591-41be-8a3a-086ba2a73f6e",
+    "735dc61c-d597-48bd-b084-ac9077476580",
+    "b5918eac-9790-42d0-ba63-e175f9c70869",
+    "b12912da-1db5-40fe-9def-d1d2caf142b3",
+    "bb39ec35-56bd-4322-8799-1363b83729f3",
+    "cd90fe38-3ab8-466f-a5c8-70808c7d090a",
+    "27678307-3bf9-4936-83d2-5445eb745698",
+    null,
+    null,
+    null
+   ],
+   "hideMiko": false,
+   "unlimitedStock": true
+  },
+  "srv_at": 1787130472459,
+  "updated_at": 1787130446885
+ }
+]

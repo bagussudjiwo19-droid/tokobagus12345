@@ -1,0 +1,33 @@
+[
+ {
+  "_id": "app_settings",
+  "shopName": "TOKO BAGUS",
+  "address": "jln mangir rt 4 rw 1 sumber bahagia",
+  "phone": "",
+  "cashier": "",
+  "note": "",
+  "thanks": "Terima kasih sudah berbelanja",
+  "showShopName": true,
+  "showAddress": true,
+  "showPhone": true,
+  "showLogo": false,
+  "showDateTime": true,
+  "showTxNumber": true,
+  "showQueue": true,
+  "showCashier": false,
+  "showQR": false,
+  "showItemName": true,
+  "showVariation": true,
+  "showBarcode": false,
+  "showUnitPrice": true,
+  "showQty": true,
+  "showSubtotal": true,
+  "showDiscount": true,
+  "showTotal": true,
+  "showCashPaid": true,
+  "showChange": true,
+  "voiceChange": true,
+  "showNote": false,
+  "showThanks": true
+ }
+]

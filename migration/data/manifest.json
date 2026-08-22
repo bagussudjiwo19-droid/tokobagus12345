@@ -1,0 +1,14 @@
+{
+  "app": "toko-bagus-kasir",
+  "exported_at": "2026-08-22T09:43:32.247102+00:00",
+  "source_db": "toko_bagus",
+  "collections": {
+    "printer": 1,
+    "products": 2261,
+    "s_products": 23134,
+    "s_settings": 3,
+    "s_transactions": 993,
+    "settings": 1,
+    "transactions": 123
+  }
+}

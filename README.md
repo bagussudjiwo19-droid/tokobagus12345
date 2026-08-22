@@ -7,6 +7,12 @@ internet mati; perubahan otomatis tersinkron saat online kembali.
 > Portabilitas: aplikasi ini **tidak terkunci** ke Emergent. Lihat
 > [`docs/PORTABILITY_AUDIT.md`](docs/PORTABILITY_AUDIT.md) dan
 > [`docs/MIGRATE_FROM_EMERGENT.md`](docs/MIGRATE_FROM_EMERGENT.md).
+>
+> **Pindah ke akun/project Emergent baru (source + SEMUA data):** lihat
+> [`migration/README_MIGRATION.md`](migration/README_MIGRATION.md).
+> Skema DB lengkap: [`migration/DATABASE_SCHEMA.md`](migration/DATABASE_SCHEMA.md).
+> Ekspor/impor data: `migration/scripts/export_data.py` & `import_data.py`
+> (snapshot data terkini tersedia di `migration/data/`).
 
 ## Arsitektur singkat
 - **Frontend** (`frontend/`): Expo / React Native. Database utama = **SQLite di HP**

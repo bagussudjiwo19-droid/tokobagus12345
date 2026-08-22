@@ -1,0 +1,3959 @@
+[
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9424"
+  },
+  "items": [
+   {
+    "product_id": "159a9285-c7f4-4e47-895d-4396afcbb97d",
+    "variation_id": null,
+    "name": "TEST_HIST_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 200.0,
+    "quantity": 1.0,
+    "subtotal": 200.0
+   }
+  ],
+  "total": 200.0,
+  "discount": 0.0,
+  "cash_paid": 200.0,
+  "change": 0.0,
+  "id": "c2d272da-7038-465e-b4d4-42c171014b41",
+  "created_at": "2026-08-12T04:48:19.875156+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9425"
+  },
+  "items": [
+   {
+    "product_id": "cfcf8838-3211-4cf1-bd0c-56930174c79f",
+    "variation_id": null,
+    "name": "TEST_LUNASI_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 5000.0,
+    "quantity": 2.0,
+    "subtotal": 10000.0
+   }
+  ],
+  "total": 8000.0,
+  "discount": 2000.0,
+  "cash_paid": 8000.0,
+  "change": 0.0,
+  "id": "80f8c450-f9fb-43a0-b4e6-38abae1eb071",
+  "created_at": "2026-08-12T04:48:19.426488+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9426"
+  },
+  "items": [
+   {
+    "product_id": "8180586d-d394-4eb2-9173-c8b8a1a3f61c",
+    "variation_id": null,
+    "name": "TEST_DISC_UPD_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 3000.0,
+    "quantity": 2.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 5000.0,
+  "discount": 1000.0,
+  "cash_paid": 6000.0,
+  "change": 1000.0,
+  "id": "2b6ec0dc-0074-41b6-9850-89f859d156cd",
+  "created_at": "2026-08-12T04:48:19.112350+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9427"
+  },
+  "items": [
+   {
+    "product_id": "9f30de35-61b1-4163-8567-8f378c71c5ee",
+    "variation_id": null,
+    "name": "TEST_DISC_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 5000.0,
+    "quantity": 2.0,
+    "subtotal": 10000.0
+   }
+  ],
+  "total": 8000.0,
+  "discount": 2000.0,
+  "cash_paid": 10000.0,
+  "change": 2000.0,
+  "id": "145e61aa-7c70-4fd1-bfdd-3f736ff6ce00",
+  "created_at": "2026-08-12T04:48:18.880472+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9428"
+  },
+  "items": [
+   {
+    "product_id": "d2b7602b-e7b1-445a-9e4e-f2be063ffacd",
+    "variation_id": null,
+    "name": "TEST_EDIT_TX_PROD",
+    "barcode": "TEST_EDIT_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 2.0,
+    "subtotal": 2000.0
+   }
+  ],
+  "total": 2000.0,
+  "discount": 0,
+  "cash_paid": 5000.0,
+  "change": 3000.0,
+  "id": "ed5e462d-0a0f-4a5e-a270-69d3a8a02d3a",
+  "created_at": "2026-08-12T04:48:18.430878+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9429"
+  },
+  "items": [
+   {
+    "product_id": "a2e33491-c481-48af-8da1-c03aa71b4a8c",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "discount": 0.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "5245be9f-5b57-4c52-b16c-530853b666b9",
+  "created_at": "2026-08-12T04:48:17.876618+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942a"
+  },
+  "items": [
+   {
+    "product_id": "570f835c-9b93-4fde-9446-93c5991d1e96",
+    "variation_id": null,
+    "name": "TEST_HIST_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 200.0,
+    "quantity": 1.0,
+    "subtotal": 200.0
+   }
+  ],
+  "total": 200.0,
+  "discount": 0.0,
+  "cash_paid": 200.0,
+  "change": 0.0,
+  "id": "1cf1ecb7-3ee3-4f2c-967f-89e9beff3d93",
+  "created_at": "2026-08-12T04:47:43.477778+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942b"
+  },
+  "items": [
+   {
+    "product_id": "83edf596-ba5b-4759-90da-094597a51a08",
+    "variation_id": null,
+    "name": "TEST_EDIT_TX_PROD",
+    "barcode": "TEST_EDIT_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 2.0,
+    "subtotal": 2000.0
+   }
+  ],
+  "total": 2000.0,
+  "discount": 0,
+  "cash_paid": 5000.0,
+  "change": 3000.0,
+  "id": "a609d93c-fb37-4c03-ba71-ba2f77a61fe1",
+  "created_at": "2026-08-12T04:47:42.889358+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942c"
+  },
+  "items": [
+   {
+    "product_id": "48a91f15-3801-4a11-81a9-d13cc7b1414f",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "discount": 0.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "9b63bc37-a7ff-4ff3-a0d4-3bc52346428d",
+  "created_at": "2026-08-12T04:47:42.320657+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942d"
+  },
+  "items": [
+   {
+    "product_id": "96e25153-3c79-4fc5-bdb2-fd893c741b28",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745540830",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   },
+   {
+    "product_id": "b5918eac-9790-42d0-ba63-e175f9c70869",
+    "variation_id": null,
+    "name": "3 swetty silver xl 2500",
+    "barcode": "8992959508312",
+    "unit": "pcs",
+    "price": 5500.0,
+    "quantity": 1.0,
+    "subtotal": 5500.0
+   },
+   {
+    "product_id": "cd90fe38-3ab8-466f-a5c8-70808c7d090a",
+    "variation_id": null,
+    "name": "76 apel",
+    "barcode": "8991906106250",
+    "unit": "pcs",
+    "price": 15000.0,
+    "quantity": 1.0,
+    "subtotal": 15000.0
+   },
+   {
+    "product_id": "14353951-5c57-48c5-819c-74134eab95bd",
+    "variation_id": null,
+    "name": "ABC sambal extra pedas",
+    "barcode": "8994907002309",
+    "unit": "pcs",
+    "price": 8500.0,
+    "quantity": 1.0,
+    "subtotal": 8500.0
+   }
+  ],
+  "total": 35000.0,
+  "discount": 0.0,
+  "cash_paid": 100000.0,
+  "change": 65000.0,
+  "id": "9e5ba342-2b7d-450e-8597-07c91bc8844d",
+  "created_at": "2026-08-12T04:35:57.551948+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942e"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 5750.0,
+    "quantity": 3.0,
+    "subtotal": 17250.0
+   }
+  ],
+  "total": 17250.0,
+  "cash_paid": 30000.0,
+  "change": 12750.0,
+  "id": "ac97d33e-f0c9-4fca-877d-63bfc3776712",
+  "created_at": "2026-08-12T04:16:27.826291+00:00",
+  "discount": 0.0
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb942f"
+  },
+  "items": [
+   {
+    "product_id": "a4baa730-256f-479d-9281-d4e2befa3d0d",
+    "variation_id": null,
+    "name": "TEST_HIST_PROD",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 200.0,
+    "quantity": 1.0,
+    "subtotal": 200.0
+   }
+  ],
+  "total": 200.0,
+  "cash_paid": 200.0,
+  "change": 0.0,
+  "id": "7099b672-44ad-4089-a037-5a582b698a34",
+  "created_at": "2026-08-12T04:15:13.432926+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9430"
+  },
+  "items": [
+   {
+    "product_id": "34ec9fba-e7b8-459f-bf7f-e21a8e0cc311",
+    "variation_id": null,
+    "name": "TEST_EDIT_TX_PROD",
+    "barcode": "TEST_EDIT_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 2.0,
+    "subtotal": 2000.0
+   }
+  ],
+  "total": 2000.0,
+  "cash_paid": 5000.0,
+  "change": 3000.0,
+  "id": "9fd306cd-6140-468f-bca1-db3ab20b16ee",
+  "created_at": "2026-08-12T04:15:12.846860+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9431"
+  },
+  "items": [
+   {
+    "product_id": "38c84356-23b8-4547-81f1-790fd260740f",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "3de68dcb-954c-4a68-8736-af13a7c0769e",
+  "created_at": "2026-08-12T04:15:12.210138+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9432"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 5750.0,
+    "quantity": 2.0,
+    "subtotal": 11500.0
+   },
+   {
+    "product_id": "f6359cb5-1840-40cc-a484-0dc18b063a62",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550525",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 2.0,
+    "subtotal": 12000.0
+   }
+  ],
+  "total": 23500.0,
+  "cash_paid": 100000.0,
+  "change": 76500.0,
+  "id": "a6ff2427-e6ed-47cb-ba47-4f178f945615",
+  "created_at": "2026-08-12T03:29:28.709276+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9433"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 5750.0,
+    "quantity": 5.0,
+    "subtotal": 28750.0
+   }
+  ],
+  "total": 28750.0,
+  "cash_paid": 500000.0,
+  "change": 471250.0,
+  "id": "afcece2f-dfb3-4422-8b39-c56f15815227",
+  "created_at": "2026-08-12T02:42:05.657307+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9434"
+  },
+  "items": [
+   {
+    "product_id": "f6359cb5-1840-40cc-a484-0dc18b063a62",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550525",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 2.0,
+    "subtotal": 12000.0
+   }
+  ],
+  "total": 12000.0,
+  "cash_paid": 13000.0,
+  "change": 1000.0,
+  "id": "fe87be6f-a399-46b7-ba5f-fe2365266a06",
+  "created_at": "2026-08-12T02:41:32.788693+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9435"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 7000.0,
+  "change": 1000.0,
+  "id": "5cf52d14-2b2c-4edd-b7bc-b91bd98f644b",
+  "created_at": "2026-08-12T02:35:12.625610+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9436"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 7000.0,
+  "change": 1000.0,
+  "id": "776e1fc7-4e43-4bc7-839d-193621e2e9bd",
+  "created_at": "2026-08-12T02:30:09.659720+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9437"
+  },
+  "items": [
+   {
+    "product_id": "96e25153-3c79-4fc5-bdb2-fd893c741b28",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745540830",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 6000.0,
+  "change": 0.0,
+  "id": "f90fee0e-19b4-475a-9a50-27cbc1fb6cd4",
+  "created_at": "2026-08-11T18:52:11.409458+00:00",
+  "discount": 0.0
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9438"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 100000.0,
+  "change": 94000.0,
+  "id": "75e27307-46e4-43be-8494-844b60dbd8d0",
+  "created_at": "2026-08-11T18:48:24.413374+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9439"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 1000.0,
+  "change": 0.0,
+  "id": "533f9c25-4f8d-4402-bfc1-c6607d4b40ed",
+  "created_at": "2026-08-11T18:48:06.064095+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943a"
+  },
+  "items": [
+   {
+    "product_id": "cd90fe38-3ab8-466f-a5c8-70808c7d090a",
+    "variation_id": null,
+    "name": "76 apel",
+    "barcode": "8991906106250",
+    "unit": "pcs",
+    "price": 15000.0,
+    "quantity": 1.0,
+    "subtotal": 15000.0
+   }
+  ],
+  "total": 15000.0,
+  "cash_paid": 1000.0,
+  "change": 0.0,
+  "id": "6f5bbbb8-dfb0-4225-a9ba-5af6e21bdf6e",
+  "created_at": "2026-08-11T18:44:49.638083+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943b"
+  },
+  "items": [
+   {
+    "product_id": "475da518-f351-4ab0-ba12-9bb9e0723b9a",
+    "variation_id": null,
+    "name": "beras A",
+    "barcode": "3516663670001",
+    "unit": "pcs",
+    "price": 13800.0,
+    "quantity": 10.0,
+    "subtotal": 138000.0
+   }
+  ],
+  "total": 138000.0,
+  "cash_paid": 100000.0,
+  "change": 0.0,
+  "id": "12bfe1cb-043a-4dc4-8f49-b5d8f15b1261",
+  "created_at": "2026-08-11T18:44:34.065832+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943c"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 6000.0,
+  "change": 0.0,
+  "id": "8121686c-7b62-45b2-8b36-b2e515bfaaac",
+  "created_at": "2026-08-11T18:35:30.459803+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943d"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 1000.0,
+  "change": 0.0,
+  "id": "f00156a1-4b27-4b4f-93a5-d2c5b8394aba",
+  "created_at": "2026-08-11T18:35:22.541009+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943e"
+  },
+  "items": [
+   {
+    "product_id": "b2babe38-8fb7-4b61-af06-f55522b4980e",
+    "variation_id": null,
+    "name": "le mineral 330ml",
+    "barcode": "8996001600375",
+    "unit": "pcs",
+    "price": 2000.0,
+    "quantity": 1.0,
+    "subtotal": 2000.0
+   },
+   {
+    "product_id": "d9095d2f-e189-4d52-bc22-4226c71e728f",
+    "variation_id": null,
+    "name": "Indofood saos tomat",
+    "barcode": "089686401721",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 — grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000.0,
+    "quantity": 1.0,
+    "subtotal": 11000.0
+   },
+   {
+    "product_id": "f78a2532-b1a0-458f-a4c5-f1c17c1dec98",
+    "variation_id": "38ead8ae-d43a-4e55-856f-f2621e37a57a",
+    "name": "hs — kretek",
+    "barcode": "8994457130279",
+    "unit": "pcs",
+    "price": 9500.0,
+    "quantity": 1.0,
+    "subtotal": 9500.0
+   }
+  ],
+  "total": 28500.0,
+  "cash_paid": 20000.0,
+  "change": 0.0,
+  "id": "e47d4a8c-b10a-4fe1-9dab-89c1b809cba2",
+  "created_at": "2026-08-11T18:34:28.027911+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb943f"
+  },
+  "items": [
+   {
+    "product_id": "c00de6de-0341-4a26-90b8-457ef22a266d",
+    "variation_id": null,
+    "name": "nobo",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 3500.0,
+    "quantity": 1.0,
+    "subtotal": 3500.0
+   }
+  ],
+  "total": 3500.0,
+  "cash_paid": 20000.0,
+  "change": 16500.0,
+  "id": "08dfb505-11c3-4e5b-94d9-07902ab448a0",
+  "created_at": "2026-08-11T18:02:22.664119+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9440"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 6000.0,
+  "change": 0.0,
+  "id": "c66db740-8a0a-4d44-a6c2-9c597a91cf43",
+  "created_at": "2026-08-11T18:01:44.448081+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9441"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "cash_paid": 10000.0,
+  "change": 4000.0,
+  "id": "952ba874-5edc-45b7-906b-94734a569b46",
+  "created_at": "2026-08-11T18:01:13.806861+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9442"
+  },
+  "items": [
+   {
+    "product_id": "40af06dc-9eda-41b5-8f9e-746243917c39",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "6ef4cc3e-abc4-42b9-9bdb-b03cf2cf70b9",
+  "created_at": "2026-08-11T17:58:50.202995+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9443"
+  },
+  "items": [
+   {
+    "product_id": "b2babe38-8fb7-4b61-af06-f55522b4980e",
+    "variation_id": null,
+    "name": "le mineral 330ml",
+    "barcode": "8996001600375",
+    "unit": "pcs",
+    "price": 2300.0,
+    "quantity": 5.0,
+    "subtotal": 11500.0
+   },
+   {
+    "product_id": "69e99335-6d0f-4ab1-aa2c-d2143d5d6b50",
+    "variation_id": null,
+    "name": "mizone",
+    "barcode": "8992752112013",
+    "unit": "pcs",
+    "price": 4500.0,
+    "quantity": 1.0,
+    "subtotal": 4500.0
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 — grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000.0,
+    "quantity": 4.0,
+    "subtotal": 44000.0
+   },
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 2500.0,
+    "quantity": 2.0,
+    "subtotal": 5000.0
+   }
+  ],
+  "total": 65000.0,
+  "cash_paid": 250000.0,
+  "change": 185000.0,
+  "id": "feddb5ae-08d0-4b1d-93e4-9f1443021d19",
+  "created_at": "2026-08-11T17:24:12.460062+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9444"
+  },
+  "items": [
+   {
+    "product_id": "26721c4f-3cf8-44a0-b720-32320f2cd058",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "3a140cff-8edf-454c-977d-a2982417f773",
+  "created_at": "2026-08-11T17:14:41.984562+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9445"
+  },
+  "items": [
+   {
+    "product_id": "bb0f6a85-0e3f-448c-81c3-f55420b15190",
+    "variation_id": null,
+    "name": "TEST_TX_PROD",
+    "barcode": "TEST_TX_BC",
+    "unit": "pcs",
+    "price": 1000.0,
+    "quantity": 3.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 3000.0,
+  "cash_paid": 5000.0,
+  "change": 2000.0,
+  "id": "5f738342-1a0f-40ce-ad26-4e1684ea6d55",
+  "created_at": "2026-08-11T16:33:12.953991+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9446"
+  },
+  "id": "1eacc7ab-bc75-4354-b13d-b0d05472bc11",
+  "items": [
+   {
+    "product_id": "3d9b8acf-fd82-4c69-b3c4-92130b78a61c",
+    "variation_id": null,
+    "name": "lervia/Zen/dettol60gr/shinzui60gr",
+    "barcode": "8993379255565",
+    "unit": "pcs",
+    "price": 3500,
+    "quantity": 1,
+    "subtotal": 3500
+   },
+   {
+    "product_id": "99d4d4da-633a-417f-a60a-d18ea6956792",
+    "variation_id": null,
+    "name": "sabun/cream Garnier",
+    "barcode": "8994993001194",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "oskadon",
+    "barcode": "",
+    "unit": "item",
+    "price": 2500,
+    "quantity": 2,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "79bee581-d496-47a3-ba96-c5a646ac8c90",
+    "variation_id": null,
+    "name": "tapioka rosebrand/matahari 200gr",
+    "barcode": "(90)MD230008002010(91)220922",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 1,
+    "subtotal": 3000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   }
+  ],
+  "total": 18500,
+  "cash_paid": 50000,
+  "change": 31500,
+  "created_at": "2026-08-11T12:58:16.579Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9447"
+  },
+  "id": "01ca07c3-2a1f-4198-90aa-1fdd4129ce3a",
+  "items": [
+   {
+    "product_id": "dcfdbd24-af01-40d1-bc0a-f4d8573a5bc4",
+    "variation_id": null,
+    "name": "gula pasir 1/2kg",
+    "barcode": "8998866200103",
+    "unit": "pcs",
+    "price": 8250,
+    "quantity": 2,
+    "subtotal": 16500
+   },
+   {
+    "product_id": "d8542b63-581e-45c4-9db7-f51b459fd222",
+    "variation_id": null,
+    "name": "posh/nivea deolotion",
+    "barcode": "8999777018191",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "surya",
+    "barcode": "",
+    "unit": "item",
+    "price": 26500,
+    "quantity": 1,
+    "subtotal": 26500
+   }
+  ],
+  "total": 45000,
+  "cash_paid": 86300,
+  "change": 41300,
+  "created_at": "2026-08-11T12:44:54.765Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9448"
+  },
+  "id": "164ed368-b06b-4be3-a4b7-5e6d8dfae5de",
+  "items": [
+   {
+    "product_id": "140c52ee-f318-48a3-b5ff-0f8271d1e41d",
+    "variation_id": null,
+    "name": "sgm 1+ 150gr",
+    "barcode": "8999099920998",
+    "unit": "pcs",
+    "price": 17500,
+    "quantity": 1,
+    "subtotal": 17500
+   },
+   {
+    "product_id": "3e288961-d11b-47bf-acde-b6732f05f910",
+    "variation_id": null,
+    "name": "tisu basah wipes beizhishu isi 80",
+    "barcode": "6978838190108",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 1,
+    "subtotal": 4000
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "jajan",
+    "barcode": "",
+    "unit": "item",
+    "price": 18000,
+    "quantity": 1,
+    "subtotal": 18000
+   }
+  ],
+  "total": 39500,
+  "cash_paid": 40000,
+  "change": 500,
+  "created_at": "2026-08-11T12:30:39.543Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9449"
+  },
+  "id": "32aeb7b9-2543-4967-ab3b-a5a2919dfd69",
+  "items": [
+   {
+    "product_id": "2afbdd38-0e49-4166-a965-c47dfc39296d",
+    "variation_id": null,
+    "name": "ekonomi 380g",
+    "barcode": "8998866600101",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "58b42938-27c0-4e6d-8699-983946f2d6e4",
+    "variation_id": null,
+    "name": "downy/royal/softener RTG 12",
+    "barcode": "8998866619004",
+    "unit": "pcs",
+    "price": 416,
+    "quantity": 24,
+    "subtotal": 9984
+   },
+   {
+    "product_id": "e697979d-7877-4425-a28b-9ba79f92b4da",
+    "variation_id": null,
+    "name": "obat 2000",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 10,
+    "subtotal": 20000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 2,
+    "subtotal": 4000
+   }
+  ],
+  "total": 43984,
+  "cash_paid": 100000,
+  "change": 56016,
+  "created_at": "2026-08-11T12:18:19.571Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944a"
+  },
+  "id": "1ee7c8db-30b9-40c3-a784-37939d479555",
+  "items": [
+   {
+    "product_id": "d05cd2e9-e3f5-4b5e-b38a-2ca239dd32c1",
+    "variation_id": null,
+    "name": "goriorio 1renteng(20)",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 9000,
+    "quantity": 1,
+    "subtotal": 9000
+   },
+   {
+    "product_id": "0b29a3dc-d36e-49c7-8d7c-50c12cbd1324",
+    "variation_id": null,
+    "name": "Kokola kukis",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 6500,
+    "quantity": 1,
+    "subtotal": 6500
+   },
+   {
+    "product_id": "8b720e8b-5c08-4455-b6ef-a98c4137fd73",
+    "variation_id": null,
+    "name": "cottonbud dewasa",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   },
+   {
+    "product_id": "c46bf66f-f2f9-496b-85ff-4af93f438b6b",
+    "variation_id": null,
+    "name": "minyakita refil 1L",
+    "barcode": "8994966000292",
+    "unit": "pcs",
+    "price": 18500,
+    "quantity": 1,
+    "subtotal": 18500
+   },
+   {
+    "product_id": "dcfdbd24-af01-40d1-bc0a-f4d8573a5bc4",
+    "variation_id": null,
+    "name": "gula pasir 1/2kg",
+    "barcode": "8998866200103",
+    "unit": "pcs",
+    "price": 8500,
+    "quantity": 1,
+    "subtotal": 8500
+   },
+   {
+    "product_id": "02290142-37b7-4c79-acd6-30acce03247b",
+    "variation_id": null,
+    "name": "tapioka rosebrand curah 500gr-",
+    "barcode": "tapioka curah",
+    "unit": "pcs",
+    "price": 6500,
+    "quantity": 2,
+    "subtotal": 13000
+   },
+   {
+    "product_id": "be08372a-18bf-4d75-b41f-4dc93256fcb1",
+    "variation_id": null,
+    "name": "tepung ketan rosebrand 500gr",
+    "barcode": "8993093135006",
+    "unit": "pcs",
+    "price": 17500,
+    "quantity": 1,
+    "subtotal": 17500
+   }
+  ],
+  "total": 75000,
+  "cash_paid": 100000,
+  "change": 25000,
+  "created_at": "2026-08-11T12:13:08.202Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944b"
+  },
+  "id": "45b22554-aa74-4530-9b2b-1f9bbc65cc19",
+  "items": [
+   {
+    "product_id": "24b2a4e0-20c2-4f6d-85d7-b4c51d010d13",
+    "variation_id": null,
+    "name": "isi3 XL makuku",
+    "barcode": "8990052004328",
+    "unit": "pcs",
+    "price": 5500,
+    "quantity": 1,
+    "subtotal": 5500
+   },
+   {
+    "product_id": "96e25153-3c79-4fc5-bdb2-fd893c741b28",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745540830",
+    "unit": "pcs",
+    "price": 6000,
+    "quantity": 1,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 14,
+    "subtotal": 28000
+   },
+   {
+    "product_id": "350c4403-cdf5-4839-b7c0-df30f9b692c4",
+    "variation_id": null,
+    "name": "teh pucuk",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 2,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "76684b7e-875c-4ba7-ad41-486196bf6cf6",
+    "variation_id": null,
+    "name": "cimory fresh milk besar",
+    "barcode": "8993200666201",
+    "unit": "pcs",
+    "price": 6000,
+    "quantity": 1,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "865b2d94-9b7f-46f5-a578-0b1e4eb28341",
+    "variation_id": null,
+    "name": "kapal api mini renteng(10)",
+    "barcode": "8991002105584",
+    "unit": "pcs",
+    "price": 950,
+    "quantity": 10,
+    "subtotal": 9500
+   },
+   {
+    "product_id": "dbca015b-3985-4c19-addd-c19f85355a55",
+    "variation_id": null,
+    "name": "Aqua/lemineral/aquviva tanggung",
+    "barcode": "8998866632287",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 1,
+    "subtotal": 2500
+   },
+   {
+    "product_id": "ad95f109-e934-4daa-9cf2-3d2996bf5d29",
+    "variation_id": null,
+    "name": "es 3500an",
+    "barcode": "es 3.500",
+    "unit": "pcs",
+    "price": 3500,
+    "quantity": 2,
+    "subtotal": 7000
+   }
+  ],
+  "total": 70500,
+  "cash_paid": 100000,
+  "change": 29500,
+  "created_at": "2026-08-11T11:59:23.133Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944c"
+  },
+  "id": "2c509226-d951-4849-9332-346816f0ac8c",
+  "items": [
+   {
+    "product_id": "8d7361a9-5a35-463d-a8ad-e49ebe01b608",
+    "variation_id": null,
+    "name": "R10k- (100:60k) (50:30.5k)(25:15.5k)",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 640,
+    "quantity": 40,
+    "subtotal": 25600
+   },
+   {
+    "product_id": "0a7a2e2c-ea77-406f-877f-63ce2a559904",
+    "variation_id": null,
+    "name": "kardus R7 nbk-",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 500,
+    "quantity": 40,
+    "subtotal": 20000
+   },
+   {
+    "product_id": "12461333-2271-4a73-8369-ae822bcb7551",
+    "variation_id": null,
+    "name": "mika lauk kotak lubang 5/4",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 250,
+    "quantity": 40,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "60005b66-fb90-43b1-b6c7-4ce2fd229bbf",
+    "variation_id": null,
+    "name": "krupuk mentah 5500",
+    "barcode": "KRUPUK 5.500",
+    "unit": "pcs",
+    "price": 5500,
+    "quantity": 1,
+    "subtotal": 5500
+   },
+   {
+    "product_id": "7c3bcfd1-de24-4150-b25c-09dce6719724",
+    "variation_id": null,
+    "name": "fermipan kemasan 11gr",
+    "barcode": "3516663740001",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "170a330f-e6e3-41a8-af7f-43a9e57dd615",
+    "variation_id": null,
+    "name": "tepung beras rosebrand 500gr",
+    "barcode": "8993093115008",
+    "unit": "pcs",
+    "price": 8500,
+    "quantity": 1,
+    "subtotal": 8500
+   },
+   {
+    "product_id": "afcbcd1e-677e-492b-a8e8-eb868fbcde0f",
+    "variation_id": null,
+    "name": "minyakkita refill 1Ltr",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 18500,
+    "quantity": 1,
+    "subtotal": 18500
+   },
+   {
+    "product_id": "f3089a28-f72f-4118-9f81-c7bf1ae56df6",
+    "variation_id": null,
+    "name": "sabun sayang/boom",
+    "barcode": "8997204306507",
+    "unit": "pcs",
+    "price": 3333,
+    "quantity": 3,
+    "subtotal": 9999
+   }
+  ],
+  "total": 103099,
+  "cash_paid": 200000,
+  "change": 96901,
+  "created_at": "2026-08-11T11:48:23.801Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944d"
+  },
+  "id": "090f4811-aca6-445c-8870-f88231902f71",
+  "items": [
+   {
+    "product_id": "366769fe-e6d8-4312-a802-88f7f544d510",
+    "variation_id": null,
+    "name": "swetty S38/M34/L28",
+    "barcode": "8992959953174",
+    "unit": "pcs",
+    "price": 42000,
+    "quantity": 1,
+    "subtotal": 42000
+   },
+   {
+    "product_id": "59166773-e366-4849-a5b1-94278ca53f5f",
+    "variation_id": null,
+    "name": "Cussons baby sabun 60g",
+    "barcode": "8998103000534",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 1,
+    "subtotal": 4000
+   },
+   {
+    "product_id": "f67315df-716b-4afb-ab00-0436d2414a2c",
+    "variation_id": null,
+    "name": "jajan 1000an",
+    "barcode": "749921011312",
+    "unit": "pcs",
+    "price": 1000,
+    "quantity": 1,
+    "subtotal": 1000
+   },
+   {
+    "product_id": "8b720e8b-5c08-4455-b6ef-a98c4137fd73",
+    "variation_id": null,
+    "name": "cottonbud dewasa",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 1000,
+    "quantity": 1,
+    "subtotal": 1000
+   }
+  ],
+  "total": 48000,
+  "cash_paid": 48000,
+  "change": 0,
+  "created_at": "2026-08-11T11:39:45.265Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944e"
+  },
+  "id": "de349195-33da-40cf-960d-4a031e200560",
+  "items": [
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 3,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "a601ee9d-4645-4d26-b34d-ad6619bb095c",
+    "variation_id": null,
+    "name": "mie sedaap",
+    "barcode": "8998866203579",
+    "unit": "pcs",
+    "price": 2900,
+    "quantity": 5,
+    "subtotal": 14500
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "kriuk",
+    "barcode": "",
+    "unit": "item",
+    "price": 1800,
+    "quantity": 10,
+    "subtotal": 18000
+   },
+   {
+    "product_id": "824368a4-9eb8-4d60-a781-cfe8bf276781",
+    "variation_id": null,
+    "name": "kopi satu satu renteng",
+    "barcode": "8992841610659",
+    "unit": "pcs",
+    "price": 850,
+    "quantity": 10,
+    "subtotal": 8500
+   },
+   {
+    "product_id": "865b2d94-9b7f-46f5-a578-0b1e4eb28341",
+    "variation_id": null,
+    "name": "kapal api mini renteng(10)",
+    "barcode": "8991002105584",
+    "unit": "pcs",
+    "price": 950,
+    "quantity": 10,
+    "subtotal": 9500
+   },
+   {
+    "product_id": "29e72f63-d11d-4007-8d6b-641f96584190",
+    "variation_id": null,
+    "name": "Milo renteng",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 19000,
+    "quantity": 1,
+    "subtotal": 19000
+   },
+   {
+    "product_id": "cba7022e-11d8-48a3-b298-a6e02774d31b",
+    "variation_id": null,
+    "name": "teh minang kecil",
+    "barcode": "9829012141683",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 2,
+    "subtotal": 4000
+   },
+   {
+    "product_id": "0d9f30f9-fdf7-4d3f-9bc6-4484c2f9a552",
+    "variation_id": null,
+    "name": "sisri/jasjus/teajus/topice 1rtg",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 3300,
+    "quantity": 5,
+    "subtotal": 16500
+   },
+   {
+    "product_id": "60005b66-fb90-43b1-b6c7-4ce2fd229bbf",
+    "variation_id": null,
+    "name": "krupuk mentah 5500",
+    "barcode": "KRUPUK 5.500",
+    "unit": "pcs",
+    "price": 5500,
+    "quantity": 2,
+    "subtotal": 11000
+   },
+   {
+    "product_id": "1cf004ce-174d-4b87-8496-4442c38e788f",
+    "variation_id": null,
+    "name": "tajimas king",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 8200,
+    "quantity": 5,
+    "subtotal": 41000
+   },
+   {
+    "product_id": "5ef75c35-6038-480e-b5ff-e2e3a36b29dc",
+    "variation_id": null,
+    "name": "grendel biru",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 15500,
+    "quantity": 1,
+    "subtotal": 15500
+   }
+  ],
+  "total": 163500,
+  "cash_paid": 164000,
+  "change": 500,
+  "created_at": "2026-08-11T11:32:15.326Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb944f"
+  },
+  "id": "f639289d-b3e0-4a3f-96ff-5bc9377c7ceb",
+  "items": [
+   {
+    "product_id": "05d005eb-0c18-4857-9768-de1dbe8ff225",
+    "variation_id": null,
+    "name": "paseo smart 540 ply",
+    "barcode": "8993053121407",
+    "unit": "pcs",
+    "price": 10500,
+    "quantity": 1,
+    "subtotal": 10500
+   },
+   {
+    "product_id": "d7fe72cf-d55e-452d-ba68-5e59c1382bb7",
+    "variation_id": null,
+    "name": "gumul 5kg",
+    "barcode": "8993883820174",
+    "unit": "pcs",
+    "price": 70000,
+    "quantity": 1,
+    "subtotal": 70000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 4,
+    "subtotal": 8000
+   },
+   {
+    "product_id": "f67315df-716b-4afb-ab00-0436d2414a2c",
+    "variation_id": null,
+    "name": "jajan 1000an",
+    "barcode": "749921011312",
+    "unit": "pcs",
+    "price": 1000,
+    "quantity": 5,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "0d9f30f9-fdf7-4d3f-9bc6-4484c2f9a552",
+    "variation_id": null,
+    "name": "sisri/jasjus/teajus/topice 1rtg",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 3500,
+    "quantity": 1,
+    "subtotal": 3500
+   },
+   {
+    "product_id": "37b75ea1-d026-4a4c-90dd-264b448b26f0",
+    "variation_id": null,
+    "name": "dettol/Lifebuoy cair 5000",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 4500,
+    "quantity": 1,
+    "subtotal": 4500
+   },
+   {
+    "product_id": "31f1312c-a142-4025-91ac-cd543c902ba1",
+    "variation_id": null,
+    "name": "pepsodent siwak/herbal 65gr",
+    "barcode": "8999999600730",
+    "unit": "pcs",
+    "price": 6000,
+    "quantity": 1,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "88b4af7b-bf1b-48ab-a770-a6917b5b808b",
+    "variation_id": null,
+    "name": "es 2500an",
+    "barcode": "es 2.500",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 1,
+    "subtotal": 2500
+   }
+  ],
+  "total": 110000,
+  "cash_paid": 200000,
+  "change": 90000,
+  "created_at": "2026-08-11T11:22:57.450Z",
+  "updated_at": "2026-08-11T11:23:37.872Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9450"
+  },
+  "id": "9b551885-d129-41dd-bc46-bd7aef32963c",
+  "items": [
+   {
+    "product_id": "25908c58-aaa1-46a7-a870-b6ddaacd534a",
+    "variation_id": null,
+    "name": "head and souders (12)",
+    "barcode": "4902430566889",
+    "unit": "pcs",
+    "price": 10000,
+    "quantity": 1,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "b1169518-9b62-4032-8024-8be41bec2a58",
+    "variation_id": null,
+    "name": "downy/royal/softener RTG 12",
+    "barcode": "8998866808705",
+    "unit": "pcs",
+    "price": 416,
+    "quantity": 12,
+    "subtotal": 4992
+   },
+   {
+    "product_id": "6a05e3cb-2cc6-4976-b748-df7982e7203b",
+    "variation_id": null,
+    "name": "pepsodent 75gr",
+    "barcode": "8999999706081",
+    "unit": "pcs",
+    "price": 4800,
+    "quantity": 1,
+    "subtotal": 4800
+   },
+   {
+    "product_id": "83cf7219-d94e-42a2-b9d3-58d8bf9f927e",
+    "variation_id": null,
+    "name": "sunlight colek",
+    "barcode": "8999999607159",
+    "unit": "pcs",
+    "price": 1900,
+    "quantity": 3,
+    "subtotal": 5700
+   },
+   {
+    "product_id": "10fe7110-da1f-4a00-8cea-71a444bf70e0",
+    "variation_id": null,
+    "name": "mie sedaap",
+    "barcode": "8998866200318",
+    "unit": "pcs",
+    "price": 2900,
+    "quantity": 5,
+    "subtotal": 14500
+   },
+   {
+    "product_id": "afd80b38-f321-4db4-876b-bcac80c4db9d",
+    "variation_id": null,
+    "name": "lampu LED 18watt",
+    "barcode": "8990085005132",
+    "unit": "pcs",
+    "price": 14500,
+    "quantity": 1,
+    "subtotal": 14500
+   },
+   {
+    "product_id": "dcfdbd24-af01-40d1-bc0a-f4d8573a5bc4",
+    "variation_id": null,
+    "name": "gula pasir 1/2kg",
+    "barcode": "8998866200103",
+    "unit": "pcs",
+    "price": 8250,
+    "quantity": 2,
+    "subtotal": 16500
+   },
+   {
+    "product_id": "2f1a69a8-2ed7-4a1c-b677-37cbc154468a",
+    "variation_id": null,
+    "name": "citrun curah 50gr",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 1500,
+    "quantity": 2,
+    "subtotal": 3000
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "roko royal",
+    "barcode": "",
+    "unit": "item",
+    "price": 16000,
+    "quantity": 2,
+    "subtotal": 32000
+   }
+  ],
+  "total": 105992,
+  "cash_paid": 120000,
+  "change": 14008,
+  "created_at": "2026-08-11T11:14:29.012Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9451"
+  },
+  "id": "b11aa0eb-e671-4fb3-87dc-6dcc3d4af7e8",
+  "items": [
+   {
+    "product_id": "be9a4b54-59a7-4f67-87b0-1fa674a24c56",
+    "variation_id": null,
+    "name": "top kopi susu isi12",
+    "barcode": "8998866200745",
+    "unit": "pcs",
+    "price": 16000,
+    "quantity": 1,
+    "subtotal": 16000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 5,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "a5d7e88e-299f-4a0b-abaf-3b7b2514adb0",
+    "variation_id": null,
+    "name": "larutan badak/kaki3 rasa",
+    "barcode": "8999988888866",
+    "unit": "pcs",
+    "price": 6500,
+    "quantity": 1,
+    "subtotal": 6500
+   },
+   {
+    "product_id": "5958a6de-bf90-40f5-9d3d-4a3cf85fe218",
+    "variation_id": null,
+    "name": "Indomilk/cimory Tayo/kun",
+    "barcode": "8993200666348",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 1,
+    "subtotal": 3000
+   }
+  ],
+  "total": 35500,
+  "cash_paid": 35500,
+  "change": 0,
+  "created_at": "2026-08-11T11:05:31.667Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9452"
+  },
+  "id": "b185f32d-4dff-4e7b-8cf5-f9519d18dc24",
+  "items": [
+   {
+    "product_id": "8fc15ddf-dae8-44e1-81bf-5b557c2d147f",
+    "variation_id": null,
+    "name": "beras B",
+    "barcode": "8993274537698",
+    "unit": "pcs",
+    "price": 14000,
+    "quantity": 3,
+    "subtotal": 42000
+   },
+   {
+    "product_id": "dcfdbd24-af01-40d1-bc0a-f4d8573a5bc4",
+    "variation_id": null,
+    "name": "gula pasir 1/2kg",
+    "barcode": "8998866200103",
+    "unit": "pcs",
+    "price": 8250,
+    "quantity": 2,
+    "subtotal": 16500
+   },
+   {
+    "product_id": "60005b66-fb90-43b1-b6c7-4ce2fd229bbf",
+    "variation_id": null,
+    "name": "krupuk mentah 5500",
+    "barcode": "KRUPUK 5.500",
+    "unit": "pcs",
+    "price": 5500,
+    "quantity": 1,
+    "subtotal": 5500
+   },
+   {
+    "product_id": "27329e50-1af2-4f2a-a10c-1758c9403084",
+    "variation_id": null,
+    "name": "nuvo baruu",
+    "barcode": "8998866633819",
+    "unit": "pcs",
+    "price": 2370,
+    "quantity": 4,
+    "subtotal": 9480
+   },
+   {
+    "product_id": "e782b51e-930a-4be7-9d12-f7f146bc64f6",
+    "variation_id": null,
+    "name": "soklin/daia/Rinso/ 5rb",
+    "barcode": "8998866612180",
+    "unit": "pcs",
+    "price": 4700,
+    "quantity": 1,
+    "subtotal": 4700
+   }
+  ],
+  "total": 78180,
+  "cash_paid": 100000,
+  "change": 21820,
+  "created_at": "2026-08-11T10:41:38.018Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9453"
+  },
+  "id": "79269bd4-5702-4f73-8617-c83d46221eae",
+  "items": [
+   {
+    "product_id": "cca6371e-bf9c-42e7-96c4-22b9c6ba4047",
+    "variation_id": null,
+    "name": "beras E",
+    "barcode": "",
+    "unit": "pcs",
+    "price": 14300,
+    "quantity": 3,
+    "subtotal": 42900
+   },
+   {
+    "product_id": "dcfdbd24-af01-40d1-bc0a-f4d8573a5bc4",
+    "variation_id": null,
+    "name": "gula pasir 1/2kg",
+    "barcode": "8998866200103",
+    "unit": "pcs",
+    "price": 8250,
+    "quantity": 4,
+    "subtotal": 33000
+   },
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 2,
+    "subtotal": 4000
+   },
+   {
+    "product_id": "0928a673-3894-44de-ab5a-b6739a369cfd",
+    "variation_id": null,
+    "name": "es 2000an",
+    "barcode": "ES 2.000",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   }
+  ],
+  "total": 81900,
+  "cash_paid": 100000,
+  "change": 18100,
+  "created_at": "2026-08-11T10:38:55.961Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9454"
+  },
+  "id": "fbd4eabd-0b8d-4c63-a3b5-662523fc60a2",
+  "items": [
+   {
+    "product_id": "7ad7358b-cd70-406b-a975-0eb40b762af1",
+    "variation_id": null,
+    "name": "charm coolin 420mm(6pads)",
+    "barcode": "8993189380006",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 15000,
+  "change": 0,
+  "created_at": "2026-08-11T10:32:04.900Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9455"
+  },
+  "id": "dfb15c6f-1445-44b7-ae7a-61949f042c22",
+  "items": [
+   {
+    "product_id": "475da518-f351-4ab0-ba12-9bb9e0723b9a",
+    "variation_id": null,
+    "name": "beras A",
+    "barcode": "3516663670001",
+    "unit": "pcs",
+    "price": 13800,
+    "quantity": 4,
+    "subtotal": 55200
+   },
+   {
+    "product_id": "85b5126b-9642-40f0-800b-1ee09caa0bc5",
+    "variation_id": null,
+    "name": "Masako/royco isi12",
+    "barcode": "8992770033130",
+    "unit": "pcs",
+    "price": 500,
+    "quantity": 1,
+    "subtotal": 500
+   },
+   {
+    "product_id": "c3bce42c-7363-44a7-97c3-b1a9c11e88d5",
+    "variation_id": null,
+    "name": "Ajinomoto micin3000",
+    "barcode": "8992770011060",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 1,
+    "subtotal": 3000
+   },
+   {
+    "product_id": "52e156bc-a65f-43e6-9327-2600b2f8bf54",
+    "variation_id": null,
+    "name": "Ajinomoto5000",
+    "barcode": "8992770011169",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "f52df019-1e2b-4858-86f7-8fd9ff3943c6",
+    "variation_id": null,
+    "name": "sambal uleg isi 10",
+    "barcode": "8991818080112",
+    "unit": "pcs",
+    "price": 1500,
+    "quantity": 2,
+    "subtotal": 3000
+   },
+   {
+    "product_id": "d9095d2f-e189-4d52-bc22-4226c71e728f",
+    "variation_id": null,
+    "name": "Indofood saos tomat",
+    "barcode": "089686401721",
+    "unit": "pcs",
+    "price": 6000,
+    "quantity": 1,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "49f1945a-1418-4536-8685-f2002d5e8e94",
+    "variation_id": null,
+    "name": "kecap sawi botol 275ml",
+    "barcode": "8993468211717",
+    "unit": "pcs",
+    "price": 11000,
+    "quantity": 1,
+    "subtotal": 11000
+   },
+   {
+    "product_id": "6a54a2c6-e5e0-428f-a5ad-3298a8149c69",
+    "variation_id": null,
+    "name": "kecap Bango botol 189g",
+    "barcode": "8990121011073",
+    "unit": "pcs",
+    "price": 10000,
+    "quantity": 1,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "720cbadd-bc94-451b-885e-9e7fd82996e1",
+    "variation_id": null,
+    "name": "kecap asin",
+    "barcode": "8993468211823",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 1,
+    "subtotal": 4000
+   },
+   {
+    "product_id": "760075cc-cbcd-43b2-87ba-61b931c5222a",
+    "variation_id": null,
+    "name": "kecap sawi botol 140ml",
+    "barcode": "8993468211397",
+    "unit": "pcs",
+    "price": 6500,
+    "quantity": 1,
+    "subtotal": 6500
+   },
+   {
+    "product_id": "5d1317e4-5be5-4e81-9e8d-568af46438f8",
+    "variation_id": null,
+    "name": "delmonte extra hot",
+    "barcode": "8998888710598",
+    "unit": "pcs",
+    "price": 7000,
+    "quantity": 1,
+    "subtotal": 7000
+   },
+   {
+    "product_id": "53d8744a-d93d-42e3-9fb5-dfdcc0b1d44b",
+    "variation_id": null,
+    "name": "delmonte tomat 200g",
+    "barcode": "8998888710192",
+    "unit": "pcs",
+    "price": 6500,
+    "quantity": 1,
+    "subtotal": 6500
+   },
+   {
+    "product_id": "88e0cd37-03b4-4530-9606-1e4e7c24ddc9",
+    "variation_id": null,
+    "name": "Indofood kecap manis/sedaap",
+    "barcode": "8998866202275",
+    "unit": "pcs",
+    "price": 1500,
+    "quantity": 3,
+    "subtotal": 4500
+   },
+   {
+    "product_id": "41014f29-eb6a-4e8c-b767-8c9336a4e43e",
+    "variation_id": null,
+    "name": "kecap sawi 3000",
+    "barcode": "8993468211700",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 2,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "91f45bea-ef8e-49eb-beb4-fe2c5787446f",
+    "variation_id": null,
+    "name": "kecap sawi refill5000",
+    "barcode": "8993468212172",
+    "unit": "pcs",
+    "price": 4500,
+    "quantity": 1,
+    "subtotal": 4500
+   }
+  ],
+  "total": 132700,
+  "cash_paid": 136000,
+  "change": 3300,
+  "created_at": "2026-08-11T10:14:11.442Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9456"
+  },
+  "id": "13c5f211-7965-4d58-8ab6-30b18c81dee3",
+  "items": [
+   {
+    "product_id": "61ccecb4-c415-42fc-8275-270f3dca4b06",
+    "variation_id": null,
+    "name": "soklin cair 500(12)",
+    "barcode": "8998866808880",
+    "unit": "pcs",
+    "price": 450,
+    "quantity": 12,
+    "subtotal": 5400
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "jajan",
+    "barcode": "",
+    "unit": "item",
+    "price": 6500,
+    "quantity": 1,
+    "subtotal": 6500
+   }
+  ],
+  "total": 11900,
+  "cash_paid": 20000,
+  "change": 8100,
+  "created_at": "2026-08-11T10:09:55.608Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9457"
+  },
+  "id": "b68c9e49-fe86-4393-a823-be9e3b9d862a",
+  "items": [
+   {
+    "product_id": "214c796b-bf93-475a-beb9-217645c192e8",
+    "variation_id": null,
+    "name": "es 3000an",
+    "barcode": "ES 3.000",
+    "unit": "pcs",
+    "price": 3000,
+    "quantity": 1,
+    "subtotal": 3000
+   },
+   {
+    "product_id": "88b4af7b-bf1b-48ab-a770-a6917b5b808b",
+    "variation_id": null,
+    "name": "es 2500an",
+    "barcode": "es 2.500",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 1,
+    "subtotal": 2500
+   }
+  ],
+  "total": 5500,
+  "cash_paid": 8000,
+  "change": 2500,
+  "created_at": "2026-08-11T10:07:01.140Z"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9458"
+  },
+  "id": "91c1e2b0-65a1-46fd-8b6b-d009c35ea839",
+  "items": [
+   {
+    "product_id": "fd3dea62-6eca-43ac-b9ee-dae409e125d1",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-d6f8f46d",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 4,
+    "subtotal": 20000
+   }
+  ],
+  "total": 20000,
+  "cash_paid": 25000,
+  "change": 5000,
+  "created_at": "2026-08-10T23:12:44.621526+00:00",
+  "updated_at": "2026-08-10T23:12:44.662041+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9459"
+  },
+  "id": "081554e9-587d-41bc-9cec-30a6bf42576e",
+  "items": [
+   {
+    "product_id": "45893f0f-1424-4abe-8b2f-baa716919460",
+    "variation_id": null,
+    "name": "TEST_Beras_9f93b6a996",
+    "barcode": "TEST9f93b6a996",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T23:12:44.607186+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945a"
+  },
+  "id": "2a7ce8fa-6977-43e9-8e75-9cdaea10ef24",
+  "items": [
+   {
+    "product_id": "fd3dea62-6eca-43ac-b9ee-dae409e125d1",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-d6f8f46d",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 10000,
+  "change": 0,
+  "created_at": "2026-08-10T23:12:44.516386+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945b"
+  },
+  "id": "ee6e1617-d8a0-40fc-850a-1a8a51105a06",
+  "items": [
+   {
+    "product_id": "fd3dea62-6eca-43ac-b9ee-dae409e125d1",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-d6f8f46d",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T23:12:44.330463+00:00",
+  "updated_at": "2026-08-10T23:12:44.454851+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945c"
+  },
+  "id": "e2b84bc2-c85f-4ce5-b5dc-11372a915c9c",
+  "items": [
+   {
+    "product_id": "fd3dea62-6eca-43ac-b9ee-dae409e125d1",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-d6f8f46d",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 2,
+    "subtotal": 8000
+   }
+  ],
+  "total": 8000,
+  "cash_paid": 10000,
+  "change": 2000,
+  "created_at": "2026-08-10T23:12:44.206436+00:00",
+  "updated_at": "2026-08-10T23:12:44.269388+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945d"
+  },
+  "id": "dd86c3ef-d171-4cfa-9dd7-aedd2b412bef",
+  "items": [
+   {
+    "product_id": "7cd2829f-b4ec-4448-99dd-727f9c3fcacc",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-a8afa0b8",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T23:12:44.201721+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945e"
+  },
+  "id": "a9a7307c-39c6-4020-a08a-3f01ee33333b",
+  "items": [
+   {
+    "product_id": "fd3dea62-6eca-43ac-b9ee-dae409e125d1",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-d6f8f46d",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T23:12:44.139437+00:00",
+  "updated_at": "2026-08-10T23:12:44.164705+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb945f"
+  },
+  "id": "1028b064-afc0-4b46-8bcd-beaf7a1ed666",
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000,
+    "quantity": 1,
+    "subtotal": 6000
+   },
+   {
+    "product_id": "efe4347a-6591-41be-8a3a-086ba2a73f6e",
+    "variation_id": null,
+    "name": "1pack Gillette goal",
+    "barcode": "8992765101004",
+    "unit": "pcs",
+    "price": 16500,
+    "quantity": 1,
+    "subtotal": 16500
+   }
+  ],
+  "total": 22500,
+  "cash_paid": 50000,
+  "change": 27500,
+  "created_at": "2026-08-10T22:54:44.715400+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9460"
+  },
+  "id": "95c59785-814f-4602-9826-f055ec9660bd",
+  "items": [
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "variation_id": null,
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 916,
+    "quantity": 1,
+    "subtotal": 916
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000,
+    "quantity": 1,
+    "subtotal": 11000
+   },
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 1,
+    "subtotal": 2500
+   },
+   {
+    "product_id": "69e99335-6d0f-4ab1-aa2c-d2143d5d6b50",
+    "variation_id": null,
+    "name": "mizone",
+    "barcode": "8992752112013",
+    "unit": "pcs",
+    "price": 4500,
+    "quantity": 1,
+    "subtotal": 4500
+   }
+  ],
+  "total": 18916,
+  "cash_paid": 21000,
+  "change": 2084,
+  "created_at": "2026-08-10T22:16:10.131394+00:00",
+  "updated_at": "2026-08-10T22:37:09.052146+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9461"
+  },
+  "id": "711e2843-d340-4001-8c74-d874f8a74ee9",
+  "items": [
+   {
+    "product_id": "b025639a-256c-415c-ab33-2a1b30fa5b72",
+    "variation_id": null,
+    "name": "TEST_Rcpt_399043",
+    "barcode": "TR399043",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 20000,
+  "change": 10000,
+  "created_at": "2026-08-10T21:57:23.998494+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9462"
+  },
+  "id": "3386ed51-b4bb-4dfb-a39b-a35578b35953",
+  "items": [
+   {
+    "product_id": "a3688c11-c390-401d-8c10-3df980c5f716",
+    "variation_id": null,
+    "name": "Beras 5kg",
+    "barcode": "899000333",
+    "unit": "sak",
+    "price": 65000,
+    "quantity": 1,
+    "subtotal": 65000
+   }
+  ],
+  "total": 65000,
+  "cash_paid": 100000,
+  "change": 35000,
+  "created_at": "2026-08-10T21:56:46.230604+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9463"
+  },
+  "id": "8782b753-65c2-42f1-9beb-5e90d6df412a",
+  "items": [
+   {
+    "product_id": "a882b50c-8d9f-4fc2-89fc-10799ce8ed3c",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-362cb002",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 4,
+    "subtotal": 20000
+   }
+  ],
+  "total": 20000,
+  "cash_paid": 25000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:56:14.993129+00:00",
+  "updated_at": "2026-08-10T21:56:15.090611+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9464"
+  },
+  "id": "4ec7b5ee-ca2c-42a5-aaf6-a52fceadd7c6",
+  "items": [
+   {
+    "product_id": "a882b50c-8d9f-4fc2-89fc-10799ce8ed3c",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-362cb002",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 10000,
+  "change": 0,
+  "created_at": "2026-08-10T21:56:14.908031+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9465"
+  },
+  "id": "005bb9c6-dbd2-496f-9b68-9eb81f846ada",
+  "items": [
+   {
+    "product_id": "3cf0c1e8-7e7b-4735-ac01-d64105336890",
+    "variation_id": null,
+    "name": "TEST_Beras_da8cb43990",
+    "barcode": "TESTda8cb43990",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:56:14.799375+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9466"
+  },
+  "id": "b7d8c6f0-9ee0-41c3-95be-cb823649b5a9",
+  "items": [
+   {
+    "product_id": "a882b50c-8d9f-4fc2-89fc-10799ce8ed3c",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-362cb002",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T21:56:14.692827+00:00",
+  "updated_at": "2026-08-10T21:56:14.837217+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9467"
+  },
+  "id": "81ece026-e1a2-4911-9f24-1f231389c1ce",
+  "items": [
+   {
+    "product_id": "a882b50c-8d9f-4fc2-89fc-10799ce8ed3c",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-362cb002",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 2,
+    "subtotal": 8000
+   }
+  ],
+  "total": 8000,
+  "cash_paid": 10000,
+  "change": 2000,
+  "created_at": "2026-08-10T21:56:14.551271+00:00",
+  "updated_at": "2026-08-10T21:56:14.621997+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9468"
+  },
+  "id": "11d17d24-37e1-4b4f-a5c4-a229dc2536d2",
+  "items": [
+   {
+    "product_id": "a882b50c-8d9f-4fc2-89fc-10799ce8ed3c",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-362cb002",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:56:14.343699+00:00",
+  "updated_at": "2026-08-10T21:56:14.413005+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9469"
+  },
+  "id": "5da5fdcc-6224-4678-9b1f-8b0295f5a6a3",
+  "items": [
+   {
+    "product_id": "9b3f42fb-fc3e-4d99-9c6f-8b687364a802",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-cb32da48",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T21:56:14.341204+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946a"
+  },
+  "id": "4be5d4bb-1a21-40ec-9c7f-7703fd5eb2a7",
+  "items": [
+   {
+    "product_id": "c5e37347-c06d-464e-98f8-287212fd7ea7",
+    "variation_id": null,
+    "name": "chitato",
+    "barcode": "089686598018",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   },
+   {
+    "product_id": "f78a2532-b1a0-458f-a4c5-f1c17c1dec98",
+    "variation_id": "38ead8ae-d43a-4e55-856f-f2621e37a57a",
+    "name": "hs - kretek",
+    "barcode": "8994457130279",
+    "unit": "pcs",
+    "price": 9500,
+    "quantity": 1,
+    "subtotal": 9500
+   },
+   {
+    "product_id": "f78a2532-b1a0-458f-a4c5-f1c17c1dec98",
+    "variation_id": "52cbf9c3-8ae0-497f-bcbb-07adf15d8568",
+    "name": "hs - filter",
+    "barcode": "A5869",
+    "unit": "pcs",
+    "price": 7000,
+    "quantity": 1,
+    "subtotal": 7000
+   }
+  ],
+  "total": 18500,
+  "cash_paid": 50000,
+  "change": 31500,
+  "created_at": "2026-08-10T21:32:37.281015+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946b"
+  },
+  "id": "dadd1ad2-88a8-4fe2-96e0-e35060d9e937",
+  "items": [
+   {
+    "product_id": "ea634435-f878-45e0-a680-9b278be0ebd2",
+    "variation_id": null,
+    "name": "TEST_Tx_0152c298",
+    "barcode": "TEST-TX-0152c298",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:27:59.097049+00:00",
+  "updated_at": "2026-08-10T21:27:59.267394+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946c"
+  },
+  "id": "b289fc78-2ad5-428d-8fcb-ff13dc220a5a",
+  "items": [
+   {
+    "product_id": "f4ab48b6-a3ab-4272-90a8-4bebbe82a7de",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-ae8c354b",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T21:27:58.416870+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946d"
+  },
+  "id": "fa7047ad-c49a-401b-9392-a214342c9efc",
+  "items": [
+   {
+    "product_id": "44c843c2-b8c0-4f19-a900-dd70ef595035",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-5264f36f",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 4,
+    "subtotal": 20000
+   }
+  ],
+  "total": 20000,
+  "cash_paid": 25000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:27:57.544661+00:00",
+  "updated_at": "2026-08-10T21:27:57.609477+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946e"
+  },
+  "id": "81c8cbf2-c2dc-4fb1-85ad-f75117ed8201",
+  "items": [
+   {
+    "product_id": "44c843c2-b8c0-4f19-a900-dd70ef595035",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-5264f36f",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 10000,
+  "change": 0,
+  "created_at": "2026-08-10T21:27:57.364640+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb946f"
+  },
+  "id": "ca2d5903-84ae-40be-a40e-cfa8f57f35cb",
+  "items": [
+   {
+    "product_id": "2254f9c3-f899-4eb6-b10b-96e768fa1fb8",
+    "variation_id": "93ec8311-f205-4a5c-a253-fd300cc02a31",
+    "name": "TEST_Snack_b7a8d901 - Small",
+    "barcode": "TESTV1b7a8d901",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 2,
+    "subtotal": 4000
+   }
+  ],
+  "total": 4000,
+  "cash_paid": 5000,
+  "change": 1000,
+  "created_at": "2026-08-10T21:27:57.232475+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9470"
+  },
+  "id": "ec67af8c-03c7-439a-8d58-44a5462dd9a1",
+  "items": [
+   {
+    "product_id": "44c843c2-b8c0-4f19-a900-dd70ef595035",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-5264f36f",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T21:27:57.195885+00:00",
+  "updated_at": "2026-08-10T21:27:57.296627+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9471"
+  },
+  "id": "504a0dfe-268f-4dfb-b7be-76b91b00fd0e",
+  "items": [
+   {
+    "product_id": "44c843c2-b8c0-4f19-a900-dd70ef595035",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-5264f36f",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 2,
+    "subtotal": 8000
+   }
+  ],
+  "total": 8000,
+  "cash_paid": 10000,
+  "change": 2000,
+  "created_at": "2026-08-10T21:27:57.061613+00:00",
+  "updated_at": "2026-08-10T21:27:57.128792+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9472"
+  },
+  "id": "3fbf53dd-79d3-446a-98ae-bf96cfe6dfa8",
+  "items": [
+   {
+    "product_id": "44c843c2-b8c0-4f19-a900-dd70ef595035",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-5264f36f",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:27:56.918801+00:00",
+  "updated_at": "2026-08-10T21:27:56.952281+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9473"
+  },
+  "id": "7f36b9da-7af4-4be7-84c9-96a4dd605e15",
+  "items": [
+   {
+    "product_id": "40c5d98a-b766-4da3-b6d3-0c5a2ff1bbaf",
+    "variation_id": "0a036019-c43e-4a76-a58b-0c96a83f8739",
+    "name": "TEST_Mie_f3c20f53 - Ayam Bawang",
+    "barcode": "MIE-A-f3c20f53",
+    "unit": "pcs",
+    "price": 2800,
+    "quantity": 5,
+    "subtotal": 14000
+   }
+  ],
+  "total": 14000,
+  "cash_paid": 20000,
+  "change": 6000,
+  "created_at": "2026-08-10T21:27:56.182559+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9474"
+  },
+  "id": "ee4588ef-03be-4083-932e-ceac191d685e",
+  "items": [
+   {
+    "product_id": "bb2c1737-155b-4eba-bf93-072d0936e7c6",
+    "variation_id": null,
+    "name": "TEST_Tx_821a2b13",
+    "barcode": "TEST-TX-821a2b13",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T21:27:46.304129+00:00",
+  "updated_at": "2026-08-10T21:27:46.495928+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9475"
+  },
+  "id": "8e912738-b50b-4589-9270-800281484865",
+  "items": [
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "Ongkos Antar",
+    "barcode": "",
+    "unit": "item",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "a3688c11-c390-401d-8c10-3df980c5f716",
+    "variation_id": null,
+    "name": "Beras 5kg",
+    "barcode": "899000333",
+    "unit": "sak",
+    "price": 65000,
+    "quantity": 1,
+    "subtotal": 65000
+   }
+  ],
+  "total": 75000,
+  "cash_paid": 100000,
+  "change": 25000,
+  "created_at": "2026-08-10T21:16:01.016204+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9476"
+  },
+  "id": "5fed236e-5595-40f7-9dd4-a38cc53d1884",
+  "items": [
+   {
+    "product_id": "98fb3e84-6d99-4b02-98c0-ca9738651f83",
+    "variation_id": null,
+    "name": "TEST_Manual_Beras_ca091c5979",
+    "barcode": "TESTMANca091c5979",
+    "unit": "pcs",
+    "price": 12000,
+    "quantity": 1,
+    "subtotal": 12000
+   }
+  ],
+  "total": 12000,
+  "cash_paid": 15000,
+  "change": 3000,
+  "created_at": "2026-08-10T21:15:17.184709+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9477"
+  },
+  "id": "f48dc0a2-8078-4a2b-a179-468c902f2812",
+  "items": [
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "TEST_ManualOnly_454ea0a4",
+    "barcode": "",
+    "unit": "item",
+    "price": 7500,
+    "quantity": 1,
+    "subtotal": 7500
+   }
+  ],
+  "total": 7500,
+  "cash_paid": 10000,
+  "change": 2500,
+  "created_at": "2026-08-10T21:15:16.798121+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9478"
+  },
+  "id": "0fecc93c-1bfa-4bfb-ae7a-dc6143327b54",
+  "items": [
+   {
+    "product_id": "8120b0ac-9088-4497-8d19-20021db654ce",
+    "variation_id": null,
+    "name": "TEST_Manual_Beras_7fdc547b30",
+    "barcode": "TESTMAN7fdc547b30",
+    "unit": "pcs",
+    "price": 12000,
+    "quantity": 1,
+    "subtotal": 12000
+   },
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "Ongkos Antar",
+    "barcode": "",
+    "unit": "item",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 22000,
+  "cash_paid": 25000,
+  "change": 3000,
+  "created_at": "2026-08-10T21:15:16.681245+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9479"
+  },
+  "id": "e4fa176d-175b-4ae5-9899-f756badfad20",
+  "items": [
+   {
+    "product_id": "manual",
+    "variation_id": null,
+    "name": "Ongkos Antar",
+    "barcode": "",
+    "unit": "item",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 20000,
+  "change": 10000,
+  "created_at": "2026-08-10T21:15:16.444818+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947a"
+  },
+  "id": "470fad1e-8b48-4df4-8c52-d2c8b66c985e",
+  "items": [
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "variation_id": null,
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 9000,
+    "quantity": 6,
+    "subtotal": 54000
+   }
+  ],
+  "total": 54000,
+  "cash_paid": 56000,
+  "change": 2000,
+  "created_at": "2026-08-10T21:15:15.992075+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947b"
+  },
+  "id": "e75ed6f8-0504-47de-9a98-4f77d7667ea7",
+  "items": [
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 998,
+    "quantity": 1,
+    "subtotal": 998
+   },
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "variation_id": null,
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 9000,
+    "quantity": 5,
+    "subtotal": 45000
+   }
+  ],
+  "total": 45998,
+  "cash_paid": 49000,
+  "change": 3002,
+  "created_at": "2026-08-10T21:06:23.552599+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947c"
+  },
+  "id": "bb35d801-7b62-44b7-9a12-9d8d86196ac3",
+  "items": [
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 998,
+    "quantity": 1,
+    "subtotal": 998
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 12000,
+    "quantity": 1,
+    "subtotal": 12000
+   }
+  ],
+  "total": 12998,
+  "cash_paid": 20000,
+  "change": 7002,
+  "created_at": "2026-08-10T20:45:42.145885+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947d"
+  },
+  "id": "7d5b8fcb-47ac-40d7-b174-efc0215b89ad",
+  "items": [
+   {
+    "product_id": "b92fe438-6f53-4dff-82da-ec95fcd4ec1f",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-919d1412",
+    "unit": "pcs",
+    "price": 8000,
+    "quantity": 4,
+    "subtotal": 32000
+   }
+  ],
+  "total": 32000,
+  "cash_paid": 999999,
+  "change": 967999,
+  "created_at": "2026-08-10T20:28:46.615847+00:00",
+  "updated_at": "2026-08-10T20:30:24.080372+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947e"
+  },
+  "id": "5b9a0518-903c-40e6-a2dc-158ddcb819aa",
+  "items": [
+   {
+    "product_id": "b92fe438-6f53-4dff-82da-ec95fcd4ec1f",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-919d1412",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 2,
+    "subtotal": 10000
+   }
+  ],
+  "total": 10000,
+  "cash_paid": 10000,
+  "change": 0,
+  "created_at": "2026-08-10T20:28:46.542653+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb947f"
+  },
+  "id": "7429dba6-4f7c-4d46-a313-5bff3cbadcc9",
+  "items": [
+   {
+    "product_id": "b92fe438-6f53-4dff-82da-ec95fcd4ec1f",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-919d1412",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T20:28:46.477076+00:00",
+  "updated_at": "2026-08-10T20:28:46.520912+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9480"
+  },
+  "id": "03a4a6c0-9760-4e1c-887d-dfe8806c4333",
+  "items": [
+   {
+    "product_id": "b92fe438-6f53-4dff-82da-ec95fcd4ec1f",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-919d1412",
+    "unit": "pcs",
+    "price": 4000,
+    "quantity": 2,
+    "subtotal": 8000
+   }
+  ],
+  "total": 8000,
+  "cash_paid": 10000,
+  "change": 2000,
+  "created_at": "2026-08-10T20:28:46.389341+00:00",
+  "updated_at": "2026-08-10T20:28:46.454752+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9481"
+  },
+  "id": "ea80671e-5b61-4078-9b04-865f2722dbce",
+  "items": [
+   {
+    "product_id": "b92fe438-6f53-4dff-82da-ec95fcd4ec1f",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-919d1412",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 3,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T20:28:46.235718+00:00",
+  "updated_at": "2026-08-10T20:28:46.259611+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9482"
+  },
+  "id": "5adb9569-5630-4504-ad83-f41e8c18b468",
+  "items": [
+   {
+    "product_id": "386f47c8-2e43-4f52-87a4-06b7a0c26b33",
+    "variation_id": null,
+    "name": "TEST_TXUPD_PRODUCT",
+    "barcode": "TXUPD-c6979d60",
+    "unit": "pcs",
+    "price": 5000,
+    "quantity": 1,
+    "subtotal": 5000
+   }
+  ],
+  "total": 5000,
+  "cash_paid": 5000,
+  "change": 0,
+  "created_at": "2026-08-10T20:28:46.212913+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9483"
+  },
+  "id": "9045eef5-bc3f-4aa5-bb25-e2d7b454ccb0",
+  "items": [
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000,
+    "quantity": 1,
+    "subtotal": 11000
+   }
+  ],
+  "total": 11000,
+  "cash_paid": 30000,
+  "change": 19000,
+  "created_at": "2026-08-10T17:56:17.160224+00:00",
+  "updated_at": "2026-08-10T20:27:55.022473+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9484"
+  },
+  "id": "6340afdf-860b-4c2a-9483-0212c4d4c299",
+  "items": [
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 12000,
+    "quantity": 1,
+    "subtotal": 12000
+   }
+  ],
+  "total": 12000,
+  "cash_paid": 12000,
+  "change": 0,
+  "created_at": "2026-08-10T17:55:15.605769+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9485"
+  },
+  "id": "fdc3a0be-dab5-4ec3-adca-9a41cdacff56",
+  "items": [
+   {
+    "product_id": "cc637862-5f9f-4e6b-b402-6991a522869b",
+    "variation_id": null,
+    "name": "Gula Pasir 1kg",
+    "barcode": "899000111",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T17:52:19.542279+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9486"
+  },
+  "id": "8b6843af-3868-43bf-b5c8-82976be516e2",
+  "items": [
+   {
+    "product_id": "d90a3ac0-ba3d-4935-8033-4386e7fdd6cd",
+    "variation_id": null,
+    "name": "TEST_Beras_9a4bf8855e",
+    "barcode": "TEST9a4bf8855e",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T17:31:43.285701+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9487"
+  },
+  "id": "c5a012ec-5cef-4139-ba3b-c86e4bc4517b",
+  "items": [
+   {
+    "product_id": "b2babe38-8fb7-4b61-af06-f55522b4980e",
+    "variation_id": null,
+    "name": "le mineral 330ml",
+    "barcode": "8996001600375",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 2,
+    "subtotal": 5000
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000,
+    "quantity": 1,
+    "subtotal": 11000
+   },
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 998,
+    "quantity": 2,
+    "subtotal": 1996
+   },
+   {
+    "product_id": "c5e37347-c06d-464e-98f8-287212fd7ea7",
+    "variation_id": null,
+    "name": "chitato",
+    "barcode": "089686598018",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   }
+  ],
+  "total": 19996,
+  "cash_paid": 99999,
+  "change": 80003,
+  "created_at": "2026-08-10T17:23:55.852532+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9488"
+  },
+  "id": "a631bc90-102e-47b6-81f6-2fc9b86d4bdb",
+  "items": [
+   {
+    "product_id": "44905a4f-7142-4fe0-b20a-13f440217f03",
+    "variation_id": null,
+    "name": "TEST_Beras_960061b085",
+    "barcode": "TEST960061b085",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T17:16:32.928681+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9489"
+  },
+  "id": "bebbdd45-77a5-4a4a-a5e4-f8c49fe21ef8",
+  "items": [
+   {
+    "product_id": "b36f239f-fe8d-4d10-bad6-1b518c1a77e2",
+    "variation_id": "f4e7a7c9-cf86-4caf-a99d-026f4669c59f",
+    "name": "TEST_Snack_8f7fb287 - Small",
+    "barcode": "TESTV18f7fb287",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 2,
+    "subtotal": 4000
+   }
+  ],
+  "total": 4000,
+  "cash_paid": 5000,
+  "change": 1000,
+  "created_at": "2026-08-10T16:59:07.325498+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948a"
+  },
+  "id": "0b2f58e2-4b76-4a6a-883a-0f29b25ab8eb",
+  "items": [
+   {
+    "product_id": "b2babe38-8fb7-4b61-af06-f55522b4980e",
+    "variation_id": null,
+    "name": "le mineral 330ml",
+    "barcode": "8996001600375",
+    "unit": "pcs",
+    "price": 2500,
+    "quantity": 1,
+    "subtotal": 2500
+   },
+   {
+    "product_id": "6f8610b6-6f2f-4767-933a-7c61b6a2c6bd",
+    "variation_id": null,
+    "name": "tajimas",
+    "barcode": "8996001600269",
+    "unit": "pcs",
+    "price": 998,
+    "quantity": 1,
+    "subtotal": 998
+   },
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "variation_id": null,
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 10000,
+    "quantity": 1,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "c5e37347-c06d-464e-98f8-287212fd7ea7",
+    "variation_id": null,
+    "name": "chitato",
+    "barcode": "089686598018",
+    "unit": "pcs",
+    "price": 2000,
+    "quantity": 1,
+    "subtotal": 2000
+   }
+  ],
+  "total": 15498,
+  "cash_paid": 50000,
+  "change": 34502,
+  "created_at": "2026-08-10T16:43:41.528936+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948b"
+  },
+  "id": "2f79d68f-7fd4-4cdb-a103-bec0ddee4c04",
+  "items": [
+   {
+    "product_id": "b2babe38-8fb7-4b61-af06-f55522b4980e",
+    "variation_id": null,
+    "name": "le mineral 330ml",
+    "barcode": "8996001600375",
+    "unit": "pcs",
+    "price": 2300,
+    "quantity": 5,
+    "subtotal": 11500
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "60db0f5f-f882-4123-80d9-12da979c7f33",
+    "name": "surya 12 - grendel utama 16",
+    "barcode": "8992729163598",
+    "unit": "pcs",
+    "price": 11000,
+    "quantity": 1,
+    "subtotal": 11000
+   },
+   {
+    "product_id": "b154fa3c-da41-4363-b836-e1c6d308818e",
+    "variation_id": "49db92b9-f9c7-4b4f-9f21-29173438f66d",
+    "name": "surya 12 - isi 16",
+    "barcode": "8998989110129",
+    "unit": "pcs",
+    "price": 26500,
+    "quantity": 1,
+    "subtotal": 26500
+   }
+  ],
+  "total": 49000,
+  "cash_paid": 300000,
+  "change": 251000,
+  "created_at": "2026-08-10T16:31:08.394638+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948c"
+  },
+  "id": "775e8327-1992-4d79-925f-7afcf751c1b9",
+  "items": [
+   {
+    "product_id": "04525d10-30e5-449d-9f0e-7f936f8d48eb",
+    "variation_id": "871835fb-d695-4516-b542-cc5353e2bf42",
+    "name": "Mie Instan - Ayam Bawang",
+    "barcode": "MIE-AYAM",
+    "unit": "pcs",
+    "price": 2800,
+    "quantity": 9,
+    "subtotal": 25200
+   }
+  ],
+  "total": 25200,
+  "cash_paid": 50000,
+  "change": 24800,
+  "created_at": "2026-08-10T16:23:05.698419+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948d"
+  },
+  "id": "d1234f70-9db6-4d70-b2e6-d767b23a9167",
+  "items": [
+   {
+    "product_id": "941f7acf-9d9b-47f6-87cc-73aaa15cfbaa",
+    "variation_id": "916ce0bc-d2c8-407f-b3f3-cd3f9c8cb7df",
+    "name": "TEST_Mie_6237076f - Ayam Bawang",
+    "barcode": "MIE-A-6237076f",
+    "unit": "pcs",
+    "price": 2800,
+    "quantity": 5,
+    "subtotal": 14000
+   }
+  ],
+  "total": 14000,
+  "cash_paid": 20000,
+  "change": 6000,
+  "created_at": "2026-08-10T16:21:35.468030+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948e"
+  },
+  "id": "38e4845a-8160-458f-959c-09bc964486b1",
+  "items": [
+   {
+    "product_id": "1ab8ac7a-2308-4c1b-8c31-a99cd520eb00",
+    "variation_id": null,
+    "name": "TEST_Beras_30f0dbf3d9",
+    "barcode": "TEST30f0dbf3d9",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T16:21:34.446223+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb948f"
+  },
+  "id": "441f2630-a404-4d02-9a2a-fc88abc1e27d",
+  "items": [
+   {
+    "product_id": "04525d10-30e5-449d-9f0e-7f936f8d48eb",
+    "variation_id": "x",
+    "name": "Mie Instan - Ayam Bawang",
+    "barcode": "MIE-AYAM",
+    "unit": "pcs",
+    "price": 2800,
+    "quantity": 5,
+    "subtotal": 14000
+   }
+  ],
+  "total": 14000,
+  "cash_paid": 20000,
+  "change": 6000,
+  "created_at": "2026-08-10T16:19:22.131123+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9490"
+  },
+  "id": "b1d4f7c6-d457-44a5-aa39-bd0700006333",
+  "items": [
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 10000,
+    "quantity": 2,
+    "subtotal": 20000
+   },
+   {
+    "product_id": "cc637862-5f9f-4e6b-b402-6991a522869b",
+    "name": "Gula Pasir 1kg",
+    "barcode": "899000111",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   },
+   {
+    "product_id": "da7cb9f1-9be0-47b1-b4f1-b3a6b04ec290",
+    "name": "TEST_Beras_004272f764",
+    "barcode": "TEST004272f764",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 1,
+    "subtotal": 12500
+   },
+   {
+    "product_id": "fc6cc6f3-f8de-4405-8eda-58a5d8bffee9",
+    "name": "TEST_Beras_b1ff04fae6",
+    "barcode": "TESTb1ff04fae6",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 1,
+    "subtotal": 12500
+   }
+  ],
+  "total": 60000,
+  "cash_paid": 600000,
+  "change": 540000,
+  "created_at": "2026-08-10T15:17:42.154230+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9491"
+  },
+  "id": "67b3ac7a-3d6c-4a81-885a-3685a21de475",
+  "items": [
+   {
+    "product_id": "cc637862-5f9f-4e6b-b402-6991a522869b",
+    "name": "Gula Pasir 1kg",
+    "barcode": "899000111",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T15:14:47.522277+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9492"
+  },
+  "id": "bf29d7e3-ebb2-439e-ab2e-47e08fe1c154",
+  "items": [
+   {
+    "product_id": "b32a686a-134a-4564-8301-1a429b51a8b2",
+    "name": "dove",
+    "barcode": "8999999560126",
+    "unit": "pcs",
+    "price": 10000,
+    "quantity": 1,
+    "subtotal": 10000
+   },
+   {
+    "product_id": "cc637862-5f9f-4e6b-b402-6991a522869b",
+    "name": "Gula Pasir 1kg",
+    "barcode": "899000111",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   },
+   {
+    "product_id": "da7cb9f1-9be0-47b1-b4f1-b3a6b04ec290",
+    "name": "TEST_Beras_004272f764",
+    "barcode": "TEST004272f764",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 1,
+    "subtotal": 12500
+   }
+  ],
+  "total": 37500,
+  "cash_paid": 40000,
+  "change": 2500,
+  "created_at": "2026-08-10T15:08:31.769584+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9493"
+  },
+  "id": "94576ee6-f39e-48ac-b64e-dc8b39d9c82e",
+  "items": [
+   {
+    "product_id": "cc637862-5f9f-4e6b-b402-6991a522869b",
+    "name": "Gula Pasir 1kg",
+    "barcode": "899000111",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 50000,
+  "change": 35000,
+  "created_at": "2026-08-10T15:05:25.617442+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9494"
+  },
+  "id": "b7f9e70f-57f9-458d-8222-5fabb8ac2475",
+  "items": [
+   {
+    "product_id": "548c2472-c12e-4634-8bd6-6fa232b927e4",
+    "name": "TEST_UIBeras_373784",
+    "barcode": "UI373784",
+    "unit": "pcs",
+    "price": 15000,
+    "quantity": 2,
+    "subtotal": 30000
+   }
+  ],
+  "total": 30000,
+  "cash_paid": 50000,
+  "change": 20000,
+  "created_at": "2026-08-10T14:56:31.761537+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9495"
+  },
+  "id": "452ecccc-7abf-4ed6-9617-9c723a6e9f69",
+  "items": [
+   {
+    "product_id": "da7cb9f1-9be0-47b1-b4f1-b3a6b04ec290",
+    "name": "TEST_Beras_004272f764",
+    "barcode": "TEST004272f764",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T14:55:46.608780+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9496"
+  },
+  "id": "7ffa6869-c493-4b20-a07f-05898dfde987",
+  "items": [
+   {
+    "product_id": "fc6cc6f3-f8de-4405-8eda-58a5d8bffee9",
+    "name": "TEST_Beras_b1ff04fae6",
+    "barcode": "TESTb1ff04fae6",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T14:29:17.738539+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9497"
+  },
+  "id": "ed28d1ab-765c-4eed-b662-84e6327798f0",
+  "items": [
+   {
+    "product_id": "cbd4e710-27f4-4799-a37f-af36ea315e97",
+    "name": "TEST_Beras_d4e9781a0f",
+    "barcode": "TESTd4e9781a0f",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T14:28:25.823762+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9498"
+  },
+  "id": "1eeb3489-bf13-4059-a97a-49fd141e6b20",
+  "items": [
+   {
+    "product_id": "8bcefcc1-690f-4e0b-adaa-134ade5c7e48",
+    "name": "Beras Test Kasir",
+    "barcode": "8999999912345",
+    "unit": "kg",
+    "price": 15000,
+    "quantity": 1,
+    "subtotal": 15000
+   }
+  ],
+  "total": 15000,
+  "cash_paid": 20000,
+  "change": 5000,
+  "created_at": "2026-08-10T14:25:31.028552+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb9499"
+  },
+  "id": "c2661cc0-a593-4545-9809-d593beb27d42",
+  "items": [
+   {
+    "product_id": "3c39f2d0-ff03-4ef1-987c-a2d4ab477980",
+    "name": "TEST_Beras_ddeffe09be",
+    "barcode": "TESTddeffe09be",
+    "unit": "pcs",
+    "price": 12500,
+    "quantity": 2,
+    "subtotal": 25000
+   }
+  ],
+  "total": 25000,
+  "cash_paid": 30000,
+  "change": 5000,
+  "created_at": "2026-08-10T14:21:18.926945+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7bfb16d5d1f8240ffb949a"
+  },
+  "id": "bd321e9a-afd4-4d61-8837-9690222e881c",
+  "items": [
+   {
+    "product_id": "8bcefcc1-690f-4e0b-adaa-134ade5c7e48",
+    "name": "Beras Test Kasir",
+    "barcode": "8999999912345",
+    "unit": "kg",
+    "price": 15000,
+    "quantity": 2,
+    "subtotal": 30000
+   }
+  ],
+  "total": 30000,
+  "cash_paid": 50000,
+  "change": 20000,
+  "created_at": "2026-08-10T14:18:47.031806+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7c570c6561d094a3d1f35c"
+  },
+  "items": [
+   {
+    "product_id": "b9a0c9a7-8b9b-41ba-9905-235807234309",
+    "variation_id": null,
+    "name": "jajan 2000an",
+    "barcode": "8998866200530",
+    "unit": "pcs",
+    "price": 2000.0,
+    "quantity": 1.0,
+    "subtotal": 2000.0
+   },
+   {
+    "product_id": "94180cd7-149e-41bd-b79d-d9844cf71434",
+    "variation_id": null,
+    "name": "jajan 2500",
+    "barcode": "8992933357110",
+    "unit": "pcs",
+    "price": 2500.0,
+    "quantity": 1.0,
+    "subtotal": 2500.0
+   }
+  ],
+  "total": 4500.0,
+  "discount": 0.0,
+  "cash_paid": 100000.0,
+  "change": 95500.0,
+  "id": "33871668-e808-4d05-a114-ae60e156d527",
+  "created_at": "2026-08-12T11:20:44.218835+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7c703cbc105e2bc1971ef6"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 5750.0,
+    "quantity": 2.0,
+    "subtotal": 11500.0
+   },
+   {
+    "product_id": "948d3239-47c3-4673-97f2-ccb80e63a1f8",
+    "variation_id": null,
+    "name": "bagus cuci piring botol",
+    "barcode": "8886020207337",
+    "unit": "pcs",
+    "price": 15000.0,
+    "quantity": 2.0,
+    "subtotal": 30000.0
+   }
+  ],
+  "total": 41500.0,
+  "discount": 0.0,
+  "cash_paid": 45000.0,
+  "change": 3500.0,
+  "id": "cda9ae30-0c13-4206-bc22-c156e3cfd978",
+  "created_at": "2026-08-12T13:08:12.156726+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7c7d3ef0ae7e99711e9eea"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   },
+   {
+    "product_id": "96e25153-3c79-4fc5-bdb2-fd893c741b28",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745540830",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   },
+   {
+    "product_id": "735dc61c-d597-48bd-b084-ac9077476580",
+    "variation_id": null,
+    "name": "2dewi hijau/kuning",
+    "barcode": null,
+    "unit": "pcs",
+    "price": 11000.0,
+    "quantity": 1.0,
+    "subtotal": 11000.0
+   },
+   {
+    "product_id": "fb5b1b55-75f6-4002-94ab-946aa043ed1c",
+    "variation_id": null,
+    "name": "3Tebu",
+    "barcode": "aku",
+    "unit": "pcs",
+    "price": 3000.0,
+    "quantity": 1.0,
+    "subtotal": 3000.0
+   }
+  ],
+  "total": 26000.0,
+  "discount": 0.0,
+  "cash_paid": 100000.0,
+  "change": 74000.0,
+  "id": "fe387283-6de8-4c3a-b15b-f7a2c35fa0d3",
+  "created_at": "2026-08-12T14:03:42.622991+00:00"
+ },
+ {
+  "_id": {
+   "$oid": "6a7c7d5cf0ae7e99711e9eeb"
+  },
+  "items": [
+   {
+    "product_id": "f4705a8e-2e00-4518-8579-575e67e0aa41",
+    "variation_id": null,
+    "name": "1 mitubaby tisu basah",
+    "barcode": "8992745550396",
+    "unit": "pcs",
+    "price": 6000.0,
+    "quantity": 1.0,
+    "subtotal": 6000.0
+   }
+  ],
+  "total": 6000.0,
+  "discount": 0.0,
+  "cash_paid": 8000.0,
+  "change": 2000.0,
+  "id": "73312839-3d13-4073-9610-b4ed8eb97e4a",
+  "created_at": "2026-08-12T14:04:12.220085+00:00"
+ }
+]
