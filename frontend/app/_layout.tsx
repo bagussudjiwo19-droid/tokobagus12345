@@ -107,6 +107,7 @@ export default function RootLayout() {
                   <Stack.Screen name="admin-pin" options={{ presentation: "modal" }} />
                   <Stack.Screen name="pengaturan-suara" options={{ presentation: "modal" }} />
                   <Stack.Screen name="baca-bukti" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="preview-struk" options={{ presentation: "modal" }} />
                 </Stack>
                 <ShareIntentHandler />
                 {!mikoHidden && !(pathname || "").includes("cek-harga") && <Miko />}

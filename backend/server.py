@@ -666,19 +666,25 @@ OCR_SYSTEM = (
 )
 
 OCR_PROMPT = (
-    "Ekstrak informasi dari gambar bukti pembayaran ini. Kembalikan HANYA JSON "
+    "Ekstrak informasi dari gambar bukti pembayaran/transfer ini. Kembalikan HANYA JSON "
     "dengan bentuk PERSIS seperti ini (tanpa teks lain):\n"
     "{\n"
-    '  "method":    {"value": <string metode/aplikasi pembayaran, mis. "ShopeePay"|"GoPay"|"DANA"|"OVO"|"QRIS"|"Transfer BCA"> atau null, "confident": <true|false>},\n'
-    '  "recipient": {"value": <string nama penerima/merchant/toko tujuan> atau null, "confident": <true|false>},\n'
-    '  "amount":    {"value": <bilangan bulat rupiah TANPA titik/koma, nominal total yang dibayar> atau null, "confident": <true|false>},\n'
-    '  "date":      {"value": <string tanggal apa adanya seperti tertulis> atau null, "confident": <true|false>},\n'
-    '  "time":      {"value": <string waktu, mis. "14:35" atau "14:35:20"> atau null, "confident": <true|false>},\n'
-    '  "ref":       {"value": <string nomor referensi/ID transaksi> atau null, "confident": <true|false>}\n'
+    '  "amount":             {"value": <bilangan bulat rupiah TANPA titik/koma, nominal/jumlah transfer> atau null, "confident": <true|false>},\n'
+    '  "sender_name":        {"value": <string nama pengirim> atau null, "confident": <true|false>},\n'
+    '  "sender_bank":        {"value": <string bank/aplikasi pengirim, mis. "SeaBank"|"BCA"|"GoPay"> atau null, "confident": <true|false>},\n'
+    '  "sender_account":     {"value": <string no. rekening/no. tujuan pengirim> atau null, "confident": <true|false>},\n'
+    '  "recipient":          {"value": <string nama penerima/merchant, mis. "Shopee"> atau null, "confident": <true|false>},\n'
+    '  "recipient_username": {"value": <string username tujuan> atau null, "confident": <true|false>},\n'
+    '  "method":             {"value": <string metode transaksi, mis. "SeaBank Bayar Instan"|"QRIS"|"Transfer Bank"> atau null, "confident": <true|false>},\n'
+    '  "ref":                {"value": <string nomor referensi> atau null, "confident": <true|false>},\n'
+    '  "txno":               {"value": <string nomor transaksi> atau null, "confident": <true|false>},\n'
+    '  "product":            {"value": <string produk/keterangan, mis. "Pembayaran Shopee"> atau null, "confident": <true|false>},\n'
+    '  "date":               {"value": <string tanggal apa adanya seperti tertulis> atau null, "confident": <true|false>},\n'
+    '  "time":               {"value": <string waktu, mis. "21:55"> atau null, "confident": <true|false>}\n'
     "}\n"
-    "ATURAN: (1) amount adalah nominal pembayaran UTAMA, bukan saldo/biaya admin. "
+    "ATURAN: (1) amount adalah nominal transfer UTAMA, bukan saldo/biaya admin. "
     "(2) Jika ragu pada sebuah field, WAJIB value=null dan confident=false — jangan menebak. "
-    "(3) Jangan menambah field lain."
+    "(3) Jangan menambah field lain. (4) Baca APA ADANYA dari gambar, jangan mengubah/melengkapi."
 )
 
 
@@ -780,7 +786,8 @@ async def ocr_bukti(payload: OcrBuktiIn):
         logger.error(f"ocr_bukti parse error, raw={raw[:300]}")
         raise HTTPException(status_code=502, detail="Gagal membaca hasil AI. Coba lagi atau isi manual.")
 
-    fields = {k: _norm_field(parsed.get(k)) for k in ("method", "recipient", "amount", "date", "time", "ref")}
+    OCR_KEYS = ("amount", "sender_name", "sender_bank", "sender_account", "recipient", "recipient_username", "method", "ref", "txno", "product", "date", "time")
+    fields = {k: _norm_field(parsed.get(k)) for k in OCR_KEYS}
     # amount harus bilangan bulat; bila tidak, tandai ragu.
     amt = fields["amount"]["value"]
     if amt is not None:

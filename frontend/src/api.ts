@@ -5,7 +5,8 @@ const BASE = (process.env.EXPO_PUBLIC_BACKEND_URL || "").replace(/\/$/, "") + "/
 
 // Hasil OCR bukti pembayaran (per-field + tanda "yakin"/ragu).
 export type OcrField = { value: string | number | null; confident: boolean };
-export type OcrBuktiResult = { fields: Record<"method" | "recipient" | "amount" | "date" | "time" | "ref", OcrField> };
+export type OcrKey = "amount" | "sender_name" | "sender_bank" | "sender_account" | "recipient" | "recipient_username" | "method" | "ref" | "txno" | "product" | "date" | "time";
+export type OcrBuktiResult = { fields: Record<OcrKey, OcrField> };
 
 // ============================================================================
 // APLIKASI OFFLINE: semua data tersimpan di HP (tidak butuh internet/server).
@@ -53,7 +54,7 @@ export const api = {
     local.importBackup(data),
   // Bukti Pembayaran (OCR)
   getBukti: (limit = 500): Promise<Bukti[]> => local.getBukti(limit),
-  saveBukti: (b: Omit<Bukti, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string }): Promise<Bukti> =>
+  saveBukti: (b: Partial<Bukti> & { id?: string; created_at?: string }): Promise<Bukti> =>
     local.saveBukti(b),
   deleteBukti: (id: string): Promise<{ ok: boolean }> => local.deleteBukti(id),
   // OCR online: kirim gambar (base64) ke backend → JSON terstruktur. Lempar error bila offline.

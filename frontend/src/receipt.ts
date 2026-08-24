@@ -169,25 +169,31 @@ function labeledWrapped(label: string, value: string): string[] {
 
 export function buildBuktiReceiptText(b: Bukti, s: Settings): string {
   const L: string[] = [];
-  L.push(C_CENTER + C_BOLD + center("BUKTI TRANSAKSI").trimStart());
-  L.push(center("TOKO BAGUS").trimStart() + C_NORMAL);
-  if (s.showShopName && s.shopName) L.push(C_CENTER + center(s.shopName).trimStart() + C_LEFT);
-  if (s.showAddress && s.address) for (const w of wrapWords(s.address, CW)) L.push(C_CENTER + center(w).trimStart() + C_LEFT);
-  if (s.showPhone && s.phone) L.push(C_CENTER + center(s.phone).trimStart() + C_LEFT);
+  L.push(C_CENTER + C_BIG_BOLD + center("BUKTI PEMBAYARAN").trimStart());
+  L.push(center("TOKO BAGUS").trimStart() + C_NORMAL + C_LEFT);
   L.push(LINE);
-  L.push(twoCols("Metode", (b.method || "-")));
-  L.push(...labeledWrapped("Penerima :", b.recipient));
+  L.push(C_BOLD + twoCols("STATUS", (b.status || "BERHASIL")) + C_NORMAL);
   L.push(LINE);
-  L.push(C_BOLD + twoCols("NOMINAL", "Rp" + numberID(b.amount || 0)) + C_NORMAL);
+  L.push(line("NOMINAL"));
+  L.push(C_CENTER + C_BIG_BOLD + center("Rp" + numberID(b.amount || 0)).trimStart() + C_NORMAL + C_LEFT);
   L.push(LINE);
-  L.push(twoCols("Tanggal", (b.date || "-")));
-  L.push(twoCols("Waktu", (b.time || "-")));
-  L.push(...labeledWrapped("No. Ref  :", b.ref));
-  if (b.customer && b.customer.trim()) L.push(...labeledWrapped("Pelanggan:", b.customer));
+  L.push(twoCols("DARI", (b.sender_name || "-")));
+  L.push(twoCols("BANK", (b.sender_bank || "-")));
+  if (b.sender_account) L.push(...labeledWrapped("NO. TUJUAN :", b.sender_account));
   L.push(LINE);
-  L.push(C_CENTER + center("Salinan bukti pembayaran").trimStart());
-  if (s.showThanks && s.thanks) L.push(center(s.thanks).trimStart());
-  L.push(C_LEFT);
+  L.push(twoCols("KE", (b.recipient || "-")));
+  if (b.recipient_username) L.push(twoCols("USERNAME", b.recipient_username));
+  L.push(LINE);
+  L.push(...labeledWrapped("METODE :", b.method || "-"));
+  if (b.ref) L.push(...labeledWrapped("NO. REFERENSI :", b.ref));
+  if (b.txno) L.push(...labeledWrapped("NO. TRANSAKSI :", b.txno));
+  if (b.product) L.push(...labeledWrapped("PRODUK :", b.product));
+  L.push(LINE);
+  L.push(twoCols("TANGGAL", (b.date || "-")));
+  L.push(twoCols("WAKTU", (b.time || "-")));
+  L.push(LINE);
+  L.push(C_CENTER + center("TERIMA KASIH").trimStart());
+  L.push(center("TOKO BAGUS").trimStart() + C_LEFT);
   return L.join("\n") + "\n\n\n";
 }
 
@@ -195,38 +201,45 @@ export function buildBuktiReceiptText(b: Bukti, s: Settings): string {
 export function buildBuktiReceiptHTML(b: Bukti, s: Settings): string {
   const esc = (t: string) => (t || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
   const row = (k: string, v: string) => `<div class="row"><span>${esc(k)}</span><span class="v">${esc(v || "-")}</span></div>`;
-  const idText = s.showShopName && s.shopName ? `<div class="c b">${esc(s.shopName)}</div>` : "";
-  const addr = s.showAddress && s.address ? `<div class="c s">${esc(s.address)}</div>` : "";
-  const phone = s.showPhone && s.phone ? `<div class="c s">${esc(s.phone)}</div>` : "";
+  const opt = (k: string, v?: string) => (v && v.trim() ? row(k, v) : "");
   return `<!doctype html><html><head><meta charset="utf-8"/>
 <style>
   @page { margin: 6px; }
   * { font-family: 'Courier New', monospace; }
   body { width: 220px; margin: 0 auto; color: #000; }
   .c { text-align: center; }
-  .b { font-weight: 700; }
-  .title { font-weight: 700; font-size: 15px; text-align: center; }
-  .s { font-size: 11px; }
+  .title { font-weight: 700; font-size: 16px; text-align: center; line-height: 1.2; }
+  .s { font-size: 11px; text-align:center; }
   hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
   .row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
-  .row .v { text-align: right; max-width: 130px; word-break: break-word; }
-  .amt { display:flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+  .row span:first-child { font-weight: 700; }
+  .row .v { text-align: right; max-width: 130px; word-break: break-word; font-weight: 400; }
+  .st { display:flex; justify-content: space-between; font-weight: 700; font-size: 13px; }
+  .amt { text-align:center; font-weight: 700; font-size: 18px; margin: 4px 0; }
 </style></head><body>
-  <div class="title">BUKTI TRANSAKSI TOKO BAGUS</div>
-  ${idText}${addr}${phone}
+  <div class="title">BUKTI PEMBAYARAN<br/>TOKO BAGUS</div>
   <hr/>
-  ${row("Metode", b.method)}
-  ${row("Penerima", b.recipient)}
+  <div class="st"><span>STATUS</span><span>${esc(b.status || "BERHASIL")}</span></div>
   <hr/>
-  <div class="amt"><span>NOMINAL</span><span>Rp${numberID(b.amount || 0)}</span></div>
+  <div style="font-weight:700;font-size:12px;">NOMINAL</div>
+  <div class="amt">Rp${numberID(b.amount || 0)}</div>
   <hr/>
-  ${row("Tanggal", b.date)}
-  ${row("Waktu", b.time)}
-  ${row("No. Ref", b.ref)}
-  ${b.customer ? row("Pelanggan", b.customer) : ""}
+  ${row("DARI", b.sender_name)}
+  ${row("BANK", b.sender_bank)}
+  ${opt("NO. TUJUAN", b.sender_account)}
   <hr/>
-  <div class="c s">Salinan bukti pembayaran</div>
-  ${s.showThanks && s.thanks ? `<div class="c s">${esc(s.thanks)}</div>` : ""}
+  ${row("KE", b.recipient)}
+  ${opt("USERNAME", b.recipient_username)}
+  <hr/>
+  ${row("METODE", b.method)}
+  ${opt("NO. REFERENSI", b.ref)}
+  ${opt("NO. TRANSAKSI", b.txno)}
+  ${opt("PRODUK", b.product)}
+  <hr/>
+  ${row("TANGGAL", b.date)}
+  ${row("WAKTU", b.time)}
+  <hr/>
+  <div class="s">TERIMA KASIH<br/>TOKO BAGUS</div>
 </body></html>`;
 }
 

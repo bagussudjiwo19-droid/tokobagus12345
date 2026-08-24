@@ -318,19 +318,26 @@ export const local = {
     return buktiList.slice(0, limit).map(clone);
   },
 
-  async saveBukti(payload: Omit<Bukti, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string }): Promise<Bukti> {
+  async saveBukti(payload: Partial<Bukti> & { id?: string; created_at?: string }): Promise<Bukti> {
     await ensureInit();
     const now = nowIso();
     const existing = payload.id ? buktiList.find((x) => x.id === payload.id) : null;
     const b: Bukti = {
       id: payload.id || genId(),
-      method: payload.method || "",
-      recipient: payload.recipient || "",
+      status: payload.status || "BERHASIL",
       amount: payload.amount || 0,
+      sender_name: payload.sender_name || "",
+      sender_bank: payload.sender_bank || "",
+      sender_account: payload.sender_account || "",
+      recipient: payload.recipient || "",
+      recipient_username: payload.recipient_username || "",
+      method: payload.method || "",
+      ref: payload.ref || "",
+      txno: payload.txno || "",
+      product: payload.product || "",
       date: payload.date || "",
       time: payload.time || "",
-      ref: payload.ref || "",
-      customer: payload.customer || "",
+      note: payload.note || "",
       image_uri: payload.image_uri ?? null,
       created_at: existing?.created_at || payload.created_at || now,
       updated_at: now,

@@ -155,8 +155,10 @@ export default function RiwayatScreen() {
   // Buka bukti untuk cetak ulang / bagikan (prefill data ke layar Baca Bukti).
   const openBukti = (b: Bukti) => {
     router.push({ pathname: "/baca-bukti", params: {
-      id: b.id, method: b.method, recipient: b.recipient, amount: String(b.amount),
-      date: b.date, time: b.time, ref: b.ref, customer: b.customer,
+      id: b.id, status: b.status, amount: String(b.amount),
+      sender_name: b.sender_name, sender_bank: b.sender_bank, sender_account: b.sender_account,
+      recipient: b.recipient, recipient_username: b.recipient_username, method: b.method,
+      ref: b.ref, txno: b.txno, product: b.product, date: b.date, time: b.time, note: b.note,
     } });
   };
   const removeBukti = (b: Bukti) => {
@@ -175,7 +177,7 @@ export default function RiwayatScreen() {
           <View style={styles.buktiBadge}><Text style={styles.buktiBadgeTxt}>BUKTI</Text></View>
         </View>
         <Text style={styles.rowSub} numberOfLines={1}>
-          {formatDateID(item.created_at)}{item.customer ? ` · ${item.customer}` : ""}
+          {formatDateID(item.created_at)}{item.sender_name ? ` · ${item.sender_name}` : (item.recipient ? ` · ${item.recipient}` : "")}
         </Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>
