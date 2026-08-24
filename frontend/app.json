@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.appauditpreview.b4uyup",
+      "bundleIdentifier": "com.tokobagus.kasir",
       "infoPlist": {
         "NSCameraUsageDescription": "Scan barcode produk saat berjualan",
         "NSBluetoothAlwaysUsageDescription": "Hubungkan printer struk Bluetooth",
@@ -30,7 +30,7 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.appauditpreview.b4uyup",
+      "package": "com.tokobagus.kasir",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.CAMERA",
@@ -104,10 +104,15 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["image/*"],
-          "androidMultiIntentFilters": ["image/*"]
+          "androidIntentFilters": [
+            "image/*"
+          ],
+          "androidMultiIntentFilters": [
+            "image/*"
+          ]
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
