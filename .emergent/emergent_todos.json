@@ -1,0 +1,26 @@
+[
+  {
+    "content": "Fix 1: Add Expo tunnel env vars to frontend/.env",
+    "status": "completed"
+  },
+  {
+    "content": "Fix 3: Make /api/backup/import non-destructive (upsert merge)",
+    "status": "completed"
+  },
+  {
+    "content": "Verify preview still works after changes",
+    "status": "completed"
+  },
+  {
+    "content": "Fix 2: Supervisor config — confirmed VALID as-is, no edit needed",
+    "status": "completed"
+  },
+  {
+    "content": "Re-run deployment_agent to confirm PASS",
+    "status": "completed"
+  },
+  {
+    "content": "Run testing_agent to verify backend + backup import fix",
+    "status": "completed"
+  }
+]

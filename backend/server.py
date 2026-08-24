@@ -512,28 +512,34 @@ async def backup_import(data: dict = Body(...)):
     except Exception:
         raise HTTPException(status_code=400, detail="File backup rusak: data transaksi tidak sesuai format. Data lama tidak diubah.")
 
-    # 3) Staging ke koleksi sementara — jika gagal, data lama TIDAK tersentuh.
-    await db.products_tmp.drop()
-    await db.transactions_tmp.drop()
+    # 3) Merge NON-DESTRUKTIF berbasis "id" (upsert). Data lama yang tidak ada
+    #    di file backup TIDAK dihapus — aman untuk deployment & mencegah
+    #    kehilangan data. Produk/transaksi dengan id sama akan diperbarui;
+    #    yang baru ditambahkan. (Menggantikan pola lama delete_many + insert.)
+    from pymongo import ReplaceOne
     try:
         if cprods:
-            await db.products_tmp.insert_many([strip_id(p) for p in cprods])
+            ops = [
+                ReplaceOne({"id": p.get("id")}, strip_id(p), upsert=True)
+                for p in cprods if p.get("id")
+            ]
+            no_id = [strip_id(p) for p in cprods if not p.get("id")]
+            if ops:
+                await db.products.bulk_write(ops, ordered=False)
+            if no_id:
+                await db.products.insert_many(no_id)
         if ctx:
-            await db.transactions_tmp.insert_many([strip_id(t) for t in ctx])
+            ops = [
+                ReplaceOne({"id": t.get("id")}, strip_id(t), upsert=True)
+                for t in ctx if t.get("id")
+            ]
+            no_id = [strip_id(t) for t in ctx if not t.get("id")]
+            if ops:
+                await db.transactions.bulk_write(ops, ordered=False)
+            if no_id:
+                await db.transactions.insert_many(no_id)
     except Exception:
-        await db.products_tmp.drop()
-        await db.transactions_tmp.drop()
         raise HTTPException(status_code=400, detail="Gagal memproses file backup. Data lama tidak diubah.")
-
-    # 4) Staging sukses → baru ganti data lama.
-    await db.products.delete_many({})
-    await db.transactions.delete_many({})
-    if cprods:
-        await db.products.insert_many([strip_id(p) for p in cprods])
-    if ctx:
-        await db.transactions.insert_many([strip_id(t) for t in ctx])
-    await db.products_tmp.drop()
-    await db.transactions_tmp.drop()
 
     if data.get("settings"):
         s = strip_id(data["settings"])
