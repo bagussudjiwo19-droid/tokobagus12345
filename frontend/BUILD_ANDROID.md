@@ -76,31 +76,39 @@ Hasil APK ada di:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## 4B. Build APK RELEASE (untuk dibagikan/produksi)
-1. Buat keystore (sekali saja):
-```bash
-keytool -genkeypair -v -keystore my-release-key.keystore \
-  -alias tokobagus -keyalg RSA -keysize 2048 -validity 10000
-```
-2. Taruh `my-release-key.keystore` di folder `android/app/`.
-3. Edit `android/gradle.properties`, tambahkan:
-```
-MYAPP_UPLOAD_STORE_FILE=my-release-key.keystore
-MYAPP_UPLOAD_KEY_ALIAS=tokobagus
-MYAPP_UPLOAD_STORE_PASSWORD=<password_anda>
-MYAPP_UPLOAD_KEY_PASSWORD=<password_anda>
-```
-4. Edit `android/app/build.gradle` bagian `signingConfigs` & `buildTypes.release`
-   agar memakai konfigurasi di atas (lihat dok resmi RN "Generating a release build").
-5. Build:
+## 4B. Build APK RELEASE (SUDAH dikonfigurasi — tinggal build!)
+> ✅ **Signing release sudah disiapkan untuk Anda.** Keystore, alias, dan
+> password sudah terpasang. Anda **tidak perlu** membuat keystore lagi.
+> - Keystore: `android/app/tokobagus-release.keystore`
+> - Alias: `tokobagus`
+> - Password (store & key): `TokoBagus2026`
+> - Konfigurasi ada di `android/gradle.properties` (`MYAPP_RELEASE_*`) dan
+>   `android/app/build.gradle` (`signingConfigs.release`).
+
+Cukup jalankan:
 ```bash
 cd android
-./gradlew assembleRelease     # (Windows: gradlew.bat assembleRelease)
+# Windows:
+gradlew.bat assembleRelease
+# macOS / Linux:
+./gradlew assembleRelease
 ```
-Hasil:
+Hasil APK **release yang sudah ditandatangani**:
 ```
 android/app/build/outputs/apk/release/app-release.apk
 ```
+
+> 🔐 **Catatan keamanan:** Keystore & password ini ikut tersimpan di repo agar
+> siap-pakai. Untuk produksi jangka panjang, disarankan **ganti dengan keystore
+> milik Anda sendiri** dan simpan passwordnya di tempat aman (jangan di repo).
+> Ganti keystore:
+> ```bash
+> keytool -genkeypair -v -keystore android/app/tokobagus-release.keystore \
+>   -alias tokobagus -keyalg RSA -keysize 2048 -validity 10000
+> ```
+> lalu perbarui password di `android/gradle.properties`.
+> **Simpan keystore ini baik-baik** — dibutuhkan untuk setiap update aplikasi
+> di masa depan (kalau hilang, Anda tak bisa meng-update APK dengan identitas sama).
 
 ---
 

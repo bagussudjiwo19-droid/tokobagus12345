@@ -1,26 +1,26 @@
 [
   {
-    "content": "Set application ID (com.tokobagus.kasir) & point EXPO_PUBLIC_BACKEND_URL to production backend",
+    "content": "Set application ID (com.tokobagus.kasir) & backend URL",
     "status": "completed"
   },
   {
-    "content": "Run expo-doctor and fix dependency/config errors",
+    "content": "Fix dependencies (expo-doctor)",
     "status": "completed"
   },
   {
-    "content": "Run 'expo prebuild -p android' to generate native Android project",
+    "content": "Generate native android/ project (expo prebuild)",
     "status": "completed"
   },
   {
-    "content": "Install Android build toolchain - BLOCKED: aapt2/NDK x86_64-only, cannot run on ARM64 host",
+    "content": "Generate release keystore (tokobagus-release.keystore)",
     "status": "completed"
   },
   {
-    "content": "Build APK here - NOT POSSIBLE on ARM64 (proven: aapt2 Exec format error, qemu unusable)",
-    "status": "cancelled"
+    "content": "Configure Gradle release signing (build.gradle + gradle.properties)",
+    "status": "completed"
   },
   {
-    "content": "Provide ready-to-build native project + BUILD_ANDROID.md guide",
+    "content": "Push android source + release config + keystore + guide to GitHub branch",
     "status": "completed"
   }
 ]
